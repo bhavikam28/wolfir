@@ -34,6 +34,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [awsProfile, setAwsProfile] = useState<string>('secops-lens');
+  const [awsConnected, setAwsConnected] = useState(false);
 
   useEffect(() => {
     loadScenarios();
