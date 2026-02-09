@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-from api import analysis, demo, visual, remediation, voice, orchestration, storage, documentation, auth
+from api import analysis, demo, visual, remediation, voice, orchestration, storage, documentation, auth, mcp, nova_act
 from utils.config import get_settings
 from utils.logger import logger
 
@@ -59,6 +59,8 @@ app.include_router(orchestration.router)
 app.include_router(storage.router)
 app.include_router(documentation.router)
 app.include_router(auth.router)
+app.include_router(mcp.router)
+app.include_router(nova_act.router)
 
 
 @app.get("/")
@@ -81,7 +83,12 @@ async def health_check():
         "models": {
             "nova_lite": settings.nova_lite_model_id,
             "nova_pro": settings.nova_pro_model_id,
-            "nova_micro": settings.nova_micro_model_id
+            "nova_micro": settings.nova_micro_model_id,
+            "nova_sonic": settings.nova_sonic_model_id
+        },
+        "frameworks": {
+            "mcp": "Model Context Protocol v1.0",
+            "strands": "Strands Agents Framework"
         }
     }
 

@@ -29,6 +29,7 @@ import type { AnalysisResponse, DemoScenario, OrchestrationResponse } from './ty
 import { formatAnalysisTime } from './utils/formatting';
 import { demoAnalysisData } from './data/demoAnalysis';
 import AgentProgress from './components/Analysis/AgentProgress';
+import VoiceAssistant from './components/Analysis/VoiceAssistant';
 
 function App() {
   const [showDemo, setShowDemo] = useState(false);
@@ -606,9 +607,23 @@ function App() {
               <span>Nova Micro</span>
               <span>•</span>
               <span>Nova 2 Sonic</span>
+              <span>•</span>
+              <span>MCP Server</span>
+              <span>•</span>
+              <span>Strands Agents</span>
             </div>
           </div>
         </footer>
+
+        {/* Nova Sonic Voice Assistant - Floating */}
+        <VoiceAssistant
+          incidentContext={orchestrationResult?.results ? {
+            timeline: orchestrationResult.results.timeline,
+            remediation_plan: orchestrationResult.results.remediation_plan,
+          } : undefined}
+          incidentId={orchestrationResult?.incident_id || analysisResult?.incident_id}
+          isAnalysisComplete={!!analysisResult && !loading}
+        />
       </div>
     );
   }

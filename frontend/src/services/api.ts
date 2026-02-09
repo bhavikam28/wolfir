@@ -195,4 +195,133 @@ export const documentationAPI = {
   },
 };
 
+export const voiceAPI = {
+  /**
+   * Send a voice query to Nova Sonic
+   */
+  query: async (
+    queryText: string,
+    incidentContext?: any
+  ): Promise<any> => {
+    const response = await api.post('/api/voice/query', {
+      query: queryText,
+      incident_context: incidentContext,
+    });
+    return response.data;
+  },
+
+  /**
+   * Generate voice summary of incident
+   */
+  summary: async (incidentData: any): Promise<any> => {
+    const response = await api.post('/api/voice/summary', {
+      incident_data: incidentData,
+    });
+    return response.data;
+  },
+
+  /**
+   * Health check for voice service
+   */
+  healthCheck: async (): Promise<any> => {
+    const response = await api.get('/api/voice/health');
+    return response.data;
+  },
+};
+
+export const novaActAPI = {
+  /**
+   * Generate remediation automation plan using Nova Act
+   */
+  generateRemediationAutomation: async (
+    incidentType: string,
+    rootCause: string,
+    affectedResources: string[],
+    remediationSteps: any[]
+  ): Promise<any> => {
+    const response = await api.post('/api/nova-act/remediation-automation', {
+      incident_type: incidentType,
+      root_cause: rootCause,
+      affected_resources: affectedResources,
+      remediation_steps: remediationSteps,
+    });
+    return response.data;
+  },
+
+  /**
+   * Generate JIRA automation plan
+   */
+  generateJiraAutomation: async (
+    incidentId: string,
+    summary: string,
+    description: string,
+    severity: string
+  ): Promise<any> => {
+    const response = await api.post('/api/nova-act/jira-automation', {
+      incident_id: incidentId,
+      summary,
+      description,
+      severity,
+    });
+    return response.data;
+  },
+};
+
+export const mcpAPI = {
+  /**
+   * Get MCP server info
+   */
+  getServerInfo: async (): Promise<any> => {
+    const response = await api.get('/api/mcp/server-info');
+    return response.data;
+  },
+
+  /**
+   * List MCP tools
+   */
+  listTools: async (): Promise<any> => {
+    const response = await api.get('/api/mcp/tools');
+    return response.data;
+  },
+
+  /**
+   * Call an MCP tool
+   */
+  callTool: async (toolName: string, args: any): Promise<any> => {
+    const response = await api.post('/api/mcp/call-tool', {
+      tool_name: toolName,
+      arguments: args,
+    });
+    return response.data;
+  },
+
+  /**
+   * List Strands agent tools
+   */
+  listStrandsTools: async (): Promise<any> => {
+    const response = await api.get('/api/mcp/strands/tools');
+    return response.data;
+  },
+
+  /**
+   * Run Strands-orchestrated analysis
+   */
+  strandsAnalyze: async (events: any[], incidentType?: string, voiceQuery?: string): Promise<any> => {
+    const response = await api.post('/api/mcp/strands/analyze', {
+      events,
+      incident_type: incidentType || 'Unknown',
+      voice_query: voiceQuery,
+    });
+    return response.data;
+  },
+
+  /**
+   * Health check for MCP/Strands services
+   */
+  healthCheck: async (): Promise<any> => {
+    const response = await api.get('/api/mcp/health');
+    return response.data;
+  },
+};
+
 export default api;

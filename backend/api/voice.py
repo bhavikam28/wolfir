@@ -1,8 +1,9 @@
 """
-Voice API endpoints
+Voice API endpoints - Nova Sonic powered voice interaction
 """
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Form
 from typing import Dict, Any, Optional
+from pydantic import BaseModel
 
 from agents.voice_agent import VoiceAgent
 from utils.logger import logger
@@ -11,97 +12,76 @@ router = APIRouter(prefix="/api/voice", tags=["voice"])
 voice_agent = VoiceAgent()
 
 
-@router.post("/speech-to-text")
-async def speech_to_text(
-    file: UploadFile = File(...),
-    language: str = Form("en-US")
-) -> Dict[str, Any]:
-    """
-    Convert speech to text
-    
-    Upload an audio file and get transcription
-    
-    Args:
-        file: Audio file (WAV, MP3, etc.)
-        language: Language code (default: en-US)
-        
-    Returns:
-        Transcription with text and confidence
-    """
-    try:
-        # Validate file type
-        if not file.content_type or not file.content_type.startswith('audio/'):
-            raise HTTPException(
-                status_code=400,
-                detail="File must be an audio file (WAV, MP3, etc.)"
-            )
-        
-        # Read audio data
-        audio_data = await file.read()
-        
-        if len(audio_data) > 10 * 1024 * 1024:  # 10MB limit
-            raise HTTPException(
-                status_code=400,
-                detail="Audio file too large (max 10MB)"
-            )
-        
-        logger.info(f"Received speech-to-text request: {file.filename} ({len(audio_data)} bytes)")
-        
-        # Convert to text
-        transcription = await voice_agent.speech_to_text(
-            audio_data=audio_data,
-            language=language
-        )
-        
-        return transcription
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in speech-to-text: {e}")
-        logger.error(f"Traceback: {error_trace}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Speech-to-text failed: {str(e)}"
-        )
+class VoiceQueryRequest(BaseModel):
+    """Request model for voice queries"""
+    query: str
+    incident_context: Optional[Dict[str, Any]] = None
 
 
-@router.post("/text-to-speech")
-async def text_to_speech(
-    text: str = Form(...),
-    voice: str = Form("default")
-) -> Dict[str, Any]:
+class VoiceSummaryRequest(BaseModel):
+    """Request model for voice summary generation"""
+    incident_data: Dict[str, Any]
+
+
+@router.post("/query")
+async def voice_query(request: VoiceQueryRequest) -> Dict[str, Any]:
     """
-    Convert text to speech
+    Process a voice query about security incidents.
+    
+    Uses Nova Sonic to understand natural language security questions
+    and provide contextual responses based on current incident data.
     
     Args:
-        text: Text to convert to speech
-        voice: Voice type (default, male, female)
+        request: Query text and optional incident context
         
     Returns:
-        Audio metadata (audio generation would be implemented with Nova 2 Sonic)
+        AI response with text, action suggestions, and follow-ups
     """
     try:
-        logger.info(f"Received text-to-speech request: {text[:50]}...")
+        logger.info(f"Voice query received: {request.query[:100]}...")
         
-        # Convert to speech
-        result = await voice_agent.text_to_speech(
-            text=text,
-            voice=voice
+        result = await voice_agent.process_voice_query(
+            query_text=request.query,
+            incident_context=request.incident_context
         )
         
         return result
         
     except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in text-to-speech: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Voice query error: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Text-to-speech failed: {str(e)}"
+            detail=f"Voice query failed: {str(e)}"
+        )
+
+
+@router.post("/summary")
+async def voice_summary(request: VoiceSummaryRequest) -> Dict[str, Any]:
+    """
+    Generate a spoken summary of incident analysis results.
+    
+    Returns text optimized for text-to-speech output.
+    
+    Args:
+        request: Complete incident analysis data
+        
+    Returns:
+        Summary text for speech output
+    """
+    try:
+        logger.info("Generating voice summary...")
+        
+        result = await voice_agent.generate_voice_summary(
+            incident_data=request.incident_data
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Voice summary error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Voice summary generation failed: {str(e)}"
         )
 
 
@@ -110,7 +90,7 @@ async def process_command(
     command: str = Form(...)
 ) -> Dict[str, Any]:
     """
-    Process a voice command
+    Process a voice command and determine action.
     
     Args:
         command: Transcribed voice command text
@@ -119,18 +99,11 @@ async def process_command(
         Command interpretation with action and parameters
     """
     try:
-        logger.info(f"Received voice command: {command}")
-        
-        # Process command
+        logger.info(f"Processing voice command: {command}")
         result = await voice_agent.process_voice_command(command)
-        
         return result
-        
     except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error processing voice command: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Voice command error: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Command processing failed: {str(e)}"
@@ -143,5 +116,6 @@ async def health_check() -> Dict[str, str]:
     return {
         "status": "healthy",
         "service": "voice-api",
-        "model": "amazon.nova-sonic-v1:0"
+        "model": "amazon.nova-sonic-v1:0",
+        "capabilities": "query,summary,command"
     }
