@@ -1,5 +1,5 @@
 /**
- * Nova Flow Diagram - Light Background Pipeline
+ * Nova Flow Diagram - Pipeline with themed background
  * Clean, professional horizontal flow with clearly visible step numbers
  * Inspired by Wiz.io, CrowdStrike, Orca enterprise design
  */
@@ -62,11 +62,12 @@ const NovaFlowDiagram: React.FC = () => {
   const hoveredStep = STEPS.find(s => s.id === activeStep);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-card">
+    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-50/60 via-white to-blue-50/40 border border-indigo-100/60 shadow-card">
       {/* Subtle dot grid */}
       <div className="absolute inset-0" style={{
-        backgroundImage: 'radial-gradient(circle, #e2e8f0 0.8px, transparent 0.8px)',
+        backgroundImage: 'radial-gradient(circle, #c7d2fe 0.6px, transparent 0.6px)',
         backgroundSize: '24px 24px',
+        opacity: 0.4,
       }} />
 
       <div className="relative z-10 p-8 lg:p-10">
@@ -98,8 +99,8 @@ const NovaFlowDiagram: React.FC = () => {
                   onMouseEnter={() => setActiveStep(step.id)}
                   onMouseLeave={() => setActiveStep(null)}
                 >
-                  <div className={`bg-white rounded-xl p-5 border text-center transition-all duration-300 h-full flex flex-col items-center group cursor-pointer ${
-                    isActive ? 'border-slate-300 shadow-md -translate-y-1' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                  <div className={`bg-white/90 backdrop-blur-sm rounded-xl p-5 border text-center transition-all duration-300 h-full flex flex-col items-center group cursor-pointer ${
+                    isActive ? 'border-slate-300 shadow-md -translate-y-1' : 'border-slate-200/80 hover:border-slate-300 hover:shadow-sm'
                   }`}>
                     {/* Step number - clearly visible */}
                     <div
@@ -159,7 +160,7 @@ const NovaFlowDiagram: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="mt-6 mx-auto max-w-2xl"
             >
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: hoveredStep.bg }}>
                     <hoveredStep.icon className="w-4 h-4" style={{ color: hoveredStep.color }} strokeWidth={2} />
