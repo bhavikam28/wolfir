@@ -2,7 +2,6 @@
  * Documentation Display - JIRA, Slack, Confluence tabs with copy functionality
  */
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { FileText, MessageSquare, Book, Copy, CheckCircle2, ExternalLink } from 'lucide-react';
 
 interface DocumentationDisplayProps {

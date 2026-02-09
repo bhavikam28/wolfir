@@ -4,8 +4,8 @@
  */
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Clock, User, Server, AlertCircle, Shield, Filter } from 'lucide-react';
-import type { Timeline, TimelineEvent } from '../../types/incident';
+import { ChevronDown, ChevronUp, Clock, User, Server, AlertCircle } from 'lucide-react';
+import type { Timeline } from '../../types/incident';
 
 interface TimelineViewProps {
   timeline: Timeline;

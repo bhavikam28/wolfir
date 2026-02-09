@@ -14,7 +14,7 @@ interface NodeDef {
   id: string;
   x: number;
   y: number;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: any;
   label: string;
   subLabel: string;
   color: string;

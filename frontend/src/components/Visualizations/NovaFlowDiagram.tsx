@@ -9,7 +9,7 @@ import { Eye, Brain, Zap, Shield, FileText, ChevronRight } from 'lucide-react';
 
 interface PipelineStep {
   id: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: any;
   title: string;
   model: string;
   description: string;

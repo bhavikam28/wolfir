@@ -5,8 +5,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Cloud, Key, Shield, CheckCircle2, AlertCircle, 
-  Info, Copy, Loader2, Terminal, Lock
+  Key, Shield, CheckCircle2, AlertCircle, 
+  Copy, Loader2, Terminal, Lock
 } from 'lucide-react';
 
 interface AWSAuthTabProps {

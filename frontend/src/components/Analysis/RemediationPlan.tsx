@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, CheckCircle2, AlertTriangle, ChevronDown,
-  ChevronUp, Play, Clock, Loader2
+  ChevronUp, Play, Clock
 } from 'lucide-react';
 
 interface RemediationStep {
@@ -51,8 +51,19 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
       LOW: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       MEDIUM: 'bg-amber-50 text-amber-700 border-amber-200',
       HIGH: 'bg-red-50 text-red-700 border-red-200',
+      CRITICAL: 'bg-red-100 text-red-800 border-red-300',
     };
-    return styles[risk] || styles.MEDIUM;
+    return styles[risk.toUpperCase()] || styles.MEDIUM;
+  };
+
+  const getRiskNumberStyle = (risk: string) => {
+    const styles: Record<string, string> = {
+      LOW: 'bg-emerald-100 text-emerald-700',
+      MEDIUM: 'bg-amber-100 text-amber-700',
+      HIGH: 'bg-red-100 text-red-700',
+      CRITICAL: 'bg-red-200 text-red-800',
+    };
+    return styles[risk.toUpperCase()] || 'bg-indigo-100 text-indigo-700';
   };
 
   const getPriorityStyles = (priority: string) => {
@@ -121,10 +132,15 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
         ) : null}
       </div>
 
-      {/* Steps */}
+      {/* Steps - sorted by severity: CRITICAL → HIGH → MEDIUM → LOW */}
       <div className="p-6 space-y-2">
-        {steps.map((step: any, index: number) => {
-          const stepNumber = step.step || step.step_number || (index + 1);
+        {[...steps].sort((a: any, b: any) => {
+          const severityOrder: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+          const riskA = (a.risk || a.risk_level || 'MEDIUM').toUpperCase();
+          const riskB = (b.risk || b.risk_level || 'MEDIUM').toUpperCase();
+          return (severityOrder[riskA] ?? 4) - (severityOrder[riskB] ?? 4);
+        }).map((step: any, index: number) => {
+          const stepNumber = index + 1;
           const action = step.action || step.command || step.description || 'Remediation Action';
           const target = step.target || step.resource || step.resource_name;
           let reason = step.reason || step.description || step.rationale;
@@ -136,7 +152,7 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
             else if (a.includes('disable')) reason = 'Disable compromised resource to prevent exploitation.';
             else reason = `Addresses the security incident: ${action.toLowerCase()}.`;
           }
-          const risk = step.risk || step.risk_level || 'MEDIUM';
+          const risk = (step.risk || step.risk_level || 'MEDIUM').toUpperCase();
           const apiCall = step.api_call || step.command || step.cli_command || step.aws_cli_command;
           const isExpanded = expandedSteps.has(stepNumber);
 
@@ -153,7 +169,7 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
                 onClick={() => toggleStep(stepNumber)}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  <div className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center flex-shrink-0 ${getRiskNumberStyle(risk)}`}>
                     {stepNumber}
                   </div>
                   <div className="flex-1 min-w-0">

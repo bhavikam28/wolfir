@@ -6,7 +6,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   CheckCircle2, Loader2, XCircle, Clock, 
-  Brain, Eye, Zap, Shield, SkipForward, ArrowRight
+  Brain, Eye, Zap, Shield, SkipForward
 } from 'lucide-react';
 import type { AgentStatus } from '../../types/incident';
 

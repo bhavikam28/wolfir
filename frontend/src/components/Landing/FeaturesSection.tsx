@@ -7,7 +7,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Eye, Brain, Zap, Mic, FileText, Shield,
-  Network, Target, Lock, Cpu, BarChart3, Layers
+  Network, Target, Lock, Cpu, BarChart3
 } from 'lucide-react';
 import NovaFlowDiagram from '../Visualizations/NovaFlowDiagram';
 import AttackPathVisualization from '../Visualizations/AttackPathVisualization';
@@ -48,7 +48,7 @@ const FeaturesSection: React.FC = () => {
       </div>
 
       {/* ============ PIPELINE SECTION ============ */}
-      <div className="py-20 bg-white">
+      <div className="py-20 bg-gradient-to-b from-slate-50/80 via-indigo-50/30 to-slate-50/80 border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

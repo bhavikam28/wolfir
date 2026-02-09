@@ -4,7 +4,7 @@
  */
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Image, X, CheckCircle2, AlertCircle, Loader2, Eye, Play, Sparkles } from 'lucide-react';
+import { Upload, Image, X, CheckCircle2, AlertCircle, Loader2, Eye, Sparkles } from 'lucide-react';
 
 interface VisualAnalysisUploadProps {
   onUpload: (file: File) => Promise<void>;

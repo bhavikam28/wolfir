@@ -2,11 +2,11 @@
  * Nova Sentinel - Autonomous Security Intelligence Platform
  * Premium UI with Wiz.io-inspired design language
  */
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, AlertCircle, CheckCircle2, Menu, X, 
-  ArrowLeft, Shield, Zap, Clock, ChevronRight,
+  ArrowLeft, Clock, ChevronRight,
   Loader2, Sparkles
 } from 'lucide-react';
 import NovaSentinelLogo from './components/Logo';
@@ -138,9 +138,9 @@ function App() {
   // ========== DEMO/ANALYSIS VIEW ==========
   if (showDemo) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20">
         {/* Premium Dashboard Header */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-4">
@@ -222,7 +222,7 @@ function App() {
 
                                   const realAnalysis = await analysisAPI.analyzeRealCloudTrail(daysBack, maxEvents, awsProfile);
                                   
-                                  if (realAnalysis.status === 'no_events') {
+                                  if ((realAnalysis as any).status === 'no_events') {
                                     setError(`No security events found in the last ${daysBack} days. Try increasing the time range.`);
                                     setLoading(false);
                                     return;
@@ -302,27 +302,123 @@ function App() {
               </motion.div>
             )}
 
-            {/* Loading State */}
+            {/* Loading State - Premium Animated Pipeline */}
             {loading && (
               <div className="space-y-6">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-elevated"
+                  className="bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-2xl border border-slate-200 shadow-elevated overflow-hidden"
                 >
-                  <div className="relative inline-flex items-center justify-center mb-6">
-                    <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                    <Sparkles className="w-6 h-6 text-indigo-600 absolute" />
+                  {/* Animated top accent bar */}
+                  <div className="h-1 bg-slate-100 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-500"
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      style={{ width: '50%' }}
+                    />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">
-                    Multi-Agent Analysis in Progress
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-2">
-                    5 Nova AI models are working together to analyze this incident...
-                  </p>
-                  <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
-                    <Clock className="w-3 h-3" />
-                    <span>Typical analysis takes 15-45 seconds</span>
+
+                  <div className="p-8 lg:p-10">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                      <div className="relative inline-flex items-center justify-center mb-4">
+                        <motion.div
+                          className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <Sparkles className="w-8 h-8 text-white" />
+                        </motion.div>
+                        <motion.div
+                          className="absolute -inset-3 rounded-2xl border-2 border-indigo-300"
+                          animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      </div>
+                      <h3 className="text-2xl font-black text-slate-900 mb-2">
+                        Multi-Agent Analysis in Progress
+                      </h3>
+                      <p className="text-sm text-slate-500 max-w-md mx-auto">
+                        5 Nova AI models are working together to detect, analyze, classify, and remediate this incident
+                      </p>
+                    </div>
+
+                    {/* Animated Agent Pipeline */}
+                    <div className="grid grid-cols-5 gap-3 mb-8">
+                      {[
+                        { name: 'Detect', model: 'Nova Pro', icon: '🔍', color: 'from-blue-500 to-cyan-500', delay: 0 },
+                        { name: 'Investigate', model: 'Nova 2 Lite', icon: '🧠', color: 'from-purple-500 to-violet-500', delay: 3 },
+                        { name: 'Classify', model: 'Nova Micro', icon: '⚡', color: 'from-amber-500 to-orange-500', delay: 6 },
+                        { name: 'Remediate', model: 'Orchestrator', icon: '🛡️', color: 'from-emerald-500 to-teal-500', delay: 9 },
+                        { name: 'Document', model: 'Nova 2 Lite', icon: '📄', color: 'from-violet-500 to-purple-500', delay: 12 },
+                      ].map((agent, i) => (
+                        <motion.div
+                          key={agent.name}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.15 }}
+                          className="relative"
+                        >
+                          <div className="bg-white rounded-xl p-4 border border-slate-200 text-center h-full">
+                            {/* Running indicator */}
+                            <motion.div
+                              className={`w-10 h-10 rounded-lg bg-gradient-to-br ${agent.color} mx-auto mb-2 flex items-center justify-center shadow-sm`}
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity, delay: agent.delay * 0.1 }}
+                            >
+                              <span className="text-lg">{agent.icon}</span>
+                            </motion.div>
+                            <p className="text-xs font-bold text-slate-900">{agent.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{agent.model}</p>
+                            {/* Mini progress bar */}
+                            <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <motion.div
+                                className={`h-full bg-gradient-to-r ${agent.color} rounded-full`}
+                                animate={{ width: ['0%', '100%'] }}
+                                transition={{ duration: 8, delay: agent.delay * 0.3, ease: 'easeInOut' }}
+                              />
+                            </div>
+                          </div>
+                          {/* Connector arrow */}
+                          {i < 4 && (
+                            <motion.div
+                              className="absolute top-1/2 -right-2.5 z-10 text-slate-300"
+                              animate={{ x: [0, 3, 0] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Live status ticker */}
+                    <div className="bg-white/70 border border-slate-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <motion.div
+                            className="w-2.5 h-2.5 rounded-full bg-indigo-500"
+                            animate={{ opacity: [1, 0.3, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          />
+                          <motion.span
+                            className="text-sm font-medium text-slate-700"
+                            key={Math.floor(Date.now() / 3000)}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                          >
+                            Analyzing CloudTrail events and building attack timeline...
+                          </motion.span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <Clock className="w-3 h-3" />
+                          <span>~30 seconds</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
                 
@@ -443,7 +539,7 @@ function App() {
                 {remediationPlan && (
                   <RemediationPlan
                     plan={remediationPlan}
-                    onApprove={async (plan) => {
+                    onApprove={async () => {
                       try {
                         setLoading(true);
                         setError(null);
@@ -497,11 +593,20 @@ function App() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 bg-white mt-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <footer className="border-t border-slate-200/50 bg-white/50 backdrop-blur-sm mt-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <p className="text-center text-xs text-slate-400">
               Nova Sentinel — Built with Amazon Nova for the Amazon Nova AI Hackathon 2026
             </p>
+            <div className="flex justify-center gap-4 mt-2 text-[10px] text-slate-300">
+              <span>Nova 2 Lite</span>
+              <span>•</span>
+              <span>Nova Pro</span>
+              <span>•</span>
+              <span>Nova Micro</span>
+              <span>•</span>
+              <span>Nova 2 Sonic</span>
+            </div>
           </div>
         </footer>
       </div>
