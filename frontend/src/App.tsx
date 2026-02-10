@@ -44,8 +44,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [awsProfile, setAwsProfile] = useState<string>('secops-lens');
+  const [awsProfile, setAwsProfile] = useState<string>('default');
   const [awsConnected, setAwsConnected] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'profile' | 'env'>('profile');
+  const [envKeys, setEnvKeys] = useState({ accessKey: '', secretKey: '', sessionToken: '' });
   const [activeFeature, setActiveFeature] = useState('overview');
 
   useEffect(() => {
@@ -283,47 +285,137 @@ function App() {
       if (mode === 'console') {
         return (
           <div className="space-y-6">
-            {/* Connection Status */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-xl font-bold text-slate-900 mb-1">Connect Your AWS Account</h2>
-              <p className="text-sm text-slate-500 mb-5">
-                Connect via AWS CLI profile. Credentials stay local — <span className="font-semibold text-slate-700">never stored</span> on our servers.
-              </p>
-              <div className="flex items-end gap-3 mb-4">
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5">AWS CLI Profile Name</label>
-                  <input
-                    type="text"
-                    value={awsProfile}
-                    onChange={(e) => setAwsProfile(e.target.value)}
-                    placeholder="default"
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                  />
-                </div>
+            {/* Connection Card */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              {/* Header */}
+              <div className="p-5 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-900 mb-0.5">Connect Your AWS Account</h2>
+                <p className="text-sm text-slate-500">
+                  Credentials stay local — <span className="font-semibold text-slate-700">never stored</span> on our servers.
+                </p>
+              </div>
+
+              {/* Auth Method Tabs */}
+              <div className="flex border-b border-slate-100">
                 <button
-                  onClick={async () => {
-                    try {
-                      const result = await authAPI.testConnection(awsProfile);
-                      setAwsConnected(result.connected);
-                    } catch {
-                      setAwsConnected(false);
-                    }
-                  }}
-                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                  onClick={() => setAuthMethod('profile')}
+                  className={`flex-1 px-4 py-3 text-xs font-bold text-center transition-colors relative ${
+                    authMethod === 'profile'
+                      ? 'text-indigo-700 bg-indigo-50/50'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Test Connection
+                  AWS CLI Profile
+                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">Recommended</span>
+                  {authMethod === 'profile' && (
+                    <motion.div layoutId="authTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setAuthMethod('env')}
+                  className={`flex-1 px-4 py-3 text-xs font-bold text-center transition-colors relative ${
+                    authMethod === 'env'
+                      ? 'text-indigo-700 bg-indigo-50/50'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  Temporary Credentials
+                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">Quick Access</span>
+                  {authMethod === 'env' && (
+                    <motion.div layoutId="authTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />
+                  )}
                 </button>
               </div>
-              {awsConnected && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-bold text-emerald-700">Connected to AWS account</span>
+
+              {/* Auth Forms */}
+              <div className="p-5">
+                {authMethod === 'profile' ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Profile Name</label>
+                      <input
+                        type="text"
+                        value={awsProfile}
+                        onChange={(e) => setAwsProfile(e.target.value)}
+                        placeholder="default"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Profile from <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">~/.aws/credentials</code>
+                      </p>
+                    </div>
+                    <div className="bg-slate-900 rounded-lg p-3">
+                      <p className="text-[10px] text-slate-400 mb-1 font-mono">Quick setup</p>
+                      <code className="text-sm text-green-400 font-mono">aws configure --profile {awsProfile}</code>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-slate-500 mb-1">
+                      Paste temporary credentials from AWS Console → Security Credentials → Create Access Key.
+                    </p>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Access Key ID</label>
+                      <input
+                        type="text"
+                        value={envKeys.accessKey}
+                        onChange={(e) => setEnvKeys(prev => ({ ...prev, accessKey: e.target.value }))}
+                        placeholder="AKIA..."
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Secret Access Key</label>
+                      <input
+                        type="password"
+                        value={envKeys.secretKey}
+                        onChange={(e) => setEnvKeys(prev => ({ ...prev, secretKey: e.target.value }))}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Session Token <span className="text-slate-400">(optional)</span></label>
+                      <input
+                        type="password"
+                        value={envKeys.sessionToken}
+                        onChange={(e) => setEnvKeys(prev => ({ ...prev, sessionToken: e.target.value }))}
+                        placeholder="Optional — for temporary credentials"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                      />
+                    </div>
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] text-amber-700 leading-relaxed">
+                        Credentials are used in-memory only for this session. They are <strong>never persisted</strong> to disk or sent anywhere except directly to AWS APIs.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Test Connection */}
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const result = await authAPI.testConnection(awsProfile);
+                        setAwsConnected(result.connected);
+                      } catch {
+                        setAwsConnected(false);
+                      }
+                    }}
+                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Test Connection
+                  </button>
+                  {awsConnected && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-bold text-emerald-700">Connected</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="mt-4 bg-slate-900 rounded-lg p-3">
-                <p className="text-[10px] text-slate-400 mb-1 font-mono">Quick setup</p>
-                <code className="text-sm text-green-400 font-mono">aws configure --profile {awsProfile}</code>
               </div>
             </div>
 
