@@ -92,18 +92,19 @@ const LandingHero: React.FC = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
           >
             <a
-              href="#demo"
+              href="#console"
               className="btn-nova group px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-base flex items-center gap-3 justify-center shadow-glow-sm"
             >
               <Shield className="w-5 h-5" />
-              Launch Live Demo
+              Launch Console
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="#features"
-              className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-base hover:border-indigo-200 hover:shadow-md transition-all flex items-center gap-2 justify-center"
+              href="#demo"
+              className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-base hover:border-indigo-200 hover:shadow-md transition-all flex items-center gap-3 justify-center"
             >
-              See How It Works
+              <Zap className="w-5 h-5 text-indigo-600" />
+              Try Demo
             </a>
           </motion.div>
 
