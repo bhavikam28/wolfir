@@ -237,9 +237,15 @@ def cloudtrail_lookup(event_category: str = "all", days_back: int = 7, max_resul
     Returns:
         JSON with events, severity summary, and risk indicators.
     """
-    ct = get_cloudtrail_mcp()
-    result = _run_async(ct.lookup_security_events(event_category, days_back, max_results))
-    return json.dumps(result)
+    try:
+        ct = get_cloudtrail_mcp()
+        result = _run_async(ct.lookup_security_events(event_category, days_back, max_results))
+        if isinstance(result, dict) and "error" in result:
+            logger.warning(f"CloudTrail MCP returned error: {result['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"CloudTrail lookup tool failed: {e}")
+        return json.dumps({"error": str(e), "events": [], "source": "cloudtrail-mcp-server"})
 
 
 @tool
@@ -255,9 +261,15 @@ def cloudtrail_anomaly_scan(days_back: int = 1) -> str:
     Returns:
         JSON with anomalies found and risk assessment.
     """
-    ct = get_cloudtrail_mcp()
-    result = _run_async(ct.scan_for_anomalies(days_back))
-    return json.dumps(result)
+    try:
+        ct = get_cloudtrail_mcp()
+        result = _run_async(ct.scan_for_anomalies(days_back))
+        if isinstance(result, dict) and "error" in result:
+            logger.warning(f"CloudTrail anomaly scan returned error: {result['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"CloudTrail anomaly scan tool failed: {e}")
+        return json.dumps({"error": str(e), "anomalies": [], "source": "cloudtrail-mcp-server"})
 
 
 @tool
@@ -273,12 +285,18 @@ def iam_audit(audit_type: str = "users") -> str:
     Returns:
         JSON with findings, risk scores, and remediation commands.
     """
-    iam = get_iam_mcp()
-    if audit_type == "roles":
-        result = _run_async(iam.audit_iam_roles())
-    else:
-        result = _run_async(iam.audit_iam_users())
-    return json.dumps(result)
+    try:
+        iam = get_iam_mcp()
+        if audit_type == "roles":
+            result = _run_async(iam.audit_iam_roles())
+        else:
+            result = _run_async(iam.audit_iam_users())
+        if isinstance(result, dict) and "error" in result:
+            logger.warning(f"IAM audit returned error: {result['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"IAM audit tool failed: {e}")
+        return json.dumps({"error": str(e), "findings": [], "source": "iam-mcp-server"})
 
 
 @tool
@@ -294,9 +312,15 @@ def iam_policy_analysis(policy_arn: str) -> str:
     Returns:
         JSON with permissions, findings, and risk level.
     """
-    iam = get_iam_mcp()
-    result = _run_async(iam.analyze_policy(policy_arn))
-    return json.dumps(result)
+    try:
+        iam = get_iam_mcp()
+        result = _run_async(iam.analyze_policy(policy_arn))
+        if isinstance(result, dict) and "error" in result:
+            logger.warning(f"IAM policy analysis returned error: {result['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"IAM policy analysis tool failed: {e}")
+        return json.dumps({"error": str(e), "policy_arn": policy_arn, "source": "iam-mcp-server"})
 
 
 @tool
@@ -309,10 +333,19 @@ def cloudwatch_security_check() -> str:
     Returns:
         JSON with alarm status, EC2 metrics, and risk assessment.
     """
-    cw = get_cloudwatch_mcp()
-    alarms = _run_async(cw.get_security_alarms())
-    ec2 = _run_async(cw.get_ec2_security_metrics())
-    return json.dumps({"alarms": alarms, "ec2_security": ec2})
+    try:
+        cw = get_cloudwatch_mcp()
+        alarms = _run_async(cw.get_security_alarms())
+        ec2 = _run_async(cw.get_ec2_security_metrics())
+        # Check for errors in sub-results
+        result = {"alarms": alarms, "ec2_security": ec2}
+        for key, val in result.items():
+            if isinstance(val, dict) and "error" in val:
+                logger.warning(f"CloudWatch {key} returned error: {val['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"CloudWatch security check tool failed: {e}")
+        return json.dumps({"error": str(e), "alarms": {}, "ec2_security": {}, "source": "cloudwatch-mcp-server"})
 
 
 @tool
@@ -328,9 +361,15 @@ def cloudwatch_billing_check(days_back: int = 7) -> str:
     Returns:
         JSON with billing metrics and anomaly detection.
     """
-    cw = get_cloudwatch_mcp()
-    result = _run_async(cw.get_billing_anomalies(days_back))
-    return json.dumps(result)
+    try:
+        cw = get_cloudwatch_mcp()
+        result = _run_async(cw.get_billing_anomalies(days_back))
+        if isinstance(result, dict) and "error" in result:
+            logger.warning(f"CloudWatch billing check returned error: {result['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"CloudWatch billing check tool failed: {e}")
+        return json.dumps({"error": str(e), "billing": {}, "source": "cloudwatch-mcp-server"})
 
 
 @tool
@@ -348,9 +387,15 @@ def nova_canvas_generate_report_cover(incident_type: str, severity: str = "CRITI
     Returns:
         JSON with base64-encoded image and metadata.
     """
-    nc = get_nova_canvas_mcp()
-    result = _run_async(nc.generate_security_report_cover(incident_type, severity, incident_id))
-    return json.dumps(result)
+    try:
+        nc = get_nova_canvas_mcp()
+        result = _run_async(nc.generate_security_report_cover(incident_type, severity, incident_id))
+        if isinstance(result, dict) and "error" in result:
+            logger.warning(f"Nova Canvas report cover returned error: {result['error']}")
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"Nova Canvas report cover tool failed: {e}")
+        return json.dumps({"error": str(e), "source": "nova-canvas-mcp-server"})
 
 
 # ========== ALL STRANDS TOOLS ==========

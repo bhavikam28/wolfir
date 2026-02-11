@@ -121,7 +121,7 @@ Please provide your analysis in JSON format:
 Return ONLY valid JSON, no additional text."""
 
 
-NOVA_ACT_DOCUMENTATION_PROMPT = """Generate automated documentation and notifications for this security incident.
+DOCUMENTATION_GENERATION_PROMPT = """Generate automated documentation and notifications for this security incident.
 
 Incident Details:
 {incident_details}

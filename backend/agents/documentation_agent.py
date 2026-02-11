@@ -1,15 +1,17 @@
 """
 Documentation Agent — Automated documentation and notifications
-Uses Nova 2 Lite (amazon.nova-2-lite-v1:0) for content generation.
 
-Nova Act (nova-act SDK) is available for browser automation to post
-to JIRA/Slack/Confluence — see nova_act_agent.py for that integration.
+Uses Nova 2 Lite (amazon.nova-2-lite-v1:0) for content generation.
+Generates structured documentation for JIRA, Slack, and Confluence.
+
+For browser-based posting to these platforms, see NovaActAgent
+in nova_act_agent.py which uses the Nova Act SDK for browser automation.
 """
 import json
 import time
 from typing import Dict, Any, Optional
 from services.bedrock_service import BedrockService
-from utils.prompts import NOVA_ACT_DOCUMENTATION_PROMPT
+from utils.prompts import DOCUMENTATION_GENERATION_PROMPT
 from utils.logger import logger
 
 
@@ -18,7 +20,8 @@ class DocumentationAgent:
     Agent for automated documentation generation using Nova 2 Lite.
     
     Generates structured content for JIRA tickets, Slack messages, and Confluence pages.
-    For browser-based posting, see NovaActAgent.create_jira_ticket().
+    Content generation uses Nova 2 Lite (text model).
+    Browser-based posting uses NovaActAgent (see nova_act_agent.py).
     """
     
     def __init__(self):
@@ -62,11 +65,11 @@ class DocumentationAgent:
         }
         
         # Format the prompt
-        user_prompt = NOVA_ACT_DOCUMENTATION_PROMPT.format(
+        user_prompt = DOCUMENTATION_GENERATION_PROMPT.format(
             incident_details=json.dumps(incident_details, indent=2)
         )
         
-        # Invoke Nova 2 Lite (Nova Act uses Nova 2 Lite for automation planning)
+        # Invoke Nova 2 Lite for content generation
         response = await self.bedrock.invoke_nova_lite(
             prompt=user_prompt,
             max_tokens=4000,
@@ -92,7 +95,7 @@ class DocumentationAgent:
                     "platforms": ["jira", "slack", "confluence"]
                 }
             else:
-                logger.warning("No JSON found in Nova Act response, returning raw text.")
+                logger.warning("No JSON found in documentation response, returning raw text.")
                 return {
                     "documentation": {
                         "jira": {"title": "Security Incident", "description": documentation_text},
@@ -105,7 +108,7 @@ class DocumentationAgent:
                     "platforms": ["jira", "slack", "confluence"]
                 }
         except json.JSONDecodeError:
-            logger.error("Failed to parse JSON from Nova Act response.")
+            logger.error("Failed to parse JSON from documentation response.")
             return {
                 "documentation": {
                     "jira": {"title": "Security Incident", "description": documentation_text},

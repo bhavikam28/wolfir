@@ -4,7 +4,8 @@ AI-Powered Security Incident Response using Amazon Nova
 
 Architecture:
 - Framework: FastAPI + Strands Agents SDK + MCP Server (FastMCP)
-- Models: Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, Nova Canvas, Nova Act
+- Models: Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, Nova Canvas (5 Bedrock models)
+- SDK: Nova Act (browser automation SDK, separate from Bedrock)
 - Protocol: Model Context Protocol (MCP) via FastMCP
 - Orchestration: Strands Agents SDK with @tool decorators
 - AWS MCP Servers: CloudTrail, IAM, CloudWatch, Nova Canvas
@@ -47,7 +48,7 @@ app = FastAPI(
     title="Nova Sentinel",
     description=(
         "AI-Powered Security Incident Response using Amazon Nova — "
-        "Strands Agents SDK + MCP Server + 6 Nova Models + "
+        "Strands Agents SDK + MCP Server + 5 Nova Bedrock Models + Nova Act SDK + "
         "4 AWS MCP Servers (CloudTrail, IAM, CloudWatch, Nova Canvas)"
     ),
     version="3.0.0",

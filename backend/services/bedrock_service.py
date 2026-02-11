@@ -1,9 +1,17 @@
 """
 Amazon Bedrock service wrapper for Nova models
 Supports Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, and Nova Canvas
+
+Model capabilities (verified via Bedrock console):
+- amazon.nova-2-lite-v1:0  — Input: TEXT,IMAGE,VIDEO | Output: TEXT | Streaming: Yes
+- amazon.nova-pro-v1:0     — Input: TEXT,IMAGE,VIDEO | Output: TEXT | Streaming: Yes
+- amazon.nova-micro-v1:0   — Input: TEXT            | Output: TEXT | Streaming: Yes
+- amazon.nova-2-sonic-v1:0 — Input: SPEECH          | Output: SPEECH,TEXT | Streaming: Yes
+- amazon.nova-canvas-v1:0  — Input: TEXT,IMAGE       | Output: IMAGE | Streaming: No
 """
 import json
 import asyncio
+import base64
 import boto3
 from typing import Dict, Any, Optional, List
 from botocore.exceptions import ClientError
@@ -198,6 +206,141 @@ class BedrockService:
         except Exception as e:
             logger.error(f"Unexpected error invoking Nova Micro: {e}")
             raise
+
+    async def invoke_nova_sonic(
+        self,
+        audio_bytes: bytes,
+        audio_format: str = "wav",
+        system_prompt: Optional[str] = None,
+        max_tokens: int = 1000,
+        temperature: float = 0.3
+    ) -> Dict[str, Any]:
+        """
+        Invoke Nova 2 Sonic model for speech-to-speech/text processing.
+        
+        Nova 2 Sonic (amazon.nova-2-sonic-v1:0) is a speech foundation model.
+        Input: SPEECH (audio bytes) — Output: SPEECH + TEXT
+        
+        This method sends audio to Nova 2 Sonic and returns both the text
+        transcription/response and (when available) audio response bytes.
+        
+        Uses converse_stream for streaming response from the speech model.
+        
+        Args:
+            audio_bytes: Raw audio data (WAV, PCM, or supported format)
+            audio_format: Audio format identifier (wav, pcm, mp3, etc.)
+            system_prompt: Optional system context for the conversation
+            max_tokens: Maximum response tokens
+            temperature: Response temperature
+            
+        Returns:
+            Dict with text response and optional audio response
+        """
+        try:
+            logger.info(f"Invoking Nova 2 Sonic ({self.settings.nova_sonic_model_id}), "
+                        f"audio_format={audio_format}, audio_size={len(audio_bytes)} bytes")
+            
+            # Build the audio content block for Nova Sonic
+            # Nova Sonic accepts SPEECH input via the converse API
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+            
+            messages = [{
+                "role": "user",
+                "content": [{
+                    "audio": {
+                        "format": audio_format,
+                        "source": {
+                            "bytes": audio_bytes
+                        }
+                    }
+                }]
+            }]
+            
+            # Build converse request
+            converse_params = {
+                "modelId": self.settings.nova_sonic_model_id,
+                "messages": messages,
+                "inferenceConfig": {
+                    "maxTokens": max_tokens,
+                    "temperature": temperature,
+                }
+            }
+            
+            if system_prompt:
+                converse_params["system"] = [{"text": system_prompt}]
+            
+            # Use converse_stream for streaming audio response
+            response = await asyncio.to_thread(
+                self.client.converse_stream,
+                **converse_params
+            )
+            
+            # Collect streaming response
+            response_text = ""
+            response_audio_chunks = []
+            stop_reason = "end_turn"
+            usage = {}
+            
+            stream = response.get("stream", {})
+            for event in stream:
+                if "contentBlockDelta" in event:
+                    delta = event["contentBlockDelta"].get("delta", {})
+                    if "text" in delta:
+                        response_text += delta["text"]
+                    if "audio" in delta:
+                        audio_chunk = delta["audio"].get("bytes", b"")
+                        if audio_chunk:
+                            response_audio_chunks.append(audio_chunk)
+                elif "messageStop" in event:
+                    stop_reason = event["messageStop"].get("stopReason", "end_turn")
+                elif "metadata" in event:
+                    usage = event["metadata"].get("usage", {})
+            
+            # Combine audio chunks if present
+            response_audio = b"".join(response_audio_chunks) if response_audio_chunks else None
+            
+            result = {
+                "text": response_text,
+                "stop_reason": stop_reason,
+                "usage": usage,
+                "model_used": self.settings.nova_sonic_model_id,
+                "has_audio_response": response_audio is not None,
+            }
+            
+            if response_audio:
+                result["audio_response_b64"] = base64.b64encode(response_audio).decode('utf-8')
+                result["audio_response_size"] = len(response_audio)
+            
+            logger.info(f"Nova 2 Sonic response: {len(response_text)} chars text, "
+                        f"{len(response_audio_chunks)} audio chunks")
+            
+            return result
+            
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            logger.error(f"Bedrock API error (Nova 2 Sonic): {error_code} — {e}")
+            
+            # If the model doesn't support this content format, provide clear feedback
+            if error_code in ("ValidationException", "ModelNotReadyException"):
+                return {
+                    "text": "",
+                    "error": f"Nova 2 Sonic API error: {error_code}. "
+                             "Speech-to-speech requires bidirectional audio streaming which "
+                             "may need a WebSocket connection for full functionality.",
+                    "model_used": self.settings.nova_sonic_model_id,
+                    "has_audio_response": False,
+                    "fallback_available": True,
+                }
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error invoking Nova 2 Sonic: {e}")
+            return {
+                "text": "",
+                "error": str(e),
+                "model_used": self.settings.nova_sonic_model_id,
+                "has_audio_response": False,
+                "fallback_available": True,
+            }
 
     async def invoke_nova_canvas(
         self,
