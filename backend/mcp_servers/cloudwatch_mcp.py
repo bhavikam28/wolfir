@@ -1,11 +1,10 @@
 """
-CloudWatch MCP Server — Official AWS MCP Pattern
+CloudWatch MCP Server — Custom implementation (boto3)
 
 Provides MCP-compatible tools for security monitoring,
 metric analysis, and anomaly detection via CloudWatch.
 
-Follows the same patterns as the official AWS CloudWatch MCP server
-(awslabs/mcp) but integrated into Nova Sentinel's FastMCP instance.
+Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
 """
 import asyncio
 from typing import Dict, Any, List, Optional

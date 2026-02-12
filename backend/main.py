@@ -96,7 +96,7 @@ async def root():
         "service": "Nova Sentinel",
         "version": "3.0.0",
         "status": "running",
-        "description": "AI-Powered Security Incident Response — Multi-MCP Orchestration Platform",
+        "description": "AI-Powered Security Incident Response — 4 Nova Bedrock models + Nova Act SDK",
         "frameworks": {
             "strands": "strands-agents SDK (real)",
             "mcp": "MCP Server via FastMCP (real)",
@@ -114,7 +114,7 @@ async def root():
             "cloudtrail-mcp-server — CloudTrail event analysis & anomaly detection",
             "iam-mcp-server — IAM security auditing & policy analysis",
             "cloudwatch-mcp-server — Security monitoring & billing anomalies",
-            "nova-canvas-mcp-server — Visual report generation (awslabs/mcp)",
+            "nova-canvas-mcp-server — Visual report generation (custom boto3)",
         ],
     }
 
@@ -138,10 +138,10 @@ async def health_check():
             "nova_act": "Nova Act SDK — browser automation",
         },
         "mcp_servers": {
-            "cloudtrail": "cloudtrail-mcp-server (awslabs/mcp pattern)",
-            "iam": "iam-mcp-server (awslabs/mcp pattern)",
-            "cloudwatch": "cloudwatch-mcp-server (awslabs/mcp pattern)",
-            "nova_canvas": "nova-canvas-mcp-server (awslabs/mcp official)",
+            "cloudtrail": "Custom CloudTrail MCP (boto3, awslabs-inspired)",
+            "iam": "Custom IAM MCP (boto3, awslabs-inspired)",
+            "cloudwatch": "Custom CloudWatch MCP (boto3, awslabs-inspired)",
+            "nova_canvas": "Custom Nova Canvas MCP (boto3, awslabs-inspired)",
         },
     }
 

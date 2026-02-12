@@ -216,15 +216,14 @@ class BedrockService:
         temperature: float = 0.3
     ) -> Dict[str, Any]:
         """
-        Invoke Nova 2 Sonic model for speech-to-speech/text processing.
+        Attempt Nova 2 Sonic speech-to-speech via Bedrock Converse API.
         
-        Nova 2 Sonic (amazon.nova-2-sonic-v1:0) is a speech foundation model.
-        Input: SPEECH (audio bytes) — Output: SPEECH + TEXT
+        NOTE: Nova 2 Sonic officially uses bidirectional WebSocket streaming for
+        production. The Converse API may not support audio content blocks — if
+        this fails (ValidationException), the voice agent returns a helpful
+        fallback message asking the user to use text input.
         
-        This method sends audio to Nova 2 Sonic and returns both the text
-        transcription/response and (when available) audio response bytes.
-        
-        Uses converse_stream for streaming response from the speech model.
+        Nova 2 Sonic: Input SPEECH → Output SPEECH + TEXT (us-east-1, ap-northeast-1, etc.)
         
         Args:
             audio_bytes: Raw audio data (WAV, PCM, or supported format)

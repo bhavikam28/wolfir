@@ -96,7 +96,7 @@ def analyze_security_timeline(events_json: str, incident_type: str = "Unknown") 
     for temporal reasoning across event sequences.
     
     Args:
-        events_json: JSON string of CloudTrail events to analyze
+        events_json: JSON string of CloudTrail events to analyze (or array of events)
         incident_type: Type of incident (crypto-mining, data-exfiltration, etc.)
     
     Returns:
@@ -104,7 +104,18 @@ def analyze_security_timeline(events_json: str, incident_type: str = "Unknown") 
         blast_radius, confidence score, and ordered events with severity levels.
     """
     agents = _get_agents()
-    events = json.loads(events_json) if isinstance(events_json, str) else events_json
+    parsed = json.loads(events_json) if isinstance(events_json, str) else events_json
+    # Handle MCP error response — don't pass to temporal agent
+    if isinstance(parsed, dict) and parsed.get("error"):
+        return json.dumps({
+            "events": [], "root_cause": "N/A", "attack_pattern": "N/A",
+            "blast_radius": "Unknown", "confidence": 0.0,
+            "error": parsed["error"], "_api_error": True,
+            "message": f"AWS API error — no events to analyze: {parsed['error']}"
+        })
+    events = parsed.get("events", parsed) if isinstance(parsed, dict) else parsed
+    if not isinstance(events, list):
+        events = [events] if events else []
     
     result = _run_async(agents["temporal"].analyze_timeline(
         events=events,
@@ -240,8 +251,10 @@ def cloudtrail_lookup(event_category: str = "all", days_back: int = 7, max_resul
     try:
         ct = get_cloudtrail_mcp()
         result = _run_async(ct.lookup_security_events(event_category, days_back, max_results))
-        if isinstance(result, dict) and "error" in result:
+        if isinstance(result, dict) and result.get("error"):
             logger.warning(f"CloudTrail MCP returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "events": result.get("events", []),
+                              "_api_error": True, "message": f"CloudTrail API error: {result['error']}"})
         return json.dumps(result)
     except Exception as e:
         logger.error(f"CloudTrail lookup tool failed: {e}")
@@ -264,8 +277,10 @@ def cloudtrail_anomaly_scan(days_back: int = 1) -> str:
     try:
         ct = get_cloudtrail_mcp()
         result = _run_async(ct.scan_for_anomalies(days_back))
-        if isinstance(result, dict) and "error" in result:
+        if isinstance(result, dict) and result.get("error"):
             logger.warning(f"CloudTrail anomaly scan returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "anomalies": result.get("anomalies", []),
+                              "_api_error": True, "message": f"CloudTrail API error: {result['error']}"})
         return json.dumps(result)
     except Exception as e:
         logger.error(f"CloudTrail anomaly scan tool failed: {e}")
@@ -274,7 +289,7 @@ def cloudtrail_anomaly_scan(days_back: int = 1) -> str:
 
 @tool
 def iam_audit(audit_type: str = "users") -> str:
-    """Audit IAM users or roles using the official IAM MCP server pattern.
+    """Audit IAM users or roles using custom IAM MCP (boto3, awslabs-inspired).
     
     Checks MFA compliance, access key age, admin access,
     trust policies, and cross-account configurations.
@@ -291,8 +306,10 @@ def iam_audit(audit_type: str = "users") -> str:
             result = _run_async(iam.audit_iam_roles())
         else:
             result = _run_async(iam.audit_iam_users())
-        if isinstance(result, dict) and "error" in result:
+        if isinstance(result, dict) and result.get("error"):
             logger.warning(f"IAM audit returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "findings": result.get("findings", []),
+                              "_api_error": True, "message": f"IAM API error: {result['error']}"})
         return json.dumps(result)
     except Exception as e:
         logger.error(f"IAM audit tool failed: {e}")
@@ -315,8 +332,10 @@ def iam_policy_analysis(policy_arn: str) -> str:
     try:
         iam = get_iam_mcp()
         result = _run_async(iam.analyze_policy(policy_arn))
-        if isinstance(result, dict) and "error" in result:
+        if isinstance(result, dict) and result.get("error"):
             logger.warning(f"IAM policy analysis returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "_api_error": True,
+                              "message": f"IAM policy API error: {result['error']}"})
         return json.dumps(result)
     except Exception as e:
         logger.error(f"IAM policy analysis tool failed: {e}")
@@ -364,8 +383,10 @@ def cloudwatch_billing_check(days_back: int = 7) -> str:
     try:
         cw = get_cloudwatch_mcp()
         result = _run_async(cw.get_billing_anomalies(days_back))
-        if isinstance(result, dict) and "error" in result:
+        if isinstance(result, dict) and result.get("error"):
             logger.warning(f"CloudWatch billing check returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "billing": result.get("billing", {}),
+                              "_api_error": True, "message": f"CloudWatch API error: {result['error']}"})
         return json.dumps(result)
     except Exception as e:
         logger.error(f"CloudWatch billing check tool failed: {e}")
@@ -377,7 +398,7 @@ def nova_canvas_generate_report_cover(incident_type: str, severity: str = "CRITI
     """Generate a visual security report cover using the Nova Canvas MCP server.
     
     Creates a professional incident report cover image using
-    Amazon Nova Canvas (following awslabs/mcp pattern).
+    Amazon Nova Canvas (custom boto3, awslabs-inspired).
     
     Args:
         incident_type: Type of incident
@@ -390,8 +411,10 @@ def nova_canvas_generate_report_cover(incident_type: str, severity: str = "CRITI
     try:
         nc = get_nova_canvas_mcp()
         result = _run_async(nc.generate_security_report_cover(incident_type, severity, incident_id))
-        if isinstance(result, dict) and "error" in result:
+        if isinstance(result, dict) and result.get("error"):
             logger.warning(f"Nova Canvas report cover returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "_api_error": True,
+                              "message": f"Nova Canvas API error: {result['error']}"})
         return json.dumps(result)
     except Exception as e:
         logger.error(f"Nova Canvas report cover tool failed: {e}")

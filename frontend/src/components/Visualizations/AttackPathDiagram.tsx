@@ -242,13 +242,17 @@ const AttackPathDiagram: React.FC = () => {
                   onMouseEnter={() => setHoveredNode(node.id)}
                   onMouseLeave={() => setHoveredNode(null)}
                 >
-                  {/* Pulse ring for critical */}
+                  {/* Pulse ring for critical - use regular circle to avoid framer-motion r undefined */}
                   {node.ring && (
-                    <motion.circle
-                      cx={node.x} cy={node.y} r="30"
-                      fill="none" stroke={node.color} strokeWidth="1.5"
-                      animate={{ opacity: [0.1, 0.3, 0.1], r: [28, 34, 28] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={30}
+                      fill="none"
+                      stroke={node.color}
+                      strokeWidth="1.5"
+                      opacity={0.2}
+                      className="animate-pulse"
                     />
                   )}
 

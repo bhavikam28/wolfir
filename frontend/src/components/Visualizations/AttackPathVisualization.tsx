@@ -167,15 +167,13 @@ const AttackPathVisualization: React.FC = () => {
                   >
                     {edge.label}
                   </motion.text>
-                  {/* Flowing particle */}
-                  <motion.circle
-                    r="3" fill={edge.color}
-                    animate={{
-                      cx: [from.x, mx, to.x],
-                      cy: [from.y, from.y, to.y],
-                      opacity: [0, 0.7, 0],
-                    }}
-                    transition={{ delay: edge.delay + 0.5, duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+                  {/* Flowing particle - use fixed cx/cy to avoid framer-motion undefined errors */}
+                  <circle
+                    r={3}
+                    fill={edge.color}
+                    cx={from?.x ?? 0}
+                    cy={from?.y ?? 0}
+                    opacity={0.5}
                   />
                 </g>
               );
@@ -194,13 +192,17 @@ const AttackPathVisualization: React.FC = () => {
                   viewport={{ once: true }}
                   transition={{ delay: node.delay, duration: 0.4, type: 'spring', stiffness: 200 }}
                 >
-                  {/* Pulse ring for critical */}
+                  {/* Pulse ring for critical - use regular circle to avoid framer-motion r undefined */}
                   {isCritical && (
-                    <motion.circle
-                      cx={node.x} cy={node.y} r="30"
-                      fill="none" stroke={node.color} strokeWidth="1.5"
-                      animate={{ opacity: [0.1, 0.25, 0.1], r: [28, 34, 28] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={30}
+                      fill="none"
+                      stroke={node.color}
+                      strokeWidth="1.5"
+                      opacity={0.2}
+                      className="animate-pulse"
                     />
                   )}
 

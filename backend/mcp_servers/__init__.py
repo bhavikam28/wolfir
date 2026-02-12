@@ -1,7 +1,7 @@
 """
 AWS MCP Server Integrations for Nova Sentinel
 
-Official AWS MCP server patterns implemented using boto3 + FastMCP.
+Custom MCP servers (awslabs-inspired patterns) using boto3 + FastMCP.
 Each module provides MCP-compatible tools for a specific AWS service:
 
 - cloudtrail_mcp: CloudTrail event lookup, security scanning

@@ -5,11 +5,11 @@ Standards-compliant Model Context Protocol server using the real mcp package.
 Uses FastMCP from the official mcp Python SDK to expose security analysis tools
 as MCP-compatible services that any MCP client can discover and invoke.
 
-Integrates official AWS MCP server patterns:
+Custom MCP implementations inspired by awslabs/mcp patterns (direct boto3 API calls):
 - CloudTrail MCP — event lookup, security scanning, anomaly detection
 - IAM MCP — user/role auditing, policy analysis, access review
 - CloudWatch MCP — security alarms, metric monitoring, billing anomalies
-- Nova Canvas MCP — visual report generation (following awslabs/mcp pattern)
+- Nova Canvas MCP — visual report generation
 
 pip install mcp
 
@@ -177,7 +177,7 @@ async def generate_documentation(
 
 # ================================================================
 # CLOUDTRAIL MCP SERVER TOOLS
-# (following awslabs/mcp cloudtrail-mcp-server pattern)
+# Custom implementation inspired by awslabs/mcp patterns (boto3)
 # ================================================================
 
 @mcp_server.tool()
@@ -188,7 +188,7 @@ async def cloudtrail_lookup_events(
 ) -> dict:
     """Lookup CloudTrail events with security-focused filtering.
     
-    Official AWS CloudTrail MCP Server pattern. Filters events by category
+    Custom CloudTrail MCP (boto3). Filters events by category
     (iam, network, data, compute) and classifies severity.
     
     Args:
@@ -229,14 +229,14 @@ async def cloudtrail_scan_anomalies(days_back: int = 1, max_results: int = 100) 
 
 # ================================================================
 # IAM MCP SERVER TOOLS
-# (following awslabs/mcp iam-mcp-server pattern)
+# Custom implementation inspired by awslabs/mcp (boto3)
 # ================================================================
 
 @mcp_server.tool()
 async def iam_audit_users() -> dict:
     """Audit all IAM users for security issues.
     
-    Official AWS IAM MCP Server pattern. Checks MFA compliance,
+    Custom IAM MCP (boto3). Checks MFA compliance,
     access key rotation, admin access policies, and unused credentials.
     Returns per-user risk scoring and remediation commands.
     """
@@ -282,14 +282,14 @@ async def iam_account_summary() -> dict:
 
 # ================================================================
 # CLOUDWATCH MCP SERVER TOOLS
-# (following awslabs/mcp cloudwatch-mcp-server pattern)
+# Custom implementation inspired by awslabs/mcp (boto3)
 # ================================================================
 
 @mcp_server.tool()
 async def cloudwatch_security_alarms() -> dict:
     """Get CloudWatch alarms related to security.
     
-    Official AWS CloudWatch MCP Server pattern. Lists all alarms,
+    Custom CloudWatch MCP (boto3). Lists all alarms,
     identifies security-related ones, and highlights active alerts.
     """
     cw = get_cloudwatch_mcp()
@@ -340,7 +340,7 @@ async def cloudwatch_billing_anomalies(days_back: int = 7) -> dict:
 
 # ================================================================
 # NOVA CANVAS MCP SERVER TOOLS
-# (following awslabs/mcp nova-canvas-mcp-server pattern)
+# Custom implementation inspired by awslabs/mcp (boto3)
 # ================================================================
 
 @mcp_server.tool()
@@ -356,7 +356,7 @@ async def nova_canvas_generate_image(
 ) -> dict:
     """Generate an image using Amazon Nova Canvas.
     
-    Official awslabs/mcp nova-canvas-mcp-server pattern.
+    Custom Nova Canvas MCP (boto3).
     Creates images from text prompts with customizable dimensions,
     quality options, and negative prompting.
     
@@ -394,7 +394,7 @@ async def nova_canvas_generate_with_colors(
 ) -> dict:
     """Generate an image with specific color palette guidance.
     
-    Official awslabs/mcp nova-canvas-mcp-server pattern.
+    Custom Nova Canvas MCP (boto3).
     Define up to 10 hex color values to influence the image style.
     
     Args:
@@ -551,25 +551,25 @@ async def get_mcp_servers() -> str:
         "mcp_servers": [
             {
                 "name": "cloudtrail-mcp-server",
-                "source": "awslabs/mcp pattern",
+                "source": "custom (awslabs-inspired)",
                 "tools": ["cloudtrail_lookup_events", "cloudtrail_get_trail_status", "cloudtrail_scan_anomalies"],
                 "description": "CloudTrail event analysis and anomaly detection",
             },
             {
                 "name": "iam-mcp-server",
-                "source": "awslabs/mcp pattern",
+                "source": "custom (awslabs-inspired)",
                 "tools": ["iam_audit_users", "iam_audit_roles", "iam_analyze_policy", "iam_account_summary"],
                 "description": "IAM security auditing and policy analysis",
             },
             {
                 "name": "cloudwatch-mcp-server",
-                "source": "awslabs/mcp pattern",
+                "source": "custom (awslabs-inspired)",
                 "tools": ["cloudwatch_security_alarms", "cloudwatch_api_metrics", "cloudwatch_ec2_security", "cloudwatch_billing_anomalies"],
                 "description": "Security monitoring, metrics, and billing anomaly detection",
             },
             {
                 "name": "nova-canvas-mcp-server",
-                "source": "awslabs/mcp (official)",
+                "source": "custom (awslabs-inspired)",
                 "tools": ["nova_canvas_generate_image", "nova_canvas_generate_with_colors", "nova_canvas_security_report_cover", "nova_canvas_attack_path_visual"],
                 "description": "Visual report generation using Amazon Nova Canvas",
             },
@@ -590,10 +590,10 @@ MCP_SERVER_INFO = {
         "resources": True,
     },
     "mcp_servers_integrated": [
-        "cloudtrail-mcp-server (awslabs/mcp pattern)",
-        "iam-mcp-server (awslabs/mcp pattern)",
-        "cloudwatch-mcp-server (awslabs/mcp pattern)",
-        "nova-canvas-mcp-server (awslabs/mcp official)",
+        "cloudtrail-mcp-server (custom boto3)",
+            "iam-mcp-server (custom boto3)",
+            "cloudwatch-mcp-server (custom boto3)",
+            "nova-canvas-mcp-server (custom boto3)",
     ],
     "models_used": [
         "amazon.nova-2-lite-v1:0 (Temporal Analysis, Documentation)",

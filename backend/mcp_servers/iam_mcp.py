@@ -1,11 +1,10 @@
 """
-IAM MCP Server — Official AWS MCP Pattern
+IAM MCP Server — Custom implementation (boto3)
 
 Provides MCP-compatible tools for IAM security analysis,
 policy auditing, role enumeration, and access review.
 
-Follows the same patterns as the official AWS IAM MCP server
-(awslabs/mcp) but integrated into Nova Sentinel's FastMCP instance.
+Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
 """
 import json
 import asyncio

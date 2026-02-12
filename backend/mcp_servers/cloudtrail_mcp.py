@@ -1,11 +1,10 @@
 """
-CloudTrail MCP Server — Official AWS MCP Pattern
+CloudTrail MCP Server — Custom implementation (boto3)
 
 Provides MCP-compatible tools for CloudTrail event analysis,
 security-focused event lookup, and anomaly detection.
 
-Follows the same patterns as the official AWS CloudTrail MCP server
-(awslabs/mcp) but integrated into Nova Sentinel's FastMCP instance.
+Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
 """
 import json
 import asyncio

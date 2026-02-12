@@ -80,18 +80,18 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
             <svg className="w-28 h-28" viewBox="0 0 120 120">
               {/* Background circle */}
               <circle cx="60" cy="60" r="50" fill="none" stroke="#f1f5f9" strokeWidth="10" />
-              {/* Score arc */}
-              <motion.circle
-                cx="60" cy="60" r="50"
+              {/* Score arc - use regular circle to avoid framer-motion cx/cy/r undefined errors */}
+              <circle
+                cx={60}
+                cy={60}
+                r={50}
                 fill="none"
                 stroke={metrics.healthScore >= 80 ? '#10b981' : metrics.healthScore >= 60 ? '#f59e0b' : metrics.healthScore >= 40 ? '#f97316' : '#ef4444'}
                 strokeWidth="10"
                 strokeLinecap="round"
                 strokeDasharray={`${(metrics.healthScore / 100) * 314} 314`}
                 transform="rotate(-90 60 60)"
-                initial={{ strokeDasharray: '0 314' }}
-                animate={{ strokeDasharray: `${(metrics.healthScore / 100) * 314} 314` }}
-                transition={{ duration: 1.5, ease: 'easeOut' }}
+                style={{ transition: 'stroke-dasharray 1s ease-out' }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">

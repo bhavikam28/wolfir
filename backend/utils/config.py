@@ -12,12 +12,12 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     aws_profile: str = "default"
     
-    # Amazon Bedrock Model IDs — Updated to latest Nova 2 where available
+    # Amazon Bedrock Model IDs — Verified against Bedrock console model-ids (us-east-1)
     nova_lite_model_id: str = "amazon.nova-2-lite-v1:0"     # Nova 2 Lite (temporal, documentation)
-    nova_pro_model_id: str = "amazon.nova-pro-v1:0"         # Nova Pro (multimodal vision)
-    nova_micro_model_id: str = "amazon.nova-micro-v1:0"     # Nova Micro (fast classification)
-    nova_sonic_model_id: str = "amazon.nova-2-sonic-v1:0"   # Nova 2 Sonic (speech-to-speech)
-    nova_canvas_model_id: str = "amazon.nova-canvas-v1:0"   # Nova Canvas (image generation)
+    nova_pro_model_id: str = "amazon.nova-pro-v1:0"         # Nova Pro gen 1 (multimodal vision)
+    nova_micro_model_id: str = "amazon.nova-micro-v1:0"     # Nova Micro gen 1 (fast classification)
+    nova_sonic_model_id: str = "amazon.nova-2-sonic-v1:0"   # Nova 2 Sonic (speech; uses WebSocket streaming)
+    nova_canvas_model_id: str = "amazon.nova-canvas-v1:0"  # Nova Canvas (image generation)
     
     # Nova Act — uses its own SDK, not Bedrock API
     # Requires NOVA_ACT_API_KEY environment variable

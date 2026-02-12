@@ -96,7 +96,13 @@ export const demoAPI = {
             const response = await api.get('/api/demo/scenarios/unauthorized-access');
             return response.data;
           },
-        };
+
+  /** Instant demo — pre-computed results, no Bedrock (~2s vs ~45s) */
+  getQuickDemo: async (scenarioId: string): Promise<OrchestrationResponse> => {
+    const response = await api.get(`/api/demo/quick/${scenarioId}`);
+    return response.data;
+  },
+};
 
 export const orchestrationAPI = {
   /**

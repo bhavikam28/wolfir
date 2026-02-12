@@ -97,3 +97,22 @@ async def get_unauthorized_access_scenario() -> Dict[str, Any]:
         "events": events,
         "event_count": len(events)
     }
+
+
+# Fast demo — returns pre-computed result without calling Bedrock (~2s vs ~45s)
+@router.get("/quick/{scenario_id}")
+async def get_quick_demo(scenario_id: str) -> Dict[str, Any]:
+    """Return pre-computed orchestration result for instant demo.
+    
+    Use this when you need a fast demo without Bedrock API calls.
+    Real analysis uses /api/orchestration/analyze-incident.
+    """
+    from utils.demo_results import get_quick_demo_result
+    names = {
+        "crypto-mining": "Cryptocurrency Mining Attack",
+        "data-exfiltration": "Data Exfiltration",
+        "privilege-escalation": "Privilege Escalation",
+        "unauthorized-access": "Unauthorized Access",
+    }
+    incident_type = names.get(scenario_id, "Security Incident")
+    return get_quick_demo_result(scenario_id, incident_type)

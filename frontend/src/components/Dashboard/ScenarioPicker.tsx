@@ -11,6 +11,8 @@ interface ScenarioPickerProps {
   scenarios: DemoScenario[];
   onSelectScenario: (scenarioId: string) => void;
   loading?: boolean;
+  useFullAI?: boolean;
+  onUseFullAIChange?: (v: boolean) => void;
 }
 
 const SCENARIO_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -34,6 +36,8 @@ const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
   scenarios,
   onSelectScenario,
   loading,
+  useFullAI = false,
+  onUseFullAIChange,
 }) => {
   return (
     <div className="space-y-6">
@@ -93,11 +97,27 @@ const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
         })}
       </div>
 
-      {/* Info */}
+      {/* Mode toggle & Info */}
+      {onUseFullAIChange && (
+        <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <span className="text-xs text-slate-600">Default: instant demo (~2s). Toggle for full Nova AI (~30s):</span>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useFullAI}
+              onChange={(e) => onUseFullAIChange(e.target.checked)}
+              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-xs font-medium text-slate-700">Use full AI analysis</span>
+          </label>
+        </div>
+      )}
       <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">
         <Shield className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
         <p className="text-xs text-indigo-600 leading-relaxed">
-          Each scenario runs through the full 5-agent Nova AI pipeline: Detection (Nova Pro), Investigation (Nova 2 Lite), Classification (Nova Micro), Remediation (Orchestrator), and Documentation (Nova 2 Lite).
+          {useFullAI
+            ? 'Full 5-agent Nova AI pipeline: Detection (Nova Pro), Investigation (Nova 2 Lite), Classification (Nova Micro), Remediation, Documentation.'
+            : 'Instant demo uses pre-computed results. Enable "Use full AI analysis" above to run the full Nova pipeline (~30s).'}
         </p>
       </div>
     </div>

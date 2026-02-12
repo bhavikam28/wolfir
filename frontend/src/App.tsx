@@ -28,6 +28,8 @@ import { analysisAPI, demoAPI, orchestrationAPI, visualAPI, documentationAPI, au
 import type { AnalysisResponse, DemoScenario, OrchestrationResponse } from './types/incident';
 import { formatAnalysisTime } from './utils/formatting';
 import { demoAnalysisData } from './data/demoAnalysis';
+import { DEFAULT_DEMO_SCENARIOS } from './data/demoScenarios';
+import { getQuickDemoResult } from './data/quickDemoResult';
 import AgentProgress from './components/Analysis/AgentProgress';
 import VoiceAssistant from './components/Analysis/VoiceAssistant';
 
@@ -35,7 +37,7 @@ type AppMode = 'landing' | 'demo' | 'console';
 
 function App() {
   const [mode, setMode] = useState<AppMode>('landing');
-  const [scenarios, setScenarios] = useState<DemoScenario[]>([]);
+  const [scenarios, setScenarios] = useState<DemoScenario[]>(DEFAULT_DEMO_SCENARIOS);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
   const [orchestrationResult, setOrchestrationResult] = useState<OrchestrationResponse | null>(null);
   const [visualAnalysisResult, setVisualAnalysisResult] = useState<any>(null);
@@ -50,6 +52,7 @@ function App() {
   const [ssoStartUrl, setSsoStartUrl] = useState('');
   const [ssoRegion, setSsoRegion] = useState('us-east-1');
   const [activeFeature, setActiveFeature] = useState('overview');
+  const [useFullAI, setUseFullAI] = useState(false);
 
   useEffect(() => {
     loadScenarios();
@@ -70,9 +73,10 @@ function App() {
   const loadScenarios = async () => {
     try {
       const data = await demoAPI.listScenarios();
-      setScenarios(data.scenarios);
+      setScenarios(data.scenarios?.length ? data.scenarios : DEFAULT_DEMO_SCENARIOS);
     } catch (err) {
       console.error('Failed to load scenarios:', err);
+      setScenarios(DEFAULT_DEMO_SCENARIOS);
       setError('Unable to connect to backend. Ensure the backend is running on port 8000.');
     }
   };
@@ -99,28 +103,22 @@ function App() {
     resetAnalysis();
 
     try {
-      let events: any[] = [];
       let incidentType = 'Unknown';
-      
-      if (scenarioId === 'crypto-mining') {
-        const scenario = await demoAPI.getCryptoMiningScenario();
-        events = scenario.events;
-        incidentType = 'Cryptocurrency Mining Attack';
-      } else if (scenarioId === 'data-exfiltration') {
-        const scenario = await demoAPI.getDataExfiltrationScenario();
-        events = scenario.events;
-        incidentType = 'Data Exfiltration';
-      } else if (scenarioId === 'privilege-escalation') {
-        const scenario = await demoAPI.getPrivilegeEscalationScenario();
-        events = scenario.events;
-        incidentType = 'Privilege Escalation';
-      } else if (scenarioId === 'unauthorized-access') {
-        const scenario = await demoAPI.getUnauthorizedAccessScenario();
-        events = scenario.events;
-        incidentType = 'Unauthorized Access';
-      }
+      if (scenarioId === 'crypto-mining') incidentType = 'Cryptocurrency Mining Attack';
+      else if (scenarioId === 'data-exfiltration') incidentType = 'Data Exfiltration';
+      else if (scenarioId === 'privilege-escalation') incidentType = 'Privilege Escalation';
+      else if (scenarioId === 'unauthorized-access') incidentType = 'Unauthorized Access';
 
-      const result = await orchestrationAPI.analyzeIncident(events, undefined, incidentType);
+      const result = useFullAI
+        ? await (async () => {
+            let events: any[] = [];
+            if (scenarioId === 'crypto-mining') events = (await demoAPI.getCryptoMiningScenario()).events;
+            else if (scenarioId === 'data-exfiltration') events = (await demoAPI.getDataExfiltrationScenario()).events;
+            else if (scenarioId === 'privilege-escalation') events = (await demoAPI.getPrivilegeEscalationScenario()).events;
+            else if (scenarioId === 'unauthorized-access') events = (await demoAPI.getUnauthorizedAccessScenario()).events;
+            return orchestrationAPI.analyzeIncident(events, undefined, incidentType);
+          })()
+        : getQuickDemoResult(scenarioId);
       setOrchestrationResult(result);
 
       if (result.results.remediation_plan) {
@@ -263,7 +261,7 @@ function App() {
               </div>
 
               <p className="text-center text-[10px] text-slate-400 mt-4">
-                Estimated time: ~30 seconds
+                {useFullAI ? 'Estimated time: ~30 seconds (full Nova AI)' : 'Instant demo: ~2 seconds'}
               </p>
             </div>
           </motion.div>
@@ -280,6 +278,8 @@ function App() {
             scenarios={scenarios}
             onSelectScenario={handleSelectScenario}
             loading={loading}
+            useFullAI={useFullAI}
+            onUseFullAIChange={setUseFullAI}
           />
         );
       }

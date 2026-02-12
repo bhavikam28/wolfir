@@ -1,6 +1,10 @@
 """
-Multi-Agent Orchestrator - Coordinates multiple agents
-Manages state, error recovery, and agent coordination
+LEGACY: Pre-Strands Orchestrator — Kept for reference only.
+
+This was the original multi-agent orchestrator before migration to Strands Agents SDK.
+It does NOT use Strands, MCP tools, or the new architecture.
+
+Production uses: StrandsOrchestrator (agents/strands_orchestrator.py)
 """
 import json
 import time
@@ -30,7 +34,8 @@ class AgentStatus(str, Enum):
 
 class Orchestrator:
     """
-    Orchestrates multiple agents to work together on security incidents
+    LEGACY: Orchestrates multiple agents (pre-Strands).
+    Use StrandsOrchestrator for production.
     """
     
     def __init__(self):
@@ -43,7 +48,6 @@ class Orchestrator:
         self.dynamodb = DynamoDBService()
         self.s3 = S3Service()
         
-        # State management
         self.active_incidents: Dict[str, Dict[str, Any]] = {}
         
     async def analyze_incident(
@@ -52,24 +56,12 @@ class Orchestrator:
         diagram_data: Optional[bytes] = None,
         incident_type: Optional[str] = None
     ) -> Dict[str, Any]:
-        """
-        Orchestrate full incident analysis using multiple agents
-        
-        Args:
-            events: CloudTrail events
-            diagram_data: Optional architecture diagram
-            incident_type: Type of incident
-            
-        Returns:
-            Complete analysis with all agent outputs
-        """
+        """Legacy incident analysis — see StrandsOrchestrator for production."""
         incident_id = f"INC-{uuid.uuid4().hex[:6].upper()}"
         start_time = time.time()
-        
         try:
-            logger.info(f"Starting orchestrated analysis for {incident_id}")
+            logger.info(f"[LEGACY] Starting orchestrated analysis for {incident_id}")
             
-            # Initialize state
             state = {
                 "incident_id": incident_id,
                 "status": "RUNNING",
@@ -79,14 +71,11 @@ class Orchestrator:
             }
             self.active_incidents[incident_id] = state
             
-            # Note: DynamoDB operations are async and may fail, but we continue with in-memory state
-            # This allows the demo to work even if DynamoDB isn't configured
             try:
                 await self.dynamodb.save_incident(incident_id, state, metadata={"status": "RUNNING"})
             except Exception as db_error:
-                logger.warning(f"Failed to save initial state to DynamoDB (continuing with in-memory state): {db_error}")
+                logger.warning(f"Failed to save initial state to DynamoDB: {db_error}")
             
-            # Step 1: Temporal Analysis (Nova 2 Lite)
             logger.info(f"[{incident_id}] Step 1: Temporal analysis")
             state["agents"]["temporal"] = {"status": AgentStatus.RUNNING, "started_at": datetime.utcnow().isoformat()}
             
@@ -102,11 +91,9 @@ class Orchestrator:
                 state["agents"]["temporal"]["status"] = AgentStatus.FAILED
                 state["agents"]["temporal"]["error"] = str(e)
             
-            # Step 2: Visual Analysis (Nova Pro) - if diagram provided
             if diagram_data:
                 logger.info(f"[{incident_id}] Step 2: Visual analysis")
                 state["agents"]["visual"] = {"status": AgentStatus.RUNNING, "started_at": datetime.utcnow().isoformat()}
-                
                 try:
                     visual_analysis = await self.visual_agent.analyze_diagram(
                         image_data=diagram_data,
@@ -121,25 +108,17 @@ class Orchestrator:
             else:
                 state["agents"]["visual"] = {"status": AgentStatus.SKIPPED, "reason": "No diagram provided"}
             
-            # Step 3: Risk Scoring (Nova Micro) - for key events
             logger.info(f"[{incident_id}] Step 3: Risk scoring")
             state["agents"]["risk_scorer"] = {"status": AgentStatus.RUNNING, "started_at": datetime.utcnow().isoformat()}
-            
             try:
-                # Score the most critical events
                 critical_events = events[:5] if len(events) > 5 else events
                 risk_scores = []
-                
                 for event in critical_events:
                     try:
                         risk = await self.risk_scorer.score_event_risk(event)
-                        risk_scores.append({
-                            "event": event.get("eventName", "Unknown"),
-                            "risk": risk
-                        })
+                        risk_scores.append({"event": event.get("eventName", "Unknown"), "risk": risk})
                     except Exception as e:
                         logger.warning(f"Failed to score event: {e}")
-                
                 state["agents"]["risk_scorer"]["status"] = AgentStatus.COMPLETED
                 state["results"]["risk_scores"] = risk_scores
             except Exception as e:
@@ -147,11 +126,9 @@ class Orchestrator:
                 state["agents"]["risk_scorer"]["status"] = AgentStatus.FAILED
                 state["agents"]["risk_scorer"]["error"] = str(e)
             
-            # Step 4: Generate Remediation Plan (if timeline available)
             if state["results"].get("timeline"):
                 logger.info(f"[{incident_id}] Step 4: Remediation planning")
                 state["agents"]["remediation"] = {"status": AgentStatus.RUNNING, "started_at": datetime.utcnow().isoformat()}
-                
                 try:
                     timeline_data = state["results"]["timeline"]
                     plan = await self.remediation_agent.generate_remediation_plan(
@@ -169,20 +146,15 @@ class Orchestrator:
                     state["agents"]["remediation"]["error"] = str(e)
             else:
                 state["agents"]["remediation"] = {"status": AgentStatus.SKIPPED, "reason": "No timeline available"}
+            
             try:
                 await self.dynamodb.update_incident_state(incident_id, state)
             except Exception as db_error:
-                logger.warning(f"DynamoDB update failed (continuing): {db_error}")
+                logger.warning(f"DynamoDB update failed: {db_error}")
             
-            # Step 5: Generate Documentation (Nova Act) - if timeline and remediation available
             if state["results"].get("timeline") and state["results"].get("remediation_plan"):
                 logger.info(f"[{incident_id}] Step 5: Documentation generation")
                 state["agents"]["documentation"] = {"status": AgentStatus.RUNNING, "started_at": datetime.utcnow().isoformat()}
-                try:
-                    await self.dynamodb.update_incident_state(incident_id, state)
-                except Exception as db_error:
-                    logger.warning(f"DynamoDB update failed (continuing): {db_error}")
-                
                 try:
                     docs = await self.documentation_agent.generate_documentation(
                         incident_id=incident_id,
@@ -198,18 +170,17 @@ class Orchestrator:
                     state["agents"]["documentation"]["error"] = str(e)
             else:
                 state["agents"]["documentation"] = {"status": AgentStatus.SKIPPED, "reason": "Missing timeline or remediation plan"}
+            
             try:
                 await self.dynamodb.update_incident_state(incident_id, state)
             except Exception as db_error:
-                logger.warning(f"DynamoDB update failed (continuing): {db_error}")
+                logger.warning(f"DynamoDB update failed: {db_error}")
             
-            # Finalize state
             total_time = int((time.time() - start_time) * 1000)
             state["status"] = "COMPLETED"
             state["completed_at"] = datetime.utcnow().isoformat()
             state["total_time_ms"] = total_time
             
-            # Prepare final result
             final_result = {
                 "incident_id": incident_id,
                 "status": "completed",
@@ -219,37 +190,26 @@ class Orchestrator:
                 "model_used": "multi-agent-orchestration"
             }
             
-            # Save to DynamoDB (async, don't wait)
             try:
                 await self.dynamodb.save_incident(
                     incident_id=incident_id,
                     analysis_result=final_result,
-                    metadata={
-                        "orchestrated": True,
-                        "agents_used": list(state["agents"].keys()),
-                        "incident_type": incident_type or "Unknown"
-                    }
+                    metadata={"orchestrated": True, "agents_used": list(state["agents"].keys()), "incident_type": incident_type or "Unknown"}
                 )
             except Exception as e:
-                logger.warning(f"Failed to save incident to DynamoDB (continuing): {e}")
+                logger.warning(f"Failed to save incident to DynamoDB: {e}")
             
             logger.info(f"[{incident_id}] Orchestrated analysis complete in {total_time}ms")
-            
             return final_result
             
         except Exception as e:
             import traceback
-            error_trace = traceback.format_exc()
             logger.error(f"Orchestrated analysis failed: {e}")
-            logger.error(f"Traceback: {error_trace}")
-            
-            # Return partial results if we have any
+            logger.error(traceback.format_exc())
             if incident_id in self.active_incidents:
                 state = self.active_incidents[incident_id]
                 state["status"] = "FAILED"
                 state["error"] = str(e)
-                
-                # If we have timeline, return partial results
                 if state.get("results", {}).get("timeline"):
                     total_time = int((time.time() - start_time) * 1000)
                     return {
@@ -261,14 +221,10 @@ class Orchestrator:
                         "error": str(e),
                         "model_used": "multi-agent-orchestration"
                     }
-            
-            # If no partial results, raise the error
             raise
     
     def get_incident_state(self, incident_id: str) -> Optional[Dict[str, Any]]:
-        """Get current state of an incident"""
         return self.active_incidents.get(incident_id)
     
     def list_active_incidents(self) -> List[Dict[str, Any]]:
-        """List all active incidents"""
         return list(self.active_incidents.values())

@@ -168,14 +168,14 @@ class VoiceAgent:
             processing_time = int((time.time() - start_time) * 1000)
             
             # Check if Sonic returned an error (fallback needed)
+            # Nova 2 Sonic uses WebSocket bidirectional streaming; Converse API may not support audio
             if sonic_response.get("error") and sonic_response.get("fallback_available"):
                 logger.warning(f"Nova Sonic error: {sonic_response['error']}. "
-                               "Falling back to Nova Lite text processing.")
+                               "Audio path unavailable — user should use text input.")
                 
-                # Fallback: we can't process the audio as text without STT
                 return {
-                    "response_text": "Audio processing via Nova Sonic encountered an issue. "
-                                     "Please use the text input or enable browser speech recognition.",
+                    "response_text": "Audio input via Nova 2 Sonic isn't available in this setup (requires WebSocket streaming). "
+                                     "Please type your question or use your browser's speech-to-text — I'll respond via Nova 2 Lite.",
                     "action": "none",
                     "processing_time_ms": processing_time,
                     "nlu_model": self.bedrock.settings.nova_sonic_model_id,

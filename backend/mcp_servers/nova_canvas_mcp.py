@@ -1,11 +1,11 @@
 """
-Nova Canvas MCP Server — Following awslabs/mcp nova-canvas-mcp-server pattern
+Nova Canvas MCP Server — Custom implementation (boto3)
 
 Provides MCP-compatible tools for image generation using Amazon Nova Canvas.
 Generates visual security reports, attack path diagrams, and architecture
 visualizations for incident documentation.
 
-Reference: https://github.com/awslabs/mcp/tree/main/src/nova-canvas-mcp-server
+Inspired by awslabs/mcp nova-canvas-mcp-server (see github.com/awslabs/mcp).
 """
 import json
 import base64
@@ -25,7 +25,7 @@ class NovaCanvasMCPServer:
     """
     Nova Canvas MCP tools for visual report generation.
 
-    Follows the official awslabs/mcp nova-canvas-mcp-server pattern:
+    Custom implementation inspired by awslabs nova-canvas-mcp-server:
     - Text-based image generation (generate_image)
     - Color-guided image generation (generate_image_with_colors)
     - Workspace integration for saving images
@@ -67,7 +67,7 @@ class NovaCanvasMCPServer:
         """
         Generate an image using Amazon Nova Canvas.
 
-        Follows the official awslabs nova-canvas-mcp-server generate_image tool spec.
+        Inspired by awslabs nova-canvas-mcp-server generate_image tool spec.
 
         Args:
             prompt: Text description of the image to generate
@@ -163,7 +163,7 @@ class NovaCanvasMCPServer:
         """
         Generate an image with specific color palette guidance.
 
-        Follows the official awslabs nova-canvas-mcp-server generate_image_with_colors tool.
+        Inspired by awslabs generate_image_with_colors tool spec.
 
         Args:
             prompt: Text description of the image
