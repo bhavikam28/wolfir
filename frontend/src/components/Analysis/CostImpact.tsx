@@ -23,6 +23,7 @@ interface CostCategory {
   sourceUrl: string;
   color: string;
   bg: string;
+  complianceBreakdown?: { framework: string; range: string; share: number }[];
 }
 
 function estimateCosts(timeline: Timeline, incidentType?: string): CostCategory[] {
@@ -117,11 +118,17 @@ function estimateCosts(timeline: Timeline, incidentType?: string): CostCategory[
       icon: Scale,
       amount: 50000,
       description: 'Potential regulatory fines for non-compliance with GDPR, CCPA, HIPAA, or PCI-DSS.',
-      methodology: 'GDPR: up to 4% annual revenue or €20M. CCPA: $2,500-$7,500 per violation. PCI-DSS: $5,000-$100,000/month. HIPAA: $100-$50,000 per violation. Estimate assumes moderate exposure.',
-      source: 'GDPR Art. 83, PCI-DSS SAQ Guidelines',
+      methodology: `Regulatory fine estimates based on observed incident scope:\n\n• GDPR (Art. 83): Up to 4% of annual global revenue or €20M — data breach + inadequate security.\n• PCI-DSS: $5,000–$100,000/month from card brands — compromised CDE access.\n• HIPAA: $100–$50,000 per violation tier — ePHI exposure if healthcare data involved.\n• CCPA: $2,500–$7,500 per intentional violation — California resident PII.\n\nThis $50,000 estimate assumes moderate exposure across frameworks. Actual fines depend on jurisdiction, revenue, and breach scope.`,
+      source: 'GDPR Art. 83, PCI-DSS SAQ Guidelines, HIPAA Breach Rule',
       sourceUrl: 'https://gdpr.eu/fines/',
       color: 'text-indigo-700',
       bg: 'bg-indigo-50',
+      complianceBreakdown: [
+        { framework: 'GDPR', range: 'Up to 4% revenue or €20M', share: 18000 },
+        { framework: 'PCI-DSS', range: '$5,000–$100,000/month', share: 15000 },
+        { framework: 'HIPAA', range: '$100–$50,000 per violation', share: 10000 },
+        { framework: 'CCPA', range: '$2,500–$7,500 per violation', share: 7000 },
+      ],
     });
   }
 
@@ -144,16 +151,39 @@ const CompactBar: React.FC<{ value: number; max: number; color: string }> = ({ v
 };
 
 const CostImpact: React.FC<CostImpactProps> = ({ timeline, incidentType }) => {
-  const [showMethodology, setShowMethodology] = useState(false);
-  const [expandedCost, setExpandedCost] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const costs = useMemo(() => estimateCosts(timeline, incidentType), [timeline, incidentType]);
 
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    if (expandedIds.size === costs.length) {
+      setExpandedIds(new Set());
+    } else {
+      setExpandedIds(new Set(costs.map(c => c.id)));
+    }
+  };
+
   const totalTraditional = useMemo(() => costs.reduce((sum, c) => sum + c.amount, 0), [costs]);
-  const novaSentinelSavings = useMemo(() => {
+  const savingsBreakdown = useMemo(() => {
     const remediationSaving = costs.find(c => c.id === 'remediation')?.amount || 0;
-    const downtimeSaving = (costs.find(c => c.id === 'downtime')?.amount || 0) * 0.85;
-    return Math.round(remediationSaving + downtimeSaving);
+    const downtimeAmount = costs.find(c => c.id === 'downtime')?.amount || 0;
+    const downtimeSaving = Math.round(downtimeAmount * 0.85);
+    return {
+      remediation: remediationSaving,
+      downtime: downtimeSaving,
+      total: Math.round(remediationSaving + downtimeSaving),
+    };
   }, [costs]);
+  const novaSentinelSavings = savingsBreakdown.total;
+  const totalWithNova = totalTraditional - novaSentinelSavings;
 
   const maxCost = Math.max(...costs.map(c => c.amount));
   const barColors: Record<string, string> = {
@@ -167,62 +197,79 @@ const CostImpact: React.FC<CostImpactProps> = ({ timeline, incidentType }) => {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-emerald-50/30">
-        <div className="flex items-center justify-between mb-3">
+      <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-br from-slate-50 via-white to-teal-50/40">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 tracking-tight">
+              <DollarSign className="w-5 h-5 text-teal-600" />
               Cost Impact Estimation
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-1">
               Estimated financial exposure and Nova Sentinel savings
             </p>
           </div>
           <button
-            onClick={() => setShowMethodology(!showMethodology)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-all"
+            onClick={expandAll}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white/80 hover:bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all"
           >
-            <Info className="w-3 h-3" />
-            {showMethodology ? 'Hide' : 'Show'} Methodology
+            <Info className="w-3.5 h-3.5" />
+            {expandedIds.size === costs.length ? 'Collapse All' : 'Expand All'} Methodologies
           </button>
         </div>
 
-        {/* Methodology note */}
-        <AnimatePresence>
-          {showMethodology && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mb-3 overflow-hidden"
-            >
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700 leading-relaxed">
-                <p className="font-bold mb-1">How are these numbers calculated?</p>
-                <p>Cost estimates are derived from industry-standard benchmarks including the IBM Cost of Data Breach Report 2025, Gartner IT Downtime Research, AWS EC2 pricing, and Bureau of Labor Statistics data. Estimates are scaled based on the number of events detected, severity level, and incident type. Click any cost category to see its specific methodology and source.</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Before/After comparison */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="p-4 rounded-xl bg-gradient-to-br from-rose-50 to-white border border-rose-100 shadow-sm">
+            <div className="text-[11px] font-semibold text-rose-600 uppercase tracking-widest mb-1.5">Without Nova Sentinel</div>
+            <div className="text-2xl font-bold text-rose-700 tabular-nums tracking-tight">${totalTraditional.toLocaleString()}</div>
+            <p className="text-xs text-rose-500 mt-1.5">Traditional incident response</p>
+          </div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-white border border-teal-100 shadow-sm">
+            <div className="text-[11px] font-semibold text-teal-600 uppercase tracking-widest mb-1.5">With Nova Sentinel</div>
+            <div className="text-2xl font-bold text-teal-700 tabular-nums tracking-tight">${totalWithNova.toLocaleString()}</div>
+            <p className="text-xs text-teal-600 mt-1.5 font-medium">Savings: ${novaSentinelSavings.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-4 mb-4">
+          <div className="flex-1">
+            <p className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider mb-1.5">Without Nova</p>
+            <div className="h-2.5 rounded-full overflow-hidden bg-slate-100">
+              <motion.div className="h-full rounded-full bg-rose-400" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1, ease: 'easeOut' }} />
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-wider mb-1.5">With Nova</p>
+            <div className="h-2.5 rounded-full overflow-hidden bg-slate-100">
+              <motion.div
+                className="h-full rounded-full bg-teal-500"
+                initial={{ width: 0 }}
+                animate={{ width: `${totalTraditional > 0 ? Math.round((totalWithNova / totalTraditional) * 100) : 0}%` }}
+                transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-            <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-1">Total Exposure</div>
-            <div className="text-xl font-black text-red-700 metric-value">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Total Exposure</div>
+            <div className="text-xl font-bold text-rose-600 tabular-nums tracking-tight">
               ${totalTraditional.toLocaleString()}
             </div>
           </div>
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Nova Sentinel Saves</div>
-            <div className="text-xl font-black text-emerald-700 metric-value">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Nova Sentinel Saves</div>
+            <div className="text-xl font-bold text-teal-600 tabular-nums tracking-tight">
               ${novaSentinelSavings.toLocaleString()}
             </div>
           </div>
-          <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
-            <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Response Time</div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black text-indigo-700 metric-value">&lt;60s</span>
-              <span className="text-[10px] text-indigo-400">vs 45min avg</span>
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Response Time</div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-slate-800 tabular-nums">&lt;60s</span>
+              <span className="text-xs text-slate-400">vs 45min avg</span>
             </div>
           </div>
         </div>
@@ -232,7 +279,7 @@ const CostImpact: React.FC<CostImpactProps> = ({ timeline, incidentType }) => {
       <div className="p-5 space-y-3">
         {costs.map((cost, i) => {
           const Icon = cost.icon;
-          const isExpanded = expandedCost === cost.id;
+          const isExpanded = expandedIds.has(cost.id);
           return (
             <motion.div
               key={cost.id}
@@ -244,7 +291,7 @@ const CostImpact: React.FC<CostImpactProps> = ({ timeline, incidentType }) => {
                 className={`rounded-xl border transition-all cursor-pointer ${
                   isExpanded ? 'border-slate-300 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
                 }`}
-                onClick={() => setExpandedCost(isExpanded ? null : cost.id)}
+                onClick={() => toggleExpand(cost.id)}
               >
                 <div className="flex items-start gap-3 p-3">
                   <div className={`w-8 h-8 rounded-lg ${cost.bg} flex items-center justify-center flex-shrink-0`}>
@@ -277,8 +324,21 @@ const CostImpact: React.FC<CostImpactProps> = ({ timeline, incidentType }) => {
                       <div className="p-3 bg-slate-50/50 space-y-2">
                         <div>
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Calculation Methodology</p>
-                          <p className="text-[11px] text-slate-600 leading-relaxed">{cost.methodology}</p>
+                          <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line">{cost.methodology}</p>
                         </div>
+                        {cost.complianceBreakdown && (
+                          <div className="mt-2 pt-2 border-t border-slate-200">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Framework-level fine estimates</p>
+                            <div className="space-y-1">
+                              {cost.complianceBreakdown.map((item) => (
+                                <div key={item.framework} className="flex justify-between text-[11px]">
+                                  <span className="text-slate-600">{item.framework}:</span>
+                                  <span className="font-medium text-slate-700">{item.range}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <a
                           href={cost.sourceUrl}
                           target="_blank"
@@ -301,17 +361,21 @@ const CostImpact: React.FC<CostImpactProps> = ({ timeline, incidentType }) => {
 
       {/* Nova Sentinel ROI */}
       <div className="px-5 pb-5">
-        <div className="p-4 bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl">
+        <div className="p-4 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
+            <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-teal-600" />
             </div>
-            <div>
-              <h4 className="text-sm font-bold text-indigo-900">Nova Sentinel ROI</h4>
-              <p className="text-xs text-indigo-600">
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-slate-800">Nova Sentinel ROI</h4>
+              <p className="text-xs text-slate-600 mb-2">
                 Autonomous response reduces manual remediation by <span className="font-bold">100%</span> and 
                 cuts downtime by <span className="font-bold">85%</span>, saving an estimated <span className="font-bold">${novaSentinelSavings.toLocaleString()}</span> per incident.
               </p>
+              <div className="text-[10px] text-teal-600 space-y-0.5">
+                <div className="flex justify-between"><span>Manual remediation eliminated</span><span className="font-bold">${savingsBreakdown.remediation.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Downtime reduced 85%</span><span className="font-bold">${savingsBreakdown.downtime.toLocaleString()}</span></div>
+              </div>
             </div>
           </div>
         </div>

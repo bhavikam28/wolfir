@@ -91,7 +91,7 @@ const FEATURES: Feature[] = [
     number: 6,
     name: 'Aria — Voice Security Assistant',
     description: 'Ask questions about incidents using voice or text. Aria explains findings, recommends actions, and walks you through results.',
-    model: 'Nova Sonic',
+    model: 'Nova 2 Lite',
     modelColor: 'text-violet-600 bg-violet-50 border-violet-200',
     icon: Mic,
     gradient: 'from-violet-500 to-purple-600',

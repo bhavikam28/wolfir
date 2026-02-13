@@ -111,6 +111,9 @@ const InsightCards: React.FC<InsightCardsProps> = ({ timeline }) => {
                     <p className="text-[10px] text-slate-400 font-medium">{insight.subtitle}</p>
                   </div>
                 </div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-200">
+                  Nova 2 Lite
+                </span>
               </div>
               
               {/* Points */}

@@ -26,7 +26,7 @@ import SecurityPostureDashboard from './components/Analysis/SecurityPostureDashb
 import ReportExport from './components/Analysis/ReportExport';
 import { analysisAPI, demoAPI, orchestrationAPI, visualAPI, documentationAPI, authAPI } from './services/api';
 import type { AnalysisResponse, DemoScenario, OrchestrationResponse } from './types/incident';
-import { formatAnalysisTime } from './utils/formatting';
+import { formatAnalysisTime, formatLastAnalyzed } from './utils/formatting';
 import { demoAnalysisData } from './data/demoAnalysis';
 import { DEFAULT_DEMO_SCENARIOS } from './data/demoScenarios';
 import { getQuickDemoResult } from './data/quickDemoResult';
@@ -471,6 +471,8 @@ function App() {
                   </div>
                   <p className="text-sm text-slate-500">
                     Analyzed in <span className="font-semibold text-slate-700">{formatAnalysisTime(analysisResult.analysis_time_ms)}</span>
+                    <span className="text-slate-400 mx-1">·</span>
+                    Last analyzed: <span className="font-medium text-slate-600">{formatLastAnalyzed(analysisResult.timeline)}</span>
                   </p>
                 </div>
                 <button
@@ -508,6 +510,7 @@ function App() {
               orchestrationResult={orchestrationResult}
               analysisTime={analysisResult.analysis_time_ms}
               incidentId={analysisResult.incident_id}
+              onNavigateToCostImpact={() => setActiveFeature('cost')}
             />
           </div>
         );
@@ -516,7 +519,13 @@ function App() {
         return <TimelineView timeline={analysisResult.timeline} />;
 
       case 'attack-path':
-        return <AttackPathDiagram />;
+        return (
+          <AttackPathDiagram
+            timeline={analysisResult.timeline}
+            orchestrationResult={orchestrationResult}
+            onNavigateToRemediation={() => setActiveFeature('remediation')}
+          />
+        );
 
       case 'compliance':
         return (
@@ -542,11 +551,13 @@ function App() {
               try {
                 setLoading(true);
                 setError(null);
-                if (orchestrationResult?.incident_id && orchestrationResult.results.timeline && remediationPlan) {
+                if (orchestrationResult?.incident_id && orchestrationResult.results.timeline) {
+                  const tl = orchestrationResult.results.timeline;
                   const docResult = await documentationAPI.generateDocumentation(
                     orchestrationResult.incident_id,
-                    orchestrationResult.results.timeline,
-                    remediationPlan
+                    { severity: 'CRITICAL', ...tl } as any,
+                    tl,
+                    remediationPlan || orchestrationResult.results.remediation_plan
                   );
                   setDocumentationResult(docResult);
                   setOrchestrationResult(prev => prev ? {
@@ -573,6 +584,9 @@ function App() {
       case 'visual':
         return (
           <VisualAnalysisUpload
+            timeline={analysisResult?.timeline}
+            orchestrationResult={orchestrationResult}
+            onNavigateToRemediation={() => setActiveFeature('remediation')}
             onUpload={async (file) => {
               try {
                 setLoading(true);
@@ -613,7 +627,7 @@ function App() {
             </div>
             <h3 className="text-lg font-bold text-slate-900 mb-2">Aria — Voice Security Assistant</h3>
             <p className="text-sm text-slate-500 mb-4 max-w-md mx-auto">
-              Powered by Amazon Nova Sonic. Click the chat icon in the bottom-right corner to ask Aria about incidents, compliance, remediation, and more.
+              Powered by Amazon Nova 2 Lite. Click the chat icon in the bottom-right corner to ask Aria about incidents, compliance, remediation, and more.
             </p>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 border border-violet-200 rounded-lg text-sm text-violet-700 font-medium">
               <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
@@ -623,33 +637,69 @@ function App() {
         );
 
       case 'documentation':
-        return (documentationResult || orchestrationResult?.results?.documentation) ? (
+        return analysisResult ? (
           <DocumentationDisplay
             documentation={(documentationResult || orchestrationResult?.results?.documentation)?.documentation || (documentationResult || orchestrationResult?.results?.documentation)}
             incidentId={orchestrationResult?.incident_id || analysisResult?.incident_id || 'Unknown'}
+            timeline={analysisResult.timeline}
+            remediationPlan={remediationPlan || orchestrationResult?.results?.remediation_plan}
+            onGenerateDocumentation={async () => {
+              try {
+                setLoading(true);
+                setError(null);
+                const incId = orchestrationResult?.incident_id || analysisResult?.incident_id;
+                const tl = analysisResult?.timeline || orchestrationResult?.results?.timeline;
+                const remPlan = remediationPlan || orchestrationResult?.results?.remediation_plan;
+                if (!incId || !tl) return;
+                const docResult = await documentationAPI.generateDocumentation(
+                  incId,
+                  { severity: 'CRITICAL', ...tl } as any,
+                  tl,
+                  remPlan
+                );
+                setDocumentationResult(docResult);
+                if (orchestrationResult) {
+                  setOrchestrationResult(prev => prev ? {
+                    ...prev,
+                    agents: { ...prev.agents, documentation: { status: 'COMPLETED' } },
+                    results: { ...prev.results, documentation: docResult }
+                  } : null);
+                }
+              } catch (err: any) {
+                setError('Documentation error: ' + (err.response?.data?.detail || err.message));
+              } finally {
+                setLoading(false);
+              }
+            }}
           />
         ) : (
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
             <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">Approve remediation plan first to generate documentation.</p>
+            <p className="text-sm text-slate-500">Run a demo scenario or AWS analysis first.</p>
             <button
-              onClick={() => setActiveFeature('remediation')}
+              onClick={() => setActiveFeature('overview')}
               className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
             >
-              Go to Remediation Engine →
+              Go to Demo Scenarios →
             </button>
           </div>
         );
 
       case 'export':
-        return (
+        return analysisResult ? (
           <ReportExport
             timeline={analysisResult.timeline}
             orchestrationResult={orchestrationResult}
             incidentId={analysisResult.incident_id}
             analysisTime={analysisResult.analysis_time_ms}
             remediationPlan={remediationPlan}
+            incidentType={orchestrationResult?.metadata?.incident_type || 'Security Incident'}
           />
+        ) : (
+          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+            <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm text-slate-500">Run a demo scenario or AWS analysis first.</p>
+          </div>
         );
 
       default:

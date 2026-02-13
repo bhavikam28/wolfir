@@ -383,13 +383,13 @@ const FeaturesSection: React.FC = () => {
                   </div>
                   <h4 className="font-bold text-lg mb-1">Compliance Mapping</h4>
                   <p className="text-indigo-100 text-sm leading-relaxed">
-                    Auto-maps every finding to CIS Benchmarks, NIST 800-53, SOC 2, and PCI-DSS. 
+                    Auto-maps every finding to CIS, NIST 800-53, SOC 2, PCI-DSS, SOX, and HIPAA. 
                     No more manual compliance auditing.
                   </p>
                 </div>
                 <div className="hidden sm:flex flex-col gap-2 text-right">
                   <div className="px-4 py-2 bg-white/10 rounded-lg border border-white/20">
-                    <div className="text-xl font-black">4</div>
+                    <div className="text-xl font-black">6</div>
                     <div className="text-[10px] text-indigo-200">Frameworks</div>
                   </div>
                   <div className="px-4 py-2 bg-white/10 rounded-lg border border-white/20">

@@ -15,7 +15,7 @@ export const demoAnalysisData: AnalysisResponse = {
         resource: "IAM Role: contractor-temp",
         severity: "MEDIUM",
         details: "Created a temporary role for contractor work with AdministratorAccess policy",
-        significance: "Initial setup of a role that could be abused",
+        significance: "Initial setup of a role that could be abused — foundation for privilege escalation.",
       },
       {
         timestamp: "2025-01-18T09:45:00Z",

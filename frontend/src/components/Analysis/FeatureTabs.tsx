@@ -21,7 +21,7 @@ export const ANALYSIS_TABS: FeatureTab[] = [
   { id: 'overview', label: 'Security Overview', shortLabel: 'Overview', icon: LayoutDashboard },
   { id: 'timeline', label: 'Incident Timeline', shortLabel: 'Timeline', icon: Clock },
   { id: 'attack-path', label: 'Attack Path', shortLabel: 'Attack Path', icon: GitBranch },
-  { id: 'compliance', label: 'Compliance Mapping', shortLabel: 'Compliance', icon: Scale, badge: '4 Frameworks', badgeColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  { id: 'compliance', label: 'Compliance Mapping', shortLabel: 'Compliance', icon: Scale, badge: '6 Frameworks', badgeColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
   { id: 'cost', label: 'Cost Impact', shortLabel: 'Cost', icon: DollarSign },
   { id: 'remediation', label: 'Remediation Engine', shortLabel: 'Remediation', icon: Shield },
   { id: 'documentation', label: 'Documentation', shortLabel: 'Docs', icon: FileText },

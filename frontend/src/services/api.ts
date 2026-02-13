@@ -203,7 +203,7 @@ export const documentationAPI = {
 
 export const voiceAPI = {
   /**
-   * Send a voice query to Nova Sonic
+   * Send a voice query to Aria (Nova 2 Lite)
    */
   query: async (
     queryText: string,

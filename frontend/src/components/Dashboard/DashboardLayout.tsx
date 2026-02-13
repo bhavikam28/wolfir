@@ -27,7 +27,7 @@ export const SIDEBAR_FEATURES: SidebarFeature[] = [
   { id: 'timeline', label: 'Incident Timeline', icon: Clock, locked: false, group: 'analysis' },
   { id: 'attack-path', label: 'Attack Path', icon: GitBranch, locked: false, group: 'analysis' },
   // Intelligence group
-  { id: 'compliance', label: 'Compliance Mapping', icon: Scale, locked: false, badge: '4', badgeColor: 'bg-emerald-100 text-emerald-700', group: 'intelligence' },
+  { id: 'compliance', label: 'Compliance Mapping', icon: Scale, locked: false, badge: '6', badgeColor: 'bg-emerald-100 text-emerald-700', group: 'intelligence' },
   { id: 'cost', label: 'Cost Impact', icon: DollarSign, locked: false, group: 'intelligence' },
   { id: 'remediation', label: 'Remediation Engine', icon: Shield, locked: false, group: 'intelligence' },
   // Tools group

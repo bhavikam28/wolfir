@@ -2,11 +2,11 @@
  * Security Posture Dashboard - Overview of analysis results
  * Health score, risk distribution, key metrics, top findings
  */
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Clock, Activity,
-  TrendingUp, ArrowUpRight, Target, Layers
+  TrendingUp, ArrowUpRight, Target, Layers, HelpCircle, ChevronDown, ChevronUp, DollarSign, ArrowRight
 } from 'lucide-react';
 import type { Timeline } from '../../types/incident';
 import type { OrchestrationResponse } from '../../types/incident';
@@ -16,12 +16,14 @@ interface SecurityPostureDashboardProps {
   orchestrationResult?: OrchestrationResponse | null;
   analysisTime?: number;
   incidentId?: string;
+  onNavigateToCostImpact?: () => void;
 }
 
 const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
   timeline,
   orchestrationResult,
   analysisTime,
+  onNavigateToCostImpact,
 }) => {
   const metrics = useMemo(() => {
     const events = timeline?.events || [];
@@ -75,7 +77,15 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className="lg:col-span-1 bg-white rounded-xl border border-slate-200 p-6 flex flex-col items-center justify-center"
         >
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Security Health</p>
+          <div className="flex items-center gap-1.5 mb-3">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Security Health</p>
+            <span
+              title={`Based on ${metrics.totalEvents} analyzed events weighted by severity (Critical 40, High 25, Medium 10, Low 3). Score = 100 − weighted risk.`}
+              className="cursor-help text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+            </span>
+          </div>
           <div className="relative">
             <svg className="w-28 h-28" viewBox="0 0 120 120">
               {/* Background circle */}
@@ -263,59 +273,123 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
         </div>
       </motion.div>
 
-      {/* Key Findings Summary */}
+      {/* Cost Impact CTA — prominent link to business value */}
+      {onNavigateToCostImpact && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-gradient-to-r from-emerald-50 to-indigo-50 rounded-xl border border-emerald-200 p-4"
+        >
+          <button
+            onClick={onNavigateToCostImpact}
+            className="w-full flex items-center justify-between gap-4 text-left hover:bg-white/50 rounded-lg p-3 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">What's the business impact?</h4>
+                <p className="text-xs text-slate-500">View cost exposure &amp; Nova Sentinel savings</p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-emerald-600 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </motion.div>
+      )}
+
+      {/* Key Findings — expandable full details (summary shown above in InsightCards) */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="bg-white rounded-xl border border-slate-200 p-5"
       >
-        <h3 className="text-sm font-bold text-slate-900 mb-4">Key Findings</h3>
-        <div className="grid md:grid-cols-3 gap-4">
-          {[
-            {
-              label: 'Root Cause',
-              value: (!timeline?.root_cause || timeline.root_cause.toLowerCase() === 'unknown' || timeline.root_cause.toLowerCase().includes('failed'))
-                ? 'Compromised IAM credentials used to escalate privileges and access resources'
-                : timeline.root_cause,
-              icon: Target,
-              color: 'text-red-600',
-              borderColor: 'border-l-red-500',
-            },
-            {
-              label: 'Attack Pattern',
-              value: (!timeline?.attack_pattern || timeline.attack_pattern.toLowerCase() === 'unknown' || timeline.attack_pattern.toLowerCase().includes('failed'))
-                ? 'Lateral movement through IAM role assumption with data staging and exfiltration'
-                : timeline.attack_pattern,
-              icon: Activity,
-              color: 'text-orange-600',
-              borderColor: 'border-l-orange-500',
-            },
-            {
-              label: 'Blast Radius',
-              value: (!timeline?.blast_radius || timeline.blast_radius.toLowerCase() === 'unknown' || timeline.blast_radius.toLowerCase().includes('failed'))
-                ? 'IAM roles, EC2 instances, S3 buckets, and RDS databases potentially impacted'
-                : timeline.blast_radius,
-              icon: Layers,
-              color: 'text-violet-600',
-              borderColor: 'border-l-violet-500',
-            },
-          ].map((finding) => (
-            <div
-              key={finding.label}
-              className={`p-4 bg-slate-50 rounded-lg border border-slate-200 border-l-[3px] ${finding.borderColor}`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <finding.icon className={`w-4 h-4 ${finding.color}`} />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{finding.label}</span>
-              </div>
-              <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">{finding.value}</p>
-            </div>
-          ))}
-        </div>
+        <h3 className="text-sm font-bold text-slate-900 mb-2">Key Findings — Supporting Evidence</h3>
+        <p className="text-xs text-slate-500 mb-1">
+          Expand to see timeline events that support each finding. Each line is: <span className="font-medium text-slate-600">Timestamp</span> · <span className="font-medium text-slate-600">API action</span> → <span className="font-medium text-slate-600">resource affected</span> (<span className="font-medium text-slate-600">severity</span>).
+        </p>
+        <p className="text-[11px] text-slate-400 mb-4">
+          These are real events from your CloudTrail/log data that led to the finding above.
+        </p>
+        <KeyFindingsExpandable timeline={timeline} />
       </motion.div>
     </div>
   );
 };
+
+function KeyFindingsExpandable({ timeline }: { timeline: Timeline }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const events = timeline?.events || [];
+
+  const getSupportingEvents = (category: string) => {
+    if (category === 'root-cause') {
+      return events.filter(e => /CreateRole|AttachRolePolicy|AssumeRole/i.test(e.action || '')).slice(0, 3);
+    }
+    if (category === 'attack-pattern') {
+      return events.filter(e => /AuthorizeSecurityGroup|RunInstances|CreateAccessKey|GuardDuty/i.test(e.action || '')).slice(0, 3);
+    }
+    return events.filter(e => (e.severity as string)?.toUpperCase() === 'CRITICAL' || (e.severity as string)?.toUpperCase() === 'HIGH').slice(0, 3);
+  };
+
+  const items = [
+    { id: 'root-cause', label: 'Root Cause', icon: Target, color: 'text-red-600', borderColor: 'border-l-red-500' },
+    { id: 'attack-pattern', label: 'Attack Pattern', icon: Activity, color: 'text-orange-600', borderColor: 'border-l-orange-500' },
+    { id: 'blast-radius', label: 'Blast Radius', icon: Layers, color: 'text-violet-600', borderColor: 'border-l-violet-500' },
+  ];
+
+  return (
+    <div className="space-y-2">
+      {items.map((item) => {
+        const isOpen = expanded === item.id;
+        const supportingEvents = getSupportingEvents(item.id);
+        return (
+          <div
+            key={item.id}
+            className={`rounded-lg border border-slate-200 border-l-[3px] ${item.borderColor} overflow-hidden`}
+          >
+            <button
+              onClick={() => setExpanded(isOpen ? null : item.id)}
+              className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+            >
+              <div className="flex items-center gap-2">
+                <item.icon className={`w-4 h-4 ${item.color}`} />
+                <span className="text-xs font-bold text-slate-700">{item.label}</span>
+              </div>
+              {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+            </button>
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white border-t border-slate-100"
+                >
+                  <div className="p-4 pt-3">
+                    {supportingEvents.length > 0 ? (
+                      <ul className="space-y-2">
+                          {supportingEvents.map((e, i) => (
+                            <li key={i} className="text-xs text-slate-600 flex items-start gap-2">
+                              <span className="text-slate-400 font-mono shrink-0">{e.timestamp?.slice(0, 16) || '—'}</span>
+                              <span>{e.action} → {e.resource} ({e.severity})</span>
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-slate-500">No timeline events for this finding.</p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default SecurityPostureDashboard;

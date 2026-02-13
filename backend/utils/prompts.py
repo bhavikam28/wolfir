@@ -52,6 +52,8 @@ Focus on:
 4. Determining what data or resources were compromised
 5. Assessing the overall impact and risk
 
+IMPORTANT: Every event in the timeline MUST have a "significance" field explaining why it matters in the attack chain. Do not omit significance for any event.
+
 Return ONLY valid JSON, no additional text."""
 
 

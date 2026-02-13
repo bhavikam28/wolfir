@@ -4,9 +4,9 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  CheckCircle2, Loader2, XCircle, Clock, 
-  Brain, Eye, Zap, Shield, SkipForward
+import {
+  CheckCircle2, Loader2, XCircle, Clock,
+  Brain, Eye, Zap, Shield, SkipForward, FileText
 } from 'lucide-react';
 import type { AgentStatus } from '../../types/incident';
 
@@ -16,47 +16,17 @@ interface AgentProgressProps {
     visual?: { status: AgentStatus };
     risk_scorer?: { status: AgentStatus };
     remediation?: { status: AgentStatus };
+    documentation?: { status: AgentStatus };
   };
 }
 
 const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
   const agentConfig = [
-    {
-      id: 'temporal',
-      name: 'Temporal Analysis',
-      model: 'Nova 2 Lite',
-      icon: Brain,
-      gradient: 'from-purple-500 to-indigo-600',
-      lightBg: 'bg-purple-50',
-      status: agents.temporal?.status || 'PENDING',
-    },
-    {
-      id: 'visual',
-      name: 'Visual Analysis',
-      model: 'Nova Pro',
-      icon: Eye,
-      gradient: 'from-blue-500 to-cyan-600',
-      lightBg: 'bg-blue-50',
-      status: agents.visual?.status || 'PENDING',
-    },
-    {
-      id: 'risk_scorer',
-      name: 'Risk Scoring',
-      model: 'Nova Micro',
-      icon: Zap,
-      gradient: 'from-amber-500 to-orange-600',
-      lightBg: 'bg-amber-50',
-      status: agents.risk_scorer?.status || 'PENDING',
-    },
-    {
-      id: 'remediation',
-      name: 'Remediation',
-      model: 'Nova 2 Lite',
-      icon: Shield,
-      gradient: 'from-emerald-500 to-green-600',
-      lightBg: 'bg-emerald-50',
-      status: agents.remediation?.status || 'PENDING',
-    },
+    { id: 'temporal', name: 'Temporal Analysis', model: 'Nova 2 Lite', icon: Brain, gradient: 'from-purple-500 to-indigo-600', lightBg: 'bg-purple-50', status: agents.temporal?.status || 'PENDING' },
+    { id: 'visual', name: 'Visual Analysis', model: 'Nova Pro', icon: Eye, gradient: 'from-blue-500 to-cyan-600', lightBg: 'bg-blue-50', status: agents.visual?.status || 'SKIPPED' },
+    { id: 'risk_scorer', name: 'Risk Scoring', model: 'Nova Micro', icon: Zap, gradient: 'from-amber-500 to-orange-600', lightBg: 'bg-amber-50', status: agents.risk_scorer?.status || 'PENDING' },
+    { id: 'remediation', name: 'Remediation', model: 'Nova 2 Lite', icon: Shield, gradient: 'from-emerald-500 to-green-600', lightBg: 'bg-emerald-50', status: agents.remediation?.status || 'PENDING' },
+    { id: 'documentation', name: 'Documentation', model: 'Nova 2 Lite', icon: FileText, gradient: 'from-violet-500 to-purple-600', lightBg: 'bg-violet-50', status: agents.documentation?.status || 'PENDING' },
   ];
 
   const getStatusIcon = (status: AgentStatus) => {
@@ -69,17 +39,17 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
     }
   };
 
-  const completedCount = agentConfig.filter(a => a.status === 'COMPLETED').length;
-  const progressPercent = (completedCount / agentConfig.length) * 100;
+  const doneCount = agentConfig.filter(a => a.status === 'COMPLETED' || a.status === 'SKIPPED').length;
+  const progressPercent = (doneCount / agentConfig.length) * 100;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-card">
       {/* Header with progress bar */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Multi-Agent Pipeline</h3>
+          <h3 className="text-base font-bold text-slate-900">Core Analysis Pipeline</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            {completedCount}/{agentConfig.length} agents completed
+            {doneCount}/{agentConfig.length} agents completed
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -96,7 +66,7 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
       </div>
 
       {/* Agent Pipeline */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {agentConfig.map((agent, index) => {
           const Icon = agent.icon;
           const isRunning = agent.status === 'RUNNING';

@@ -1,7 +1,7 @@
 /**
- * Nova Sonic Voice Assistant
+ * Aria — Voice Assistant
  * Real-time voice interaction for security incident analysis
- * Uses Web Speech API for browser-native STT/TTS + Nova Sonic backend
+ * Uses Web Speech API for browser-native STT/TTS + Nova 2 Lite backend
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -346,7 +346,7 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white">Aria</h3>
-                  <p className="text-[10px] text-white/70">Security Intelligence by Nova Sonic</p>
+                  <p className="text-[10px] text-white/70">Security Intelligence by Nova 2 Lite</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -425,7 +425,7 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
                     {/* Processing time */}
                     {msg.processingTime && (
                       <p className="text-[9px] text-slate-400 mt-1.5">
-                        Aria via Nova Sonic | {msg.processingTime}ms
+                        Aria via Nova 2 Lite | {msg.processingTime}ms
                       </p>
                     )}
                   </div>
@@ -532,7 +532,7 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
               </div>
               
               <p className="text-[9px] text-slate-400 text-center mt-2">
-                Aria | Powered by Amazon Nova Sonic
+                Aria | Powered by Amazon Nova 2 Lite
               </p>
             </div>
           </motion.div>

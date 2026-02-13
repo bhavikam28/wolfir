@@ -82,6 +82,23 @@ export const formatAnalysisTime = (ms: number): string => {
 };
 
 /**
+ * Format latest analysis timestamp for display (e.g. "Feb 4, 2025, 2:23 AM")
+ * Uses the most recent event timestamp from timeline, or current time if none
+ */
+export const formatLastAnalyzed = (timeline?: { events?: Array<{ timestamp?: string }> } | null): string => {
+  const events = timeline?.events?.filter(e => e.timestamp) || [];
+  if (events.length === 0) return format(new Date(), 'MMM d, yyyy, h:mm a');
+  const latest = events.reduce((a, b) =>
+    (a.timestamp && b.timestamp && a.timestamp > b.timestamp) ? a : b
+  );
+  try {
+    return format(parseISO(latest.timestamp!), 'MMM d, yyyy, h:mm a');
+  } catch {
+    return latest.timestamp || format(new Date(), 'MMM d, yyyy, h:mm a');
+  }
+};
+
+/**
  * Truncate text with ellipsis
  */
 export const truncate = (text: string, maxLength: number): string => {
