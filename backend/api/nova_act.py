@@ -59,10 +59,10 @@ async def generate_jira_automation(request: JiraAutomationRequest) -> Dict[str, 
     """
     try:
         logger.info(f"Generating JIRA automation for: {request.incident_id}")
-        result = await nova_act.generate_jira_automation(
+        result = await nova_act.create_jira_ticket(
             incident_id=request.incident_id,
             summary=request.summary,
-            description=request.description,
+            description=request.description or "",
             severity=request.severity
         )
         return result

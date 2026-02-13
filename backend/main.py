@@ -10,6 +10,9 @@ Architecture:
 - Orchestration: Strands Agents SDK with @tool decorators
 - AWS MCP Servers: CloudTrail, IAM, CloudWatch, Nova Canvas
 """
+import os
+import json
+import boto3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -25,6 +28,9 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
+    import os
+    import json
+    import boto3
     logger.warning("=" * 70)
     logger.warning("NOVA SENTINEL — Starting Up")
     logger.warning("=" * 70)
@@ -41,6 +47,37 @@ async def lifespan(app: FastAPI):
     logger.info(f"Nova Canvas: {settings.nova_canvas_model_id}")
     logger.info("Frameworks: Strands Agents SDK (real) + MCP Server (FastMCP)")
     logger.info("AWS MCP Servers: CloudTrail, IAM, CloudWatch, Nova Canvas")
+
+    # Validate AWS credentials at startup
+    try:
+        session = boto3.Session(profile_name=settings.aws_profile) if settings.aws_profile and settings.aws_profile != "default" else boto3.Session()
+        sts = session.client("sts", region_name=settings.aws_region)
+        identity = sts.get_caller_identity()
+        logger.info(f"AWS connected: Account {identity['Account']}, ARN: {identity['Arn']}")
+    except Exception as e:
+        logger.error(f"AWS CREDENTIALS NOT CONFIGURED: {e}")
+        logger.error("Nova Sentinel requires valid AWS credentials with Bedrock access.")
+        logger.error("Run: aws configure OR set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY")
+
+    # Validate Bedrock model access
+    try:
+        session = boto3.Session(profile_name=settings.aws_profile) if settings.aws_profile and settings.aws_profile != "default" else boto3.Session()
+        bedrock = session.client("bedrock-runtime", region_name=settings.aws_region)
+        test_body = json.dumps({
+            "messages": [{"role": "user", "content": [{"text": "test"}]}],
+            "inferenceConfig": {"max_new_tokens": 1, "temperature": 0},
+        })
+        bedrock.invoke_model(
+            modelId=settings.nova_micro_model_id,
+            contentType="application/json",
+            accept="application/json",
+            body=test_body,
+        )
+        logger.info(f"Bedrock access verified: {settings.nova_micro_model_id}")
+    except Exception as e:
+        logger.error(f"BEDROCK ACCESS FAILED: {e}")
+        logger.error("Ensure your IAM role/user has bedrock:InvokeModel permission")
+
     yield
 
 # Create FastAPI app
@@ -58,9 +95,12 @@ app = FastAPI(
 )
 
 # Configure CORS
+_cors_origins = ["http://localhost:5173", "http://localhost:3000"]
+if os.environ.get("FRONTEND_URL"):
+    _cors_origins.append(os.environ["FRONTEND_URL"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

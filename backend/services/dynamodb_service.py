@@ -50,21 +50,13 @@ class DynamoDBService:
                     await asyncio.to_thread(
                         self.client.create_table,
                         TableName=self.table_name,
-                        KeySchema=[
-                            {
-                                'AttributeName': 'incident_id',
-                                'KeyType': 'HASH'
-                            }
-                        ],
-                        AttributeDefinitions=[
-                            {
-                                'AttributeName': 'incident_id',
-                                'AttributeType': 'S'
-                            }
-                        ],
+                        KeySchema=[{'AttributeName': 'incident_id', 'KeyType': 'HASH'}],
+                        AttributeDefinitions=[{'AttributeName': 'incident_id', 'AttributeType': 'S'}],
                         BillingMode='PAY_PER_REQUEST'
                     )
-                    logger.info(f"DynamoDB table {self.table_name} created")
+                    waiter = self.client.get_waiter('table_exists')
+                    await asyncio.to_thread(waiter.wait, TableName=self.table_name)
+                    logger.info(f"DynamoDB table {self.table_name} is now ACTIVE")
                 except Exception as create_error:
                     logger.warning(f"Could not create table (may already exist): {create_error}")
             else:

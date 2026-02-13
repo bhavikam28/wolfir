@@ -116,12 +116,23 @@ def analyze_security_timeline(events_json: str, incident_type: str = "Unknown") 
     events = parsed.get("events", parsed) if isinstance(parsed, dict) else parsed
     if not isinstance(events, list):
         events = [events] if events else []
-    
+
+    # Empty events — avoid hallucinated timelines from Nova
+    if len(events) == 0:
+        return json.dumps({
+            "events": [],
+            "root_cause": "No events to analyze",
+            "attack_pattern": "N/A",
+            "blast_radius": "N/A",
+            "confidence": 0.0,
+            "analysis_summary": "No CloudTrail events were found in the specified time range.",
+        })
+
     result = _run_async(agents["temporal"].analyze_timeline(
         events=events,
         incident_type=incident_type
     ))
-    
+
     return json.dumps(result.dict() if hasattr(result, 'dict') else result)
 
 
@@ -555,24 +566,22 @@ class StrandsOrchestrator:
             logger.error(f"[{incident_id}] Timeline failed: {e}")
             state["tools"]["temporal"] = {"status": "FAILED", "error": str(e)}
         
-        # Step 2: Risk Scoring (Nova Micro)
-        logger.info(f"[{incident_id}] Step 2: score_event_risk")
+        # Step 2: Risk Scoring (Nova Micro) — parallel for speed
+        logger.info(f"[{incident_id}] Step 2: score_event_risk (parallel)")
         state["tools"]["risk_scorer"] = {"status": "RUNNING", "model": "amazon.nova-micro-v1:0"}
         try:
             critical_events = events[:5] if len(events) > 5 else events
+            tasks = [asyncio.to_thread(score_event_risk, event_json=json.dumps(e)) for e in critical_events]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
             risk_scores = []
-            for event in critical_events:
-                try:
-                    score_json = await asyncio.to_thread(
-                        score_event_risk,
-                        event_json=json.dumps(event)
-                    )
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.warning(f"Risk scoring failed: {result}")
+                else:
                     risk_scores.append({
-                        "event": event.get("eventName", "Unknown"),
-                        "risk": json.loads(score_json)
+                        "event": critical_events[i].get("eventName", critical_events[i].get("event_name", "Unknown")),
+                        "risk": json.loads(result) if isinstance(result, str) else result,
                     })
-                except Exception as e:
-                    logger.warning(f"Risk scoring failed for event: {e}")
             state["tools"]["risk_scorer"]["status"] = "COMPLETED"
             state["results"]["risk_scores"] = risk_scores
         except Exception as e:

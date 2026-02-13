@@ -104,11 +104,11 @@ async def analyze_real_cloudtrail(
     try:
         start_time = time.time()
         
-        logger.info(f"Starting real CloudTrail analysis (last {days_back} days, max {max_events} events, profile: {profile or 'default'})")
-        
-        # Create CloudTrail service with specified profile
+        profile_to_use = profile or settings.aws_profile
+        logger.info(f"Starting real CloudTrail analysis (last {days_back} days, max {max_events} events, profile: {profile_to_use})")
+
         from services.cloudtrail_service import CloudTrailService
-        cloudtrail_service_instance = CloudTrailService(profile=profile) if profile else cloudtrail_service
+        cloudtrail_service_instance = CloudTrailService(profile=profile_to_use)
         
         # Fetch real CloudTrail events
         cloudtrail_events = await cloudtrail_service_instance.get_security_events(

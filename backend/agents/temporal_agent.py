@@ -24,6 +24,8 @@ class TemporalAgent:
     def __init__(self):
         self.bedrock = BedrockService()
         
+    MAX_EVENTS_FOR_ANALYSIS = 25  # Keep under Nova 2 Lite token limits
+
     async def analyze_timeline(
         self,
         events: List[Dict[str, Any]],
@@ -40,14 +42,36 @@ class TemporalAgent:
             Timeline object with analyzed events and insights
         """
         start_time = time.time()
-        
+
         try:
-            logger.info(f"Starting temporal analysis of {len(events)} events")
-            if events:
-                logger.debug(f"First event sample: {json.dumps(events[0], indent=2, default=str)[:300]}")
-            
+            # Truncate to fit context window — avoid ValidationException from oversized input
+            if len(events) > self.MAX_EVENTS_FOR_ANALYSIS:
+                logger.warning(f"Truncating {len(events)} events to {self.MAX_EVENTS_FOR_ANALYSIS}")
+                events = events[:self.MAX_EVENTS_FOR_ANALYSIS]
+
+            # Strip verbose fields to reduce token count
+            trimmed_events = []
+            for event in events:
+                ui = event.get("userIdentity", event.get("user", {}))
+                if isinstance(ui, dict):
+                    ui = {"type": ui.get("type", ""), "arn": ui.get("arn", ""), "userName": ui.get("userName", ui.get("user_name", ""))}
+                trimmed = {
+                    "eventTime": event.get("eventTime", event.get("event_time", event.get("EventTime", ""))),
+                    "eventName": event.get("eventName", event.get("event_name", event.get("EventName", ""))),
+                    "sourceIPAddress": event.get("sourceIPAddress", event.get("source_ip", "")),
+                    "awsRegion": event.get("awsRegion", event.get("aws_region", "")),
+                    "userIdentity": ui,
+                    "requestParameters": event.get("requestParameters", event.get("request_parameters", {})),
+                    "errorCode": event.get("errorCode", event.get("error_code")),
+                }
+                trimmed_events.append(trimmed)
+
+            logger.info(f"Starting temporal analysis of {len(trimmed_events)} events")
+            if trimmed_events:
+                logger.debug(f"First event sample: {json.dumps(trimmed_events[0], indent=2, default=str)[:300]}")
+
             # Format events for the prompt
-            events_json = json.dumps(events, indent=2, default=str)
+            events_json = json.dumps(trimmed_events, indent=2, default=str)
             logger.debug(f"Events JSON length: {len(events_json)} chars")
             
             # Construct the prompt
@@ -79,9 +103,9 @@ class TemporalAgent:
             logger.info(f"Built {len(built_events)} TimelineEvent objects")
             
             # Fallback: If Nova didn't return events, build from raw CloudTrail events
-            if len(built_events) == 0 and len(events) > 0:
+            if len(built_events) == 0 and len(trimmed_events) > 0:
                 logger.warning("Nova returned no timeline events, building fallback timeline from raw CloudTrail events")
-                built_events = self._build_fallback_timeline(events)
+                built_events = self._build_fallback_timeline(trimmed_events)
                 logger.info(f"Built {len(built_events)} fallback TimelineEvent objects from raw events")
             
             timeline = Timeline(

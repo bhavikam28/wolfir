@@ -53,13 +53,10 @@ class S3Service:
                 if error_code == '404':
                     logger.info(f"Creating S3 bucket {bucket_name} for {purpose}")
                     try:
-                        await asyncio.to_thread(
-                            self.client.create_bucket,
-                            Bucket=bucket_name,
-                            CreateBucketConfiguration={
-                                'LocationConstraint': self.settings.aws_region
-                            } if self.settings.aws_region != 'us-east-1' else {}
-                        )
+                        create_params = {'Bucket': bucket_name}
+                        if self.settings.aws_region != 'us-east-1':
+                            create_params['CreateBucketConfiguration'] = {'LocationConstraint': self.settings.aws_region}
+                        await asyncio.to_thread(self.client.create_bucket, **create_params)
                         logger.info(f"S3 bucket {bucket_name} created")
                     except Exception as create_error:
                         logger.warning(f"Could not create bucket (may already exist or need permissions): {create_error}")

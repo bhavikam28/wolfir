@@ -22,7 +22,13 @@ from utils.logger import logger
 
 class BedrockService:
     """Wrapper for Amazon Bedrock Runtime API"""
-    
+    _semaphore = None  # Lazy init: asyncio.Semaphore(3)
+
+    def _get_semaphore(self):
+        if BedrockService._semaphore is None:
+            BedrockService._semaphore = asyncio.Semaphore(3)
+        return BedrockService._semaphore
+
     def __init__(self):
         self.settings = get_settings()
         
@@ -72,15 +78,19 @@ class BedrockService:
             }
             
             logger.info(f"Invoking Nova 2 Lite ({self.settings.nova_lite_model_id})")
-            
-            response = await asyncio.to_thread(
-                self.client.invoke_model,
-                modelId=self.settings.nova_lite_model_id,
-                contentType="application/json",
-                accept="application/json",
-                body=json.dumps(request_body)
-            )
-            
+
+            async with self._get_semaphore():
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.client.invoke_model,
+                        modelId=self.settings.nova_lite_model_id,
+                        contentType="application/json",
+                        accept="application/json",
+                        body=json.dumps(request_body),
+                    ),
+                    timeout=60.0,
+                )
+
             response_body = json.loads(response['body'].read())
             
             return {
@@ -92,10 +102,13 @@ class BedrockService:
         except ClientError as e:
             logger.error(f"Bedrock API error (Nova 2 Lite): {e}")
             raise
+        except asyncio.TimeoutError:
+            logger.error("Nova 2 Lite request timed out after 60s")
+            raise
         except Exception as e:
             logger.error(f"Unexpected error invoking Nova 2 Lite: {e}")
             raise
-    
+
     async def invoke_nova_pro(
         self,
         prompt: str,
@@ -107,53 +120,49 @@ class BedrockService:
         Invoke Nova Pro model for multimodal analysis.
         
         Uses amazon.nova-pro-v1:0 — supports text + image input.
+        Uses Converse API for multimodal (bytes not JSON-serializable for invoke_model).
         """
         try:
             content = []
-            
             if image_data:
                 content.append({
-                    "image": {
-                        "format": "png",
-                        "source": {
-                            "bytes": image_data
-                        }
-                    }
+                    "image": {"format": "png", "source": {"bytes": image_data}}
                 })
-            
             content.append({"text": prompt})
-            
-            request_body = {
-                "messages": [{
-                    "role": "user",
-                    "content": content
-                }],
-                "inferenceConfig": {
-                    "max_new_tokens": max_tokens,
-                    "temperature": temperature
-                }
-            }
-            
+
             logger.info(f"Invoking Nova Pro ({self.settings.nova_pro_model_id}, multimodal: {image_data is not None})")
-            
-            response = await asyncio.to_thread(
-                self.client.invoke_model,
-                modelId=self.settings.nova_pro_model_id,
-                contentType="application/json",
-                accept="application/json",
-                body=json.dumps(request_body)
-            )
-            
-            response_body = json.loads(response['body'].read())
-            
+
+            # Converse API handles bytes natively — invoke_model + json.dumps would fail
+            async with self._get_semaphore():
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.client.converse,
+                        modelId=self.settings.nova_pro_model_id,
+                        messages=[{"role": "user", "content": content}],
+                        inferenceConfig={
+                            "maxTokens": max_tokens,
+                            "temperature": temperature,
+                        },
+                    ),
+                    timeout=60.0,
+                )
+
+            output = response.get("output", {})
+            message = output.get("message", {})
+            msg_content = message.get("content", [])
+            text = msg_content[0].get("text", "") if msg_content else ""
+
             return {
-                "text": response_body['output']['message']['content'][0]['text'],
-                "stop_reason": response_body.get('stopReason', 'end_turn'),
-                "usage": response_body.get('usage', {})
+                "text": text,
+                "stop_reason": response.get("stopReason", "end_turn"),
+                "usage": response.get("usage", {}),
             }
-            
+
         except ClientError as e:
             logger.error(f"Bedrock API error (Nova Pro): {e}")
+            raise
+        except asyncio.TimeoutError:
+            logger.error("Nova Pro request timed out after 60s")
             raise
         except Exception as e:
             logger.error(f"Unexpected error invoking Nova Pro: {e}")
@@ -202,6 +211,9 @@ class BedrockService:
             
         except ClientError as e:
             logger.error(f"Bedrock API error (Nova Micro): {e}")
+            raise
+        except asyncio.TimeoutError:
+            logger.error("Nova Micro request timed out after 60s")
             raise
         except Exception as e:
             logger.error(f"Unexpected error invoking Nova Micro: {e}")

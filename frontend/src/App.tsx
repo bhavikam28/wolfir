@@ -53,6 +53,7 @@ function App() {
   const [ssoRegion, setSsoRegion] = useState('us-east-1');
   const [activeFeature, setActiveFeature] = useState('overview');
   const [useFullAI, setUseFullAI] = useState(false);
+  const [backendOffline, setBackendOffline] = useState(false);
 
   useEffect(() => {
     loadScenarios();
@@ -74,10 +75,10 @@ function App() {
     try {
       const data = await demoAPI.listScenarios();
       setScenarios(data.scenarios?.length ? data.scenarios : DEFAULT_DEMO_SCENARIOS);
-    } catch (err) {
-      console.error('Failed to load scenarios:', err);
+      setBackendOffline(false);
+    } catch {
       setScenarios(DEFAULT_DEMO_SCENARIOS);
-      setError('Unable to connect to backend. Ensure the backend is running on port 8000.');
+      setBackendOffline(true);
     }
   };
 
@@ -567,8 +568,8 @@ function App() {
                   } : null);
                   setActiveFeature('documentation');
                 }
-              } catch (err: any) {
-                setError('Documentation error: ' + (err.response?.data?.detail || err.message));
+              } catch {
+                // Backend offline — DocumentationDisplay shows client-generated docs
               } finally {
                 setLoading(false);
               }
@@ -665,8 +666,8 @@ function App() {
                     results: { ...prev.results, documentation: docResult }
                   } : null);
                 }
-              } catch (err: any) {
-                setError('Documentation error: ' + (err.response?.data?.detail || err.message));
+              } catch {
+                // Backend offline — DocumentationDisplay shows client-generated docs
               } finally {
                 setLoading(false);
               }
@@ -733,6 +734,14 @@ function App() {
             </div>
           }
         >
+          {/* Backend offline (subtle) */}
+          {backendOffline && !error && (
+            <div className="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 mb-4 flex items-center gap-2">
+              <span className="text-xs text-slate-600">
+                Demo mode — backend offline. Instant demo works. For full AI, start backend: <code className="bg-slate-200 px-1 rounded">cd backend && uvicorn main:app --reload</code>
+              </span>
+            </div>
+          )}
           {/* Error Banner */}
           {error && (
             <motion.div
