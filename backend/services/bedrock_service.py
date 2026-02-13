@@ -12,6 +12,7 @@ Model capabilities (verified via Bedrock console):
 import json
 import asyncio
 import base64
+from contextlib import asynccontextmanager
 import boto3
 from typing import Dict, Any, Optional, List
 from botocore.exceptions import ClientError
@@ -22,12 +23,24 @@ from utils.logger import logger
 
 class BedrockService:
     """Wrapper for Amazon Bedrock Runtime API"""
-    _semaphore = None  # Lazy init: asyncio.Semaphore(3)
+    _semaphore = None  # Lazy init per event loop
+    _semaphore_loop = None  # Track which loop owns the semaphore
 
-    def _get_semaphore(self):
-        if BedrockService._semaphore is None:
-            BedrockService._semaphore = asyncio.Semaphore(3)
-        return BedrockService._semaphore
+    @asynccontextmanager
+    async def _throttle(self):
+        """Acquire semaphore if running in an async event loop, otherwise pass through."""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if loop is not None:
+            if BedrockService._semaphore is None or BedrockService._semaphore_loop is not loop:
+                BedrockService._semaphore = asyncio.Semaphore(3)
+                BedrockService._semaphore_loop = loop
+            async with BedrockService._semaphore:
+                yield
+        else:
+            yield
 
     def __init__(self):
         self.settings = get_settings()
@@ -79,7 +92,7 @@ class BedrockService:
             
             logger.info(f"Invoking Nova 2 Lite ({self.settings.nova_lite_model_id})")
 
-            async with self._get_semaphore():
+            async with self._throttle():
                 response = await asyncio.wait_for(
                     asyncio.to_thread(
                         self.client.invoke_model,
@@ -113,6 +126,7 @@ class BedrockService:
         self,
         prompt: str,
         image_data: Optional[bytes] = None,
+        image_format: str = "png",
         max_tokens: int = 4000,
         temperature: float = 0.1
     ) -> Dict[str, Any]:
@@ -121,19 +135,21 @@ class BedrockService:
         
         Uses amazon.nova-pro-v1:0 — supports text + image input.
         Uses Converse API for multimodal (bytes not JSON-serializable for invoke_model).
+        image_format: png, jpeg, jpg, gif, webp (match uploaded file type)
         """
         try:
             content = []
             if image_data:
+                fmt = "jpeg" if image_format.lower() in ("jpg", "jpeg") else image_format.lower()
                 content.append({
-                    "image": {"format": "png", "source": {"bytes": image_data}}
+                    "image": {"format": fmt, "source": {"bytes": image_data}}
                 })
             content.append({"text": prompt})
 
             logger.info(f"Invoking Nova Pro ({self.settings.nova_pro_model_id}, multimodal: {image_data is not None})")
 
             # Converse API handles bytes natively — invoke_model + json.dumps would fail
-            async with self._get_semaphore():
+            async with self._throttle():
                 response = await asyncio.wait_for(
                     asyncio.to_thread(
                         self.client.converse,
@@ -192,15 +208,19 @@ class BedrockService:
             }
             
             logger.info(f"Invoking Nova Micro ({self.settings.nova_micro_model_id})")
-            
-            response = await asyncio.to_thread(
-                self.client.invoke_model,
-                modelId=self.settings.nova_micro_model_id,
-                contentType="application/json",
-                accept="application/json",
-                body=json.dumps(request_body)
-            )
-            
+
+            async with self._throttle():
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.client.invoke_model,
+                        modelId=self.settings.nova_micro_model_id,
+                        contentType="application/json",
+                        accept="application/json",
+                        body=json.dumps(request_body),
+                    ),
+                    timeout=60.0,
+                )
+
             response_body = json.loads(response['body'].read())
             
             return {

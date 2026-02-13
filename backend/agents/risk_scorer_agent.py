@@ -109,12 +109,16 @@ Consider:
 
 Classify as one of: LOW, MEDIUM, HIGH, CRITICAL
 
+If this event represents a recognizable attack technique, include the MITRE ATT&CK technique ID (e.g. T1098 for Account Manipulation, T1562 for Impair Defenses). Use the format T####. If unsure, omit mitre_technique_id.
+
 Provide your response in JSON format:
 {{
   "risk_level": "HIGH",
   "confidence": 0.92,
   "rationale": "Brief explanation",
-  "indicators": ["indicator 1", "indicator 2"]
+  "indicators": ["indicator 1", "indicator 2"],
+  "mitre_technique_id": "T1098",
+  "mitre_technique_name": "Account Manipulation"
 }}
 
 Return ONLY valid JSON, no additional text."""

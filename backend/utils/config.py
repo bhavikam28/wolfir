@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     aws_profile: str = "default"
     
-    # Amazon Bedrock Model IDs — Verified against Bedrock console model-ids (us-east-1)
-    nova_lite_model_id: str = "amazon.nova-2-lite-v1:0"     # Nova 2 Lite (temporal, documentation)
+    # Amazon Bedrock Model IDs — Use inference profile IDs (direct model ID no longer supports on-demand)
+    nova_lite_model_id: str = "us.amazon.nova-2-lite-v1:0"  # Nova 2 Lite inference profile (us-east-1)
     nova_pro_model_id: str = "amazon.nova-pro-v1:0"         # Nova Pro gen 1 (multimodal vision)
     nova_micro_model_id: str = "amazon.nova-micro-v1:0"     # Nova Micro gen 1 (fast classification)
     nova_sonic_model_id: str = "amazon.nova-2-sonic-v1:0"   # Nova 2 Sonic (speech; uses WebSocket streaming)

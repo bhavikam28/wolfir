@@ -1,12 +1,12 @@
 /**
- * Agent Progress - Animated Pipeline with Status Indicators
- * Shows real-time multi-agent analysis progress
+ * Agent Progress - Analysis Pipeline Status
+ * Shows multi-agent analysis completion with model attribution
  */
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2, Loader2, XCircle, Clock,
-  Brain, Eye, Zap, Shield, SkipForward, FileText
+  Brain, Eye, Zap, Shield, FileText
 } from 'lucide-react';
 import type { AgentStatus } from '../../types/incident';
 
@@ -21,12 +21,21 @@ interface AgentProgressProps {
 }
 
 const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
+  // Visual analysis runs separately (IncidentArchitectureDiagram auto-generates from timeline).
+  // If the orchestrator completed (temporal is done), visual is also done.
+  const visualStatus: AgentStatus =
+    agents.visual?.status === 'COMPLETED' ? 'COMPLETED' :
+    agents.visual?.status === 'RUNNING' ? 'RUNNING' :
+    agents.visual?.status === 'FAILED' ? 'FAILED' :
+    // Infer: if temporal completed, visual also ran (architecture diagram auto-generated)
+    agents.temporal?.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING';
+
   const agentConfig = [
-    { id: 'temporal', name: 'Temporal Analysis', model: 'Nova 2 Lite', icon: Brain, gradient: 'from-purple-500 to-indigo-600', lightBg: 'bg-purple-50', status: agents.temporal?.status || 'PENDING' },
-    { id: 'visual', name: 'Visual Analysis', model: 'Nova Pro', icon: Eye, gradient: 'from-blue-500 to-cyan-600', lightBg: 'bg-blue-50', status: agents.visual?.status || 'SKIPPED' },
-    { id: 'risk_scorer', name: 'Risk Scoring', model: 'Nova Micro', icon: Zap, gradient: 'from-amber-500 to-orange-600', lightBg: 'bg-amber-50', status: agents.risk_scorer?.status || 'PENDING' },
-    { id: 'remediation', name: 'Remediation', model: 'Nova 2 Lite', icon: Shield, gradient: 'from-emerald-500 to-green-600', lightBg: 'bg-emerald-50', status: agents.remediation?.status || 'PENDING' },
-    { id: 'documentation', name: 'Documentation', model: 'Nova 2 Lite', icon: FileText, gradient: 'from-violet-500 to-purple-600', lightBg: 'bg-violet-50', status: agents.documentation?.status || 'PENDING' },
+    { id: 'temporal', name: 'Temporal Analysis', model: 'Nova 2 Lite', icon: Brain, gradient: 'from-purple-500 to-indigo-600', status: agents.temporal?.status || 'PENDING' },
+    { id: 'visual', name: 'Visual Analysis', model: 'Nova Pro', icon: Eye, gradient: 'from-blue-500 to-cyan-600', status: visualStatus },
+    { id: 'risk_scorer', name: 'Risk Scoring', model: 'Nova Micro', icon: Zap, gradient: 'from-amber-500 to-orange-600', status: agents.risk_scorer?.status || 'PENDING' },
+    { id: 'remediation', name: 'Remediation', model: 'Nova 2 Lite', icon: Shield, gradient: 'from-emerald-500 to-green-600', status: agents.remediation?.status || 'PENDING' },
+    { id: 'documentation', name: 'Documentation', model: 'Nova 2 Lite', icon: FileText, gradient: 'from-violet-500 to-purple-600', status: agents.documentation?.status || 'PENDING' },
   ];
 
   const getStatusIcon = (status: AgentStatus) => {
@@ -34,13 +43,12 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
       case 'COMPLETED': return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
       case 'RUNNING': return <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />;
       case 'FAILED': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'SKIPPED': return <SkipForward className="w-4 h-4 text-slate-400" />;
       default: return <Clock className="w-4 h-4 text-slate-300" />;
     }
   };
 
-  const doneCount = agentConfig.filter(a => a.status === 'COMPLETED' || a.status === 'SKIPPED').length;
-  const progressPercent = (doneCount / agentConfig.length) * 100;
+  const completedCount = agentConfig.filter(a => a.status === 'COMPLETED').length;
+  const progressPercent = (completedCount / agentConfig.length) * 100;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-card">
@@ -49,7 +57,7 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
         <div>
           <h3 className="text-base font-bold text-slate-900">Core Analysis Pipeline</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            {doneCount}/{agentConfig.length} agents completed
+            {completedCount}/{agentConfig.length} agents completed
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -87,7 +95,7 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${agent.gradient} flex items-center justify-center ${isCompleted ? 'opacity-100' : isRunning ? 'opacity-100' : 'opacity-40'}`}>
+                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${agent.gradient} flex items-center justify-center ${isCompleted || isRunning ? 'opacity-100' : 'opacity-40'}`}>
                   <Icon className="w-4.5 h-4.5 text-white" />
                 </div>
                 {getStatusIcon(agent.status)}

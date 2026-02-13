@@ -1,26 +1,38 @@
 /**
  * Attack Path Diagram - Dashboard Analysis View
+ * Dynamic graph from real CloudTrail timeline, with static fallback for demo.
  * Minimap, search, export PNG/SVG, pinch-zoom, MITRE ATT&CK links
  */
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import type { Timeline } from '../../types/incident';
 import type { OrchestrationResponse } from '../../types/incident';
 import { motion } from 'framer-motion';
 import {
   Shield, AlertTriangle, Key, Globe, Network,
-  Wifi, Server, User, Database, Eye,
+  Wifi, Server, User, Database, Eye, Lock, Cloud, Zap,
   ZoomIn, ZoomOut, Maximize2, Minimize2, Search, Download
 } from 'lucide-react';
+
+// ─── MITRE ATT&CK mappings ────────────────────────────────────────────────────
 
 /** MITRE ATT&CK technique reference — name, why it matters, link */
 const MITRE_MAP: Record<string, { name: string; desc: string; url: string }> = {
   T1078: { name: 'Valid Accounts', desc: 'Adversary uses stolen/compromised credentials to access resources. High impact — bypasses detection.', url: 'https://attack.mitre.org/techniques/T1078/' },
+  T1098: { name: 'Account Manipulation', desc: 'Adversary modifies account permissions to maintain access or escalate privileges.', url: 'https://attack.mitre.org/techniques/T1098/' },
   T1190: { name: 'Exploit Public-Facing Application', desc: 'Initial access via vulnerable web app, API, or service exposed to the internet.', url: 'https://attack.mitre.org/techniques/T1190/' },
   T1021: { name: 'Remote Services', desc: 'Access via SSH, RDP, or other remote services. Common for lateral movement.', url: 'https://attack.mitre.org/techniques/T1021/' },
   T1041: { name: 'Exfiltration Over C2 Channel', desc: 'Data theft through command-and-control channel. Indicates data loss risk.', url: 'https://attack.mitre.org/techniques/T1041/' },
   T1552: { name: 'Unsecured Credentials', desc: 'Accessing stored credentials (Secrets Manager, config files). Enables privilege escalation.', url: 'https://attack.mitre.org/techniques/T1552/' },
   T1562: { name: 'Impair Defenses', desc: 'Adversary disables or evades security tools (CloudTrail, GuardDuty). Reduces visibility.', url: 'https://attack.mitre.org/techniques/T1562/' },
+  T1578: { name: 'Modify Cloud Compute', desc: 'Adversary creates or modifies cloud compute resources to execute malicious workloads.', url: 'https://attack.mitre.org/techniques/T1578/' },
+  T1136: { name: 'Create Account', desc: 'Adversary creates new accounts to establish persistence.', url: 'https://attack.mitre.org/techniques/T1136/' },
+  T1531: { name: 'Account Access Removal', desc: 'Adversary removes access to accounts to disrupt operations or cover tracks.', url: 'https://attack.mitre.org/techniques/T1531/' },
+  T1530: { name: 'Data from Cloud Storage', desc: 'Adversary accesses data from cloud storage (S3, etc.) for exfiltration.', url: 'https://attack.mitre.org/techniques/T1530/' },
 };
+
+/** MITRE technique metadata (ID → name, desc, url). LLM provides the ID; we only store reference data. */
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface NodeDef {
   id: string;
@@ -47,8 +59,335 @@ interface EdgeDef {
   delay: number;
 }
 
-/* Saturated palette — darker fills so nodes don't read as white */
-const NODES: NodeDef[] = [
+// ─── Dynamic AWS service detection (ARN/eventSource parsing, no hardcoded services) ─
+
+/** Extract AWS service from ARN (arn:aws:SERVICE:region:...) or eventSource (bedrock.amazonaws.com) */
+function extractService(arnOrSource: string): string {
+  if (!arnOrSource?.trim()) return '';
+  const s = arnOrSource.toLowerCase();
+  const arnMatch = s.match(/^arn:aws:([a-z0-9-]+):/);
+  if (arnMatch) return arnMatch[1];
+  const sourceMatch = s.match(/([a-z0-9-]+)\.amazonaws\.com/);
+  if (sourceMatch) return sourceMatch[1];
+  return '';
+}
+
+/** Map service name to icon category — ~10 categories, "other" is safe fallback. Works for any AWS service. */
+const SERVICE_TO_ICON: Record<string, any> = {
+  compute: Server,
+  storage: Database,
+  identity: User,
+  ai_ml: Zap,
+  database: Database,
+  network: Wifi,
+  monitoring: Eye,
+  encryption: Key,
+  other: Network,
+};
+const SERVICE_CATEGORIES: Record<string, keyof typeof SERVICE_TO_ICON> = {
+  ec2: 'compute', lambda: 'compute', batch: 'compute', fargate: 'compute', eks: 'compute', ecs: 'compute',
+  s3: 'storage', glacier: 'storage', ebs: 'storage',
+  iam: 'identity', sts: 'identity', cognito: 'identity',
+  bedrock: 'ai_ml', sagemaker: 'ai_ml', rekognition: 'ai_ml', comprehend: 'ai_ml', transcribe: 'ai_ml', polly: 'ai_ml', translate: 'ai_ml', kendra: 'ai_ml', lex: 'ai_ml',
+  rds: 'database', dynamodb: 'database', opensearch: 'database', elasticache: 'database', documentdb: 'database', keyspaces: 'database', redshift: 'database',
+  vpc: 'network', cloudfront: 'network',
+  cloudtrail: 'monitoring', cloudwatch: 'monitoring', guardduty: 'monitoring', securityhub: 'monitoring', config: 'monitoring',
+  kms: 'encryption', secretsmanager: 'encryption', cloudhsm: 'encryption',
+};
+
+function getIconCategory(service: string): keyof typeof SERVICE_TO_ICON {
+  const cat = SERVICE_CATEGORIES[service];
+  return cat || 'other';
+}
+
+function getIconForActor(actor: string): any {
+  const a = actor.toLowerCase();
+  if (a.includes('root')) return AlertTriangle;
+  if (a.includes('.amazonaws.com')) return Cloud;
+  if (a.includes('role/')) return Shield;
+  if (a.includes('user/')) return User;
+  return User;
+}
+
+function getIconForResource(resource: string, action: string): any {
+  const service = extractService(resource) || extractService(action);
+  if (service) {
+    const cat = getIconCategory(service);
+    return SERVICE_TO_ICON[cat] ?? Network;
+  }
+  const r = resource.toLowerCase();
+  const act = action.toLowerCase();
+  if (r.includes('role') || r.includes('policy') || act.includes('role') || act.includes('policy')) return Shield;
+  if (r.includes('user') || act.includes('user')) return User;
+  if (r.includes('instance') || act.includes('runinstances')) return Server;
+  if (r.includes('securitygroup') || r.includes('security-group')) return Lock;
+  if (r.includes('bucket') || act.includes('object')) return Database;
+  return Network;
+}
+
+/** Severity colors */
+const SEVERITY_STYLES: Record<string, { color: string; bg: string }> = {
+  CRITICAL: { color: '#B91C1C', bg: '#FECACA' },
+  HIGH:     { color: '#EA580C', bg: '#FED7AA' },
+  MEDIUM:   { color: '#1D4ED8', bg: '#BFDBFE' },
+  LOW:      { color: '#059669', bg: '#A7F3D0' },
+};
+
+/** Shorten ARN / long resource name for node label */
+function shortenLabel(s: string, maxLen = 20): string {
+  if (!s) return 'Unknown';
+  // Strip surrounding parentheses (e.g. CloudTrail "(root)" → "root")
+  let cleaned = s.replace(/^\(+|\)+$/g, '').trim();
+  if (!cleaned) cleaned = s;
+  // If it's an ARN, extract the last part
+  if (cleaned.includes(':')) {
+    const parts = cleaned.split(/[:/]/);
+    const last = parts[parts.length - 1] || parts[parts.length - 2] || cleaned;
+    return last.length > maxLen ? last.slice(0, maxLen - 1) + '...' : last;
+  }
+  return cleaned.length > maxLen ? cleaned.slice(0, maxLen - 1) + '...' : cleaned;
+}
+
+/** Classify actor type for subLabel */
+function actorSubLabel(actor: string): string {
+  const a = actor.toLowerCase();
+  if (a.includes('root')) return 'Root User';
+  if (a.includes('.amazonaws.com')) return 'AWS Service';
+  if (a.includes('role/')) return 'IAM Role';
+  if (a.includes('user/')) return 'IAM User';
+  return 'Actor';
+}
+
+/** SubLabel from extracted service — works for any AWS service (SageMaker, OpenSearch, etc.) */
+function resourceSubLabel(resource: string, action: string): string {
+  const service = extractService(resource) || extractService(action);
+  if (service) {
+    const name = service.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return `AWS ${name}`;
+  }
+  const r = resource.toLowerCase();
+  const act = action.toLowerCase();
+  if (r.includes('role') || act.includes('role')) return 'IAM Role';
+  if (r.includes('policy') || act.includes('policy')) return 'IAM Policy';
+  if (r.includes('user') || act.includes('user')) return 'IAM User';
+  if (r.includes('bucket') || act.includes('object')) return 'S3 Bucket';
+  if (r.includes('instance')) return 'EC2 Instance';
+  return 'Resource';
+}
+
+// ─── Dynamic graph builder ─────────────────────────────────────────────────────
+
+/** Build action → MITRE ID map from LLM-generated risk_scores (dynamic, no hardcoding) */
+function buildMitreMap(riskScores?: Array<{ event: string; risk: any }>): Map<string, string> {
+  const map = new Map<string, string>();
+  if (!riskScores) return map;
+  for (const { event, risk } of riskScores) {
+    const id = risk?.mitre_technique_id;
+    if (id && typeof id === 'string' && /^T\d{4}$/.test(id)) map.set(event, id);
+  }
+  return map;
+}
+
+function buildGraphFromTimeline(
+  timeline: Timeline,
+  riskScores?: Array<{ event: string; risk: any }>,
+): { nodes: NodeDef[]; edges: EdgeDef[] } {
+  const events = timeline.events || [];
+  if (events.length === 0) return { nodes: [], edges: [] };
+
+  const mitreMap = buildMitreMap(riskScores);
+
+  // Track unique actors and resources
+  const actorMap = new Map<string, { severity: string; count: number; actions: Set<string> }>();
+  const resourceMap = new Map<string, { severity: string; count: number; actions: Set<string>; firstAction: string }>();
+  const edgeMap = new Map<string, { action: string; count: number; severity: string }>();
+
+  for (const ev of events) {
+    const actor = ev.actor || 'Unknown';
+    const resource = ev.resource || 'Unknown';
+    const action = ev.action || 'Unknown';
+    const severity = ev.severity || 'LOW';
+
+    // Track actor
+    const existing = actorMap.get(actor);
+    if (existing) {
+      existing.count++;
+      existing.actions.add(action);
+      if (severityRank(severity) > severityRank(existing.severity)) existing.severity = severity;
+    } else {
+      actorMap.set(actor, { severity, count: 1, actions: new Set([action]) });
+    }
+
+    // Track resource
+    const existingRes = resourceMap.get(resource);
+    if (existingRes) {
+      existingRes.count++;
+      existingRes.actions.add(action);
+      if (severityRank(severity) > severityRank(existingRes.severity)) existingRes.severity = severity;
+    } else {
+      resourceMap.set(resource, { severity, count: 1, actions: new Set([action]), firstAction: action });
+    }
+
+    // Track edge (actor -> resource)
+    const edgeKey = `${actor}|||${resource}`;
+    const existingEdge = edgeMap.get(edgeKey);
+    if (existingEdge) {
+      existingEdge.count++;
+      if (severityRank(severity) > severityRank(existingEdge.severity)) existingEdge.severity = severity;
+    } else {
+      edgeMap.set(edgeKey, { action, count: 1, severity });
+    }
+  }
+
+  // Layout: actors on left column, resources on right column
+  const actorIds = [...actorMap.keys()];
+  const resourceIds = [...resourceMap.keys()];
+
+  // Remove actors that are also resources (self-references) — keep as actor
+  const pureResources = resourceIds.filter(r => !actorMap.has(r));
+
+  const leftCount = actorIds.length;
+  const rightCount = pureResources.length;
+  const maxCount = Math.max(leftCount, rightCount, 1);
+
+  const graphWidth = 960;
+  const graphHeight = Math.max(320, maxCount * 100 + 60);
+  const leftX = 140;
+  const rightX = graphWidth - 140;
+  const centerX = graphWidth / 2;
+
+  const nodes: NodeDef[] = [];
+  const nodeIdMap = new Map<string, string>(); // original name -> sanitized id
+
+  // Helper: create a sanitized ID
+  const makeId = (prefix: string, name: string) => {
+    return `${prefix}_${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}`;
+  };
+
+  // Place actor nodes (left side)
+  actorIds.forEach((actor, i) => {
+    const info = actorMap.get(actor)!;
+    const id = makeId('actor', actor);
+    nodeIdMap.set(actor, id);
+    const y = leftCount === 1 ? graphHeight / 2 : 60 + (i * (graphHeight - 120)) / Math.max(leftCount - 1, 1);
+    const sev = info.severity.toUpperCase();
+    const styles = SEVERITY_STYLES[sev] || SEVERITY_STYLES.LOW;
+    const actionsArr = [...info.actions];
+    const mitreId = actionsArr.map(a => mitreMap.get(a)).find(Boolean);
+
+    nodes.push({
+      id,
+      x: leftX,
+      y,
+      icon: getIconForActor(actor),
+      label: shortenLabel(actor),
+      subLabel: actorSubLabel(actor),
+      detail: `${actor} — ${info.count} event${info.count > 1 ? 's' : ''}: ${actionsArr.slice(0, 3).join(', ')}${actionsArr.length > 3 ? '...' : ''}`,
+      color: styles.color,
+      bg: styles.bg,
+      severity: sev.toLowerCase() as NodeDef['severity'],
+      ring: sev === 'CRITICAL' || sev === 'HIGH',
+      mitreId,
+      resourceId: actor.includes(':') ? actor : undefined,
+    });
+  });
+
+  // Place resource nodes (right side)
+  pureResources.forEach((resource, i) => {
+    const info = resourceMap.get(resource)!;
+    const id = makeId('res', resource);
+    nodeIdMap.set(resource, id);
+    const y = rightCount === 1 ? graphHeight / 2 : 60 + (i * (graphHeight - 120)) / Math.max(rightCount - 1, 1);
+    const sev = info.severity.toUpperCase();
+    const styles = SEVERITY_STYLES[sev] || SEVERITY_STYLES.LOW;
+    const actionsArr = [...info.actions];
+    const mitreId = actionsArr.map(a => mitreMap.get(a)).find(Boolean);
+
+    nodes.push({
+      id,
+      x: rightX,
+      y,
+      icon: getIconForResource(resource, info.firstAction),
+      label: shortenLabel(resource),
+      subLabel: resourceSubLabel(resource, info.firstAction),
+      detail: `${resource} — ${info.count} event${info.count > 1 ? 's' : ''}: ${actionsArr.slice(0, 3).join(', ')}${actionsArr.length > 3 ? '...' : ''}`,
+      color: styles.color,
+      bg: styles.bg,
+      severity: sev.toLowerCase() as NodeDef['severity'],
+      ring: sev === 'CRITICAL' || sev === 'HIGH',
+      mitreId,
+      resourceId: resource.includes(':') ? resource : undefined,
+    });
+  });
+
+  // If there are resources that are also actors (same entity), they go in the middle
+  const dualEntities = resourceIds.filter(r => actorMap.has(r) && r !== actorIds[0]);
+  dualEntities.forEach((entity, i) => {
+    if (nodeIdMap.has(entity)) return; // already placed as actor
+    const info = resourceMap.get(entity)!;
+    const id = makeId('dual', entity);
+    nodeIdMap.set(entity, id);
+    const y = graphHeight / 2 + (i - dualEntities.length / 2) * 80;
+    const sev = info.severity.toUpperCase();
+    const styles = SEVERITY_STYLES[sev] || SEVERITY_STYLES.LOW;
+    const actionsArr = [...info.actions];
+    const mitreId = actionsArr.map(a => mitreMap.get(a)).find(Boolean);
+
+    nodes.push({
+      id,
+      x: centerX,
+      y,
+      icon: getIconForResource(entity, info.firstAction),
+      label: shortenLabel(entity),
+      subLabel: resourceSubLabel(entity, info.firstAction),
+      detail: `${entity} — ${info.count} events`,
+      color: styles.color,
+      bg: styles.bg,
+      severity: sev.toLowerCase() as NodeDef['severity'],
+      ring: sev === 'CRITICAL',
+      mitreId,
+    });
+  });
+
+  // Build edges
+  const edges: EdgeDef[] = [];
+  let delay = 0.3;
+  edgeMap.forEach((info, key) => {
+    const [actor, resource] = key.split('|||');
+    const fromId = nodeIdMap.get(actor);
+    const toId = nodeIdMap.get(resource);
+    if (!fromId || !toId || fromId === toId) return;
+
+    const sev = info.severity.toUpperCase();
+    const edgeColor = sev === 'CRITICAL' ? '#B91C1C' : sev === 'HIGH' ? '#EA580C' : sev === 'MEDIUM' ? '#1D4ED8' : '#475569';
+    const label = info.count > 1 ? `${info.action} (${info.count}x)` : info.action;
+
+    edges.push({
+      from: fromId,
+      to: toId,
+      color: edgeColor,
+      label: label.length > 25 ? label.slice(0, 22) + '...' : label,
+      delay,
+    });
+    delay += 0.15;
+  });
+
+  return { nodes, edges };
+}
+
+function severityRank(sev: string): number {
+  switch (sev.toUpperCase()) {
+    case 'CRITICAL': return 4;
+    case 'HIGH': return 3;
+    case 'MEDIUM': return 2;
+    case 'LOW': return 1;
+    default: return 0;
+  }
+}
+
+// ─── Static fallback for demo mode ─────────────────────────────────────────────
+
+const DEMO_NODES: NodeDef[] = [
   { id: 'internet', x: 80, y: 200, icon: Globe, label: 'Internet', subLabel: 'External Origin', detail: 'Suspicious IP: 203.0.113.42 (TOR exit node)', color: '#334155', bg: '#E2E8F0', severity: 'medium', mitreId: 'T1190' },
   { id: 'gateway', x: 240, y: 200, icon: Network, label: 'API Gateway', subLabel: 'Entry Point', detail: 'REST API — 847 requests in 2 minutes', color: '#334155', bg: '#E2E8F0', severity: 'medium', mitreId: 'T1190' },
   { id: 'vpc', x: 400, y: 200, icon: Wifi, label: 'VPC', subLabel: 'Network Layer', detail: 'vpc-0a1b2c3d — us-east-1', color: '#1D4ED8', bg: '#BFDBFE', severity: 'medium', mitreId: 'T1021' },
@@ -61,7 +400,7 @@ const NODES: NodeDef[] = [
   { id: 'cloudtrail', x: 880, y: 80, icon: Eye, label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by Nova Sentinel in <60s', color: '#059669', bg: '#A7F3D0', severity: 'low', mitreId: 'T1562' },
 ];
 
-const EDGES: EdgeDef[] = [
+const DEMO_EDGES: EdgeDef[] = [
   { from: 'internet', to: 'gateway', color: '#475569', label: 'HTTP/S', delay: 0.3 },
   { from: 'gateway', to: 'vpc', color: '#475569', label: 'Route', delay: 0.5 },
   { from: 'vpc', to: 'ec2', color: '#B91C1C', label: 'SSH:22', delay: 0.7 },
@@ -74,8 +413,6 @@ const EDGES: EdgeDef[] = [
   { from: 'iam', to: 'secrets', color: '#EA580C', delay: 1.8 },
   { from: 'iam', to: 'cloudtrail', color: '#059669', label: 'Logged', delay: 1.9 },
 ];
-
-const nodeMap = Object.fromEntries(NODES.map(n => [n.id, n]));
 
 const ZOOM_LEVELS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2];
 
@@ -99,6 +436,28 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
   const graphRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Determine if we have real timeline data (more than 0 events with real actions)
+  const hasRealTimeline = !!(
+    props.timeline &&
+    props.timeline.events &&
+    props.timeline.events.length > 0 &&
+    props.timeline.events.some(e => e.action && e.action !== 'Unknown')
+  );
+
+  // Build dynamic or use static
+  const { nodes: NODES, edges: EDGES } = useMemo(() => {
+    if (hasRealTimeline && props.timeline) {
+      const riskScores = props.orchestrationResult?.results?.risk_scores;
+      const graph = buildGraphFromTimeline(props.timeline, riskScores);
+      // If dynamic graph has nodes, use it; otherwise fall back
+      if (graph.nodes.length > 0) return graph;
+    }
+    return { nodes: DEMO_NODES, edges: DEMO_EDGES };
+  }, [hasRealTimeline, props.timeline, props.orchestrationResult]);
+
+  const nodeMap = useMemo(() => Object.fromEntries(NODES.map(n => [n.id, n])), [NODES]);
+
   const activeNode = NODES.find(n => n.id === (selectedNode || hoveredNode));
   const detailPanelNode = NODES.find(n => n.id === selectedNode);
 
@@ -112,6 +471,17 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
       )
     : NODES;
   const hasSearchMatch = searchLower && filteredNodes.length > 0;
+
+  // Compute SVG dimensions from node positions
+  const svgWidth = useMemo(() => {
+    if (NODES.length === 0) return 960;
+    return Math.max(960, Math.max(...NODES.map(n => n.x)) + 140);
+  }, [NODES]);
+  const svgHeight = useMemo(() => {
+    if (NODES.length === 0) return 320;
+    return Math.max(320, Math.max(...NODES.map(n => n.y)) + 80);
+  }, [NODES]);
+
   const showMinimap = zoom > 1 || pan.x !== 0 || pan.y !== 0;
   const zoomIn = () => setZoomIndex(prev => Math.min(prev + 1, ZOOM_LEVELS.length - 1));
   const zoomOut = () => setZoomIndex(prev => Math.max(prev - 1, 0));
@@ -306,11 +676,21 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-900">Attack Path Graph</h2>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-200">
-              Powered by Nova Pro
-            </span>
+            {hasRealTimeline ? (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Live CloudTrail
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-200">
+                Demo Scenario
+              </span>
+            )}
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">Click node to select & open details below · hover for preview · drag to pan · Ctrl+scroll to zoom</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {hasRealTimeline
+              ? `${NODES.length} nodes from ${props.timeline?.events.length || 0} CloudTrail events · click to inspect · drag to pan`
+              : 'Click node to select & open details below · hover for preview · drag to pan · Ctrl+scroll to zoom'}
+          </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {/* Search */}
@@ -411,14 +791,14 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
         <div
           className="relative bg-slate-50 rounded-lg touch-none"
           style={{
-            minWidth: 960,
-            minHeight: 320,
+            minWidth: svgWidth,
+            minHeight: svgHeight,
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: 'center center',
             transition: isDragging ? 'none' : 'transform 0.2s ease-out',
           }}
         >
-          <svg ref={svgRef} width="960" height="320" viewBox="0 0 960 320" className="relative z-10" preserveAspectRatio="xMidYMid meet">
+          <svg ref={svgRef} width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="relative z-10" preserveAspectRatio="xMidYMid meet">
             <defs>
               <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                 <polygon points="0 0, 8 3, 0 6" fill="#64748b" opacity="0.7" />
@@ -585,7 +965,7 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
         {/* Minimap — when zoomed or panned */}
         {showMinimap && (
           <div className="absolute bottom-3 right-3 z-20 w-32 h-24 rounded-lg border-2 border-slate-300 bg-white/95 shadow-lg overflow-hidden pointer-events-none">
-            <svg width="128" height="96" viewBox="0 0 960 320" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+            <svg width="128" height="96" viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
               {EDGES.map((edge, i) => {
                 const from = nodeMap[edge.from];
                 const to = nodeMap[edge.to];
@@ -621,8 +1001,8 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
             <div className="text-[10px] text-slate-500 mt-1.5 font-semibold">
               Severity: {activeNode.severity.toUpperCase()}
               {activeNode.riskScore != null && ` • Risk ${activeNode.riskScore}/100`}
-              {activeNode.mitreId && MITRE_MAP[activeNode.mitreId] && (
-                <span> • {activeNode.mitreId}: {MITRE_MAP[activeNode.mitreId].name}</span>
+              {activeNode.mitreId && (
+                <span> • {activeNode.mitreId}{MITRE_MAP[activeNode.mitreId] ? `: ${MITRE_MAP[activeNode.mitreId].name}` : ''}</span>
               )}
             </div>
           </div>
@@ -656,9 +1036,9 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
                     {detailPanelNode.riskScore}/100
                   </span>
                 )}
-                {detailPanelNode.mitreId && MITRE_MAP[detailPanelNode.mitreId] && (
+                {detailPanelNode.mitreId && (
                   <a
-                    href={MITRE_MAP[detailPanelNode.mitreId].url}
+                    href={MITRE_MAP[detailPanelNode.mitreId]?.url ?? `https://attack.mitre.org/techniques/${detailPanelNode.mitreId}/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono hover:bg-indigo-100"
@@ -668,11 +1048,11 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
                 )}
               </div>
               <p className="text-[11px] text-slate-500 mt-0.5">{detailPanelNode.detail}</p>
-              {detailPanelNode.mitreId && MITRE_MAP[detailPanelNode.mitreId] && (
+              {detailPanelNode.mitreId && (
                 <div className="mt-2 p-2 rounded-lg bg-slate-100 border border-slate-200">
-                  <p className="text-[10px] font-bold text-slate-700">{detailPanelNode.mitreId}: {MITRE_MAP[detailPanelNode.mitreId].name}</p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">{MITRE_MAP[detailPanelNode.mitreId].desc}</p>
-                  <a href={MITRE_MAP[detailPanelNode.mitreId].url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-600 hover:underline mt-1 inline-block">
+                  <p className="text-[10px] font-bold text-slate-700">{detailPanelNode.mitreId}{MITRE_MAP[detailPanelNode.mitreId] ? `: ${MITRE_MAP[detailPanelNode.mitreId].name}` : ''}</p>
+                  {MITRE_MAP[detailPanelNode.mitreId] && <p className="text-[10px] text-slate-600 mt-0.5">{MITRE_MAP[detailPanelNode.mitreId].desc}</p>}
+                  <a href={MITRE_MAP[detailPanelNode.mitreId]?.url ?? `https://attack.mitre.org/techniques/${detailPanelNode.mitreId}/`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-600 hover:underline mt-1 inline-block">
                     Learn more on MITRE ATT&CK →
                   </a>
                 </div>

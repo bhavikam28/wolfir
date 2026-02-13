@@ -21,11 +21,36 @@ class VisualAgent:
     def __init__(self):
         self.bedrock = BedrockService()
         
+    def _image_format_from_content_type(self, content_type: Optional[str], filename: Optional[str] = None) -> str:
+        """Infer image format from content_type or filename. Default png."""
+        if content_type:
+            if "jpeg" in content_type or "jpg" in content_type:
+                return "jpeg"
+            if "png" in content_type:
+                return "png"
+            if "gif" in content_type:
+                return "gif"
+            if "webp" in content_type:
+                return "webp"
+        if filename:
+            ext = filename.lower().split(".")[-1] if "." in filename else ""
+            if ext in ("jpg", "jpeg"):
+                return "jpeg"
+            if ext == "png":
+                return "png"
+            if ext == "gif":
+                return "gif"
+            if ext == "webp":
+                return "webp"
+        return "png"
+
     async def analyze_diagram(
         self,
         image_path: Optional[str] = None,
         image_data: Optional[bytes] = None,
-        context: Optional[str] = None
+        context: Optional[str] = None,
+        content_type: Optional[str] = None,
+        filename: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Analyze an architecture diagram or screenshot
@@ -72,10 +97,11 @@ Provide your analysis in JSON format with:
 
 Provide a detailed analysis in JSON format."""
             
-            # Invoke Nova Pro with image
+            image_format = self._image_format_from_content_type(content_type, filename or image_path)
             response = await self.bedrock.invoke_nova_pro(
                 prompt=f"{system_context}\n\n{user_prompt}",
                 image_data=image_data,
+                image_format=image_format,
                 max_tokens=4000,
                 temperature=0.1
             )
@@ -104,7 +130,9 @@ Provide a detailed analysis in JSON format."""
         self,
         image_path: Optional[str] = None,
         image_data: Optional[bytes] = None,
-        expected_config: Optional[Dict[str, Any]] = None
+        expected_config: Optional[Dict[str, Any]] = None,
+        content_type: Optional[str] = None,
+        filename: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Detect configuration drift by comparing diagram to expected configuration
@@ -148,13 +176,15 @@ Provide findings in JSON format with:
 - severity: Severity level for each item
 - recommendations: How to fix each issue"""
             
+            image_format = self._image_format_from_content_type(content_type, filename or image_path)
             response = await self.bedrock.invoke_nova_pro(
                 prompt=prompt,
                 image_data=image_data,
+                image_format=image_format,
                 max_tokens=3000,
                 temperature=0.1
             )
-            
+
             analysis_text = response.get("text", "")
             drift_analysis = self._parse_analysis(analysis_text)
             

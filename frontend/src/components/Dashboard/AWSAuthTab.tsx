@@ -64,7 +64,7 @@ const AWSAuthTab: React.FC<AWSAuthTabProps> = ({
       icon: Terminal,
       title: 'AWS CLI Profile',
       subtitle: 'Recommended',
-      description: 'Use your existing AWS CLI profile stored locally.',
+      description: 'Use aws login (CLI 2.32+) — browser OAuth, no keys on disk, auto-refresh.',
     },
     {
       id: 'sso' as const,
@@ -158,7 +158,7 @@ const AWSAuthTab: React.FC<AWSAuthTabProps> = ({
               </button>
             </div>
             <p className="text-xs text-slate-400 mt-1.5">
-              Profile from <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[10px]">~/.aws/credentials</code>
+              Uses profile from <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[10px]">aws login</code> or config
             </p>
           </div>
 
@@ -189,14 +189,14 @@ const AWSAuthTab: React.FC<AWSAuthTabProps> = ({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-slate-400 font-mono">Quick Setup</span>
               <button
-                onClick={() => copyToClipboard(`aws configure --profile ${profileName}`)}
+                onClick={() => copyToClipboard(profileName === 'default' ? 'aws login' : `aws login --profile ${profileName}`)}
                 className="text-xs text-slate-500 hover:text-white transition-colors flex items-center gap-1"
               >
                 <Copy className="w-3 h-3" /> Copy
               </button>
             </div>
             <code className="text-sm text-green-400 font-mono">
-              aws configure --profile {profileName}
+              {profileName === 'default' ? 'aws login' : `aws login --profile ${profileName}`}
             </code>
           </div>
         </motion.div>

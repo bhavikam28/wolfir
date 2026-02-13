@@ -3,11 +3,11 @@
  * Simple, clean layout: no connection lines. Attack flow lives on the Attack Path page.
  */
 import React, { useState, useMemo } from 'react';
-import { Shield, Server, User, Eye, Wifi } from 'lucide-react';
+import { Shield, Server, User, Eye, Wifi, Database, Key, Zap } from 'lucide-react';
 import type { Timeline } from '../../types/incident';
 import type { TimelineEvent } from '../../types/incident';
 
-type ResourceType = 'iam_role' | 'iam_user' | 'ec2' | 'sg' | 'rds' | 'other';
+type ResourceType = 'iam_role' | 'iam_user' | 'ec2' | 'sg' | 'rds' | 's3' | 'bedrock' | 'lambda' | 'kms' | 'monitoring' | 'other';
 type SeverityLevel = 'critical' | 'high' | 'medium' | 'low';
 
 interface ResourceNode {
@@ -19,15 +19,38 @@ interface ResourceNode {
   detail?: string;
 }
 
+/** Extract AWS service from ARN (arn:aws:SERVICE:...) or eventSource (x.amazonaws.com) */
+function extractService(arnOrSource: string): string {
+  if (!arnOrSource?.trim()) return '';
+  const s = arnOrSource.toLowerCase();
+  const arnMatch = s.match(/^arn:aws:([a-z0-9-]+):/);
+  if (arnMatch) return arnMatch[1];
+  const sourceMatch = s.match(/([a-z0-9-]+)\.amazonaws\.com/);
+  if (sourceMatch) return sourceMatch[1];
+  return '';
+}
+
+/** Map service to ResourceType — works for any AWS service (SageMaker, OpenSearch, etc.) */
+const SERVICE_TO_TYPE: Record<string, ResourceType> = {
+  ec2: 'ec2', lambda: 'lambda', batch: 'ec2', fargate: 'ec2', eks: 'ec2', ecs: 'ec2',
+  s3: 's3', glacier: 's3', bedrock: 'bedrock', sagemaker: 'bedrock', rekognition: 'bedrock', comprehend: 'bedrock',
+  rds: 'rds', dynamodb: 'rds', opensearch: 'rds', elasticache: 'rds', documentdb: 'rds', keyspaces: 'rds', redshift: 'rds',
+  iam: 'iam_user', sts: 'iam_role', cognito: 'iam_user',
+  kms: 'kms', secretsmanager: 'kms', cloudtrail: 'monitoring', cloudwatch: 'monitoring', guardduty: 'monitoring', config: 'monitoring', securityhub: 'monitoring',
+};
+
 function inferType(action: string, resource: string): ResourceType {
+  const service = extractService(resource) || extractService(action);
+  if (service && SERVICE_TO_TYPE[service]) return SERVICE_TO_TYPE[service];
   const a = action.toLowerCase();
   const r = resource.toLowerCase();
-  if (r.includes('sg-') || r.includes('security group') || a.includes('securitygroup') || a.includes('authorizesecuritygroup')) return 'sg';
-  if (r.includes('i-') || r.includes('ec2') || r.includes('instance') || a.includes('runinstances')) return 'ec2';
-  if (r.includes('role') || a.includes('attachrole') || a.includes('assumerole') || a.includes('attachentitypolicy')) return 'iam_role';
-  if (r.includes('user') || a.includes('createaccesskey')) return 'iam_user';
-  if (r.includes('db-') || r.includes('rds') || r.includes('database')) return 'rds';
-  if (a.includes('guardduty') || a.includes('finding')) return 'other';
+  if (r.includes('sg-') || r.includes('security-group') || a.includes('securitygroup')) return 'sg';
+  if (r.includes('i-') || r.includes('instance') || a.includes('runinstances')) return 'ec2';
+  if (r.includes('role') || a.includes('attachrole') || a.includes('assumerole')) return 'iam_role';
+  if (r.includes('user') || a.includes('createaccesskey') || a.includes('putuserpolicy')) return 'iam_user';
+  if (r.includes('bucket') || a.includes('putobject') || a.includes('getobject')) return 's3';
+  if (r.includes('db-') || r.includes('database')) return 'rds';
+  if (r.includes('cloudtrail') || r.includes('cloudwatch')) return 'monitoring';
   return 'other';
 }
 
@@ -41,13 +64,30 @@ function parseResource(resource: string): string {
   return r || 'Resource';
 }
 
+function isServiceLinkedRole(resource: string): boolean {
+  const r = (resource || '').toLowerCase();
+  return r.includes('awsservicerolefor') || r.includes('aws-service-role/') || r.includes('service-role/');
+}
+
 function getSeverity(ev: TimelineEvent, action: string, type: ResourceType): SeverityLevel {
   const s = (ev.severity || '').toUpperCase();
   const a = action.toLowerCase();
+  const resource = ev.resource || '';
+
+  // AWS service-linked roles performing AssumeRole are normal activity, not compromised
+  if (a.includes('assumerole') && isServiceLinkedRole(resource)) {
+    return 'low';
+  }
+
   if ((type === 'iam_role' || type === 'iam_user') && (
-    a.includes('assumerole') || a.includes('attachrole') || a.includes('administrator') ||
-    a.includes('attachentitypolicy') || ev.significance?.toLowerCase().includes('administrator')
+    a.includes('attachrole') || a.includes('administrator') ||
+    a.includes('attachentitypolicy') || a.includes('putuserp') || a.includes('putrolep') ||
+    ev.significance?.toLowerCase().includes('administrator')
   )) return 'critical';
+
+  // Non-service-linked AssumeRole on IAM roles is still suspicious
+  if ((type === 'iam_role' || type === 'iam_user') && a.includes('assumerole')) return 'high';
+
   if (s === 'CRITICAL') return 'critical';
   if (s === 'HIGH') return 'high';
   if (s === 'MEDIUM') return 'medium';
@@ -142,32 +182,45 @@ const IncidentArchitectureDiagram: React.FC<IncidentArchitectureDiagramProps> = 
     const network: ResourceNode[] = [];
     const compute: ResourceNode[] = [];
     const identity: ResourceNode[] = [];
+    const storage: ResourceNode[] = [];
+    const aiml: ResourceNode[] = [];
+    const security: ResourceNode[] = [];
     const monitoring: ResourceNode[] = [];
 
     nodes.forEach(n => {
-      if (n.id === 'cloudtrail-monitoring' || n.label.toLowerCase().includes('cloudtrail')) monitoring.push(n);
+      if (n.type === 'monitoring' || n.id === 'cloudtrail-monitoring' || n.label.toLowerCase().includes('cloudtrail') || n.label.toLowerCase().includes('cloudwatch')) monitoring.push(n);
       else if (n.type === 'sg') network.push(n);
-      else if (n.type === 'ec2' || n.type === 'rds') compute.push(n);
+      else if (n.type === 'ec2' || n.type === 'rds' || n.type === 'lambda') compute.push(n);
       else if (n.type === 'iam_role' || n.type === 'iam_user') identity.push(n);
+      else if (n.type === 's3') storage.push(n);
+      else if (n.type === 'bedrock') aiml.push(n);
+      else if (n.type === 'kms') security.push(n);
       else network.push(n);
     });
 
     const rows: ResourceNode[][] = [];
-    if (network.length) rows.push(network);
-    if (compute.length) rows.push(compute);
     if (identity.length) rows.push(identity);
+    if (compute.length) rows.push(compute);
+    if (storage.length) rows.push(storage);
+    if (aiml.length) rows.push(aiml);
+    if (network.length) rows.push(network);
+    if (security.length) rows.push(security);
     if (monitoring.length) rows.push(monitoring);
     return rows.length ? rows : [nodes];
   }, [nodes]);
 
+  // Map row group type to label
   const rowLabels: Record<number, string> = {};
   layout.forEach((row, i) => {
-    const first = row[0];
-    if (first?.id === 'cloudtrail-monitoring' || first?.label.toLowerCase().includes('cloudtrail')) rowLabels[i] = 'Monitoring';
-    else if (first?.type === 'sg') rowLabels[i] = 'Network';
-    else if (first?.type === 'ec2' || first?.type === 'rds') rowLabels[i] = 'Compute';
-    else if (first?.type === 'iam_role' || first?.type === 'iam_user') rowLabels[i] = 'Identity';
-    else rowLabels[i] = 'Network';
+    const types = new Set(row.map(n => n.type));
+    if (types.has('monitoring') || row.some(n => n.label.toLowerCase().includes('cloudtrail'))) rowLabels[i] = 'Monitoring';
+    else if (types.has('iam_role') || types.has('iam_user')) rowLabels[i] = 'Identity';
+    else if (types.has('ec2') || types.has('rds') || types.has('lambda')) rowLabels[i] = 'Compute';
+    else if (types.has('s3')) rowLabels[i] = 'Storage';
+    else if (types.has('bedrock')) rowLabels[i] = 'AI / ML';
+    else if (types.has('kms')) rowLabels[i] = 'Encryption';
+    else if (types.has('sg')) rowLabels[i] = 'Network';
+    else rowLabels[i] = 'Resources';
   });
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -178,6 +231,9 @@ const IncidentArchitectureDiagram: React.FC<IncidentArchitectureDiagramProps> = 
     if (label === 'Compute') return Server;
     if (label === 'Identity') return User;
     if (label === 'Monitoring') return Eye;
+    if (label === 'Storage') return Database;
+    if (label === 'AI / ML') return Zap;
+    if (label === 'Encryption') return Key;
     return Wifi;
   };
 
@@ -190,7 +246,7 @@ const IncidentArchitectureDiagram: React.FC<IncidentArchitectureDiagramProps> = 
   }
 
   const nodeList = layout.flat();
-  const CARD_W = 180;
+  const CARD_MIN_W = 160;
 
   return (
     <div className="w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
@@ -221,6 +277,8 @@ const IncidentArchitectureDiagram: React.FC<IncidentArchitectureDiagramProps> = 
                   {row.map(n => {
                     const colors = getSeverityColors(n.severity);
                     const isHovered = hoveredNode === n.id;
+                    // Dynamic width: estimate from label length, with min and max
+                    const estimatedWidth = Math.max(CARD_MIN_W, Math.min(360, n.label.length * 9 + 40));
                     return (
                       <div
                         key={n.id}
@@ -229,15 +287,16 @@ const IncidentArchitectureDiagram: React.FC<IncidentArchitectureDiagramProps> = 
                           backgroundColor: colors.bg,
                           borderLeftColor: colors.border,
                           boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
-                          width: CARD_W,
-                          minWidth: CARD_W,
+                          minWidth: CARD_MIN_W,
+                          width: estimatedWidth,
+                          maxWidth: '100%',
                         }}
                         onMouseEnter={(e) => { setHoveredNode(n.id); setTooltipPos({ x: e.clientX, y: e.clientY }); }}
                         onMouseMove={(e) => hoveredNode === n.id && setTooltipPos({ x: e.clientX, y: e.clientY })}
                         onMouseLeave={() => { setHoveredNode(null); setTooltipPos(null); }}
                       >
-                        <div className="font-semibold text-slate-800 text-sm">{n.label}</div>
-                        <div className="text-xs font-medium mt-0.5" style={{ color: colors.border }}>{n.subLabel}</div>
+                        <div className="font-semibold text-slate-800 text-sm break-words">{n.label}</div>
+                        <div className="text-xs font-medium mt-0.5 break-words" style={{ color: colors.border }}>{n.subLabel}</div>
                       </div>
                     );
                   })}

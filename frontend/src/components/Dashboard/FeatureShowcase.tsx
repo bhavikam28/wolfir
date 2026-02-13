@@ -112,7 +112,7 @@ const FEATURES: Feature[] = [
     id: 'real-aws',
     number: 8,
     name: 'Real AWS Account Analysis',
-    description: 'Connect your live AWS account via CLI profile for real CloudTrail event analysis — no credentials stored.',
+    description: 'Connect via aws login or CLI profile for real CloudTrail analysis — OAuth, no keys stored.',
     model: 'All Models',
     modelColor: 'text-orange-600 bg-orange-50 border-orange-200',
     icon: Cloud,

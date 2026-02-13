@@ -54,6 +54,8 @@ function App() {
   const [activeFeature, setActiveFeature] = useState('overview');
   const [useFullAI, setUseFullAI] = useState(false);
   const [backendOffline, setBackendOffline] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connectionLoading, setConnectionLoading] = useState(false);
 
   useEffect(() => {
     loadScenarios();
@@ -154,7 +156,8 @@ function App() {
       const realAnalysis = await analysisAPI.analyzeRealCloudTrail(daysBack, maxEvents, awsProfile);
       
       if ((realAnalysis as any).status === 'no_events') {
-        setError(`No security events found in the last ${daysBack} days.`);
+        const msg = (realAnalysis as any).message || `No security events found in the last ${daysBack} days.`;
+        setError(msg);
         setLoading(false);
         return;
       }
@@ -171,11 +174,24 @@ function App() {
 
       const result = await orchestrationAPI.analyzeIncident(cloudtrailEvents, undefined, 'Real AWS Account Analysis');
       setOrchestrationResult(result);
+
+      if (result.results.remediation_plan) {
+        setRemediationPlan(result.results.remediation_plan);
+      }
+
+      // Derive a meaningful incident type from the orchestration results
+      const derivedIncidentType =
+        result.metadata?.incident_type ||
+        result.results?.timeline?.attack_pattern ||
+        result.results?.timeline?.root_cause ||
+        'Real AWS Account Analysis';
+
       setAnalysisResult({
         incident_id: result.incident_id,
         timeline: result.results.timeline || realAnalysis.timeline,
         analysis_time_ms: result.analysis_time_ms || realAnalysis.analysis_time_ms,
         model_used: 'Multi-Agent Orchestration (Real AWS)',
+        incident_type: derivedIncidentType,
       });
     } catch (err: any) {
       console.error('Real AWS analysis error:', err);
@@ -343,17 +359,21 @@ function App() {
                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                       />
                       <p className="text-[10px] text-slate-400 mt-1">
-                        Profile from <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">~/.aws/credentials</code>
+                        Uses AWS CLI profile (from <code className="bg-slate-100 px-1 rounded text-[10px]">aws login</code> or config).
+                        <span className="block mt-0.5">Profile Name = section in <code className="bg-slate-100 px-1 rounded text-[10px]">~/.aws/config</code>. Use &quot;default&quot; for your main AWS account.</span>
                       </p>
                     </div>
                     <div className="bg-slate-900 rounded-lg p-3">
-                      <p className="text-[10px] text-slate-400 mb-1 font-mono">Quick setup</p>
-                      <code className="text-sm text-green-400 font-mono">aws configure --profile {awsProfile}</code>
+                      <p className="text-[10px] text-slate-400 mb-1 font-mono">Recommended — aws login (CLI 2.32.0+)</p>
+                      <code className="text-sm text-green-400 font-mono block">
+                        {awsProfile === 'default' ? 'aws login' : `aws login --profile ${awsProfile}`}
+                      </code>
+                      <p className="text-[10px] text-slate-500 mt-2">Alternative: <code className="text-slate-400">aws configure --profile {awsProfile}</code></p>
                     </div>
                     <div className="flex items-start gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
                       <Shield className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
                       <p className="text-[10px] text-indigo-600 leading-relaxed">
-                        <strong>Zero-trust:</strong> Credentials never leave your machine. The backend reads your local AWS CLI config — nothing is transmitted or stored on any server.
+                        <strong>aws login:</strong> Browser-based OAuth. No keys on disk. Temporary credentials auto-refresh. Zero-trust — nothing transmitted or stored on any server.
                       </p>
                     </div>
                   </div>
@@ -389,7 +409,8 @@ function App() {
                     </div>
                     <div className="bg-slate-900 rounded-lg p-3">
                       <p className="text-[10px] text-slate-400 mb-1 font-mono">CLI setup</p>
-                      <code className="text-xs text-green-400 font-mono block">aws configure sso --profile nova-sentinel</code>
+                      <code className="text-xs text-green-400 font-mono block">aws login --profile nova-sentinel</code>
+                      <p className="text-[10px] text-slate-500 mt-2">First-time SSO: <code className="text-slate-400">aws configure sso --profile nova-sentinel</code></p>
                     </div>
                     <div className="flex items-start gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
                       <Shield className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
@@ -401,19 +422,38 @@ function App() {
                 )}
 
                 {/* Test Connection */}
-                <div className="mt-4 flex items-center gap-3">
-                  <button
-                    onClick={async () => {
-                      try {
-                        const result = await authAPI.testConnection(awsProfile);
-                        setAwsConnected(result.connected);
-                      } catch {
-                        setAwsConnected(false);
-                      }
-                    }}
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                  >
-                    {authMethod === 'sso' ? (
+                <div className="mt-4 flex flex-col gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      onClick={async () => {
+                        setConnectionLoading(true);
+                        setConnectionError(null);
+                        try {
+                          const result = await authAPI.testConnection(awsProfile);
+                          setAwsConnected(result.connected);
+                          if (result.connected) setConnectionError(null);
+                          else setConnectionError('Connection failed. Check credentials and backend.');
+                        } catch (err: any) {
+                          setAwsConnected(false);
+                          const msg = err?.response?.data?.detail || err?.message;
+                          setConnectionError(
+                            err?.response
+                              ? `Connection test failed: ${msg || 'Check backend logs.'}`
+                              : 'Backend unreachable. Start backend: cd backend && uvicorn main:app --reload'
+                          );
+                        } finally {
+                          setConnectionLoading(false);
+                        }
+                      }}
+                      disabled={connectionLoading}
+                      className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+                    >
+                    {connectionLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Testing...
+                      </>
+                    ) : authMethod === 'sso' ? (
                       <>
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -434,6 +474,12 @@ function App() {
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-xs font-bold text-emerald-700">Connected</span>
                     </div>
+                  )}
+                  </div>
+                  {connectionError && (
+                    <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                      {connectionError}
+                    </p>
                   )}
                 </div>
               </div>
@@ -540,7 +586,11 @@ function App() {
         return (
           <CostImpact
             timeline={analysisResult.timeline}
-            incidentType={orchestrationResult?.metadata?.incident_type}
+            incidentType={
+              orchestrationResult?.metadata?.incident_type ||
+              orchestrationResult?.results?.timeline?.attack_pattern ||
+              (analysisResult as any)?.incident_type
+            }
           />
         );
 

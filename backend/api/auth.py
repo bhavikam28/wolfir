@@ -73,18 +73,17 @@ async def test_aws_connection(
         try:
             cloudtrail_client = session.client('cloudtrail', region_name=settings.aws_region)
             # Try to list trails (read-only operation)
-            cloudtrail_client.list_trails(MaxResults=1)
+            cloudtrail_client.list_trails()
             results["permissions"]["cloudtrail"] = True
             logger.info("CloudTrail access verified")
         except ClientError as e:
             logger.warning(f"CloudTrail access test failed: {e}")
             results["permissions"]["cloudtrail"] = False
         
-        # Test 3: Verify Bedrock access
+        # Test 3: Verify Bedrock access (list_foundation_models is on bedrock control plane, not bedrock-runtime)
         try:
-            bedrock_client = session.client('bedrock-runtime', region_name=settings.aws_region)
-            # Try to list foundation models (read-only operation)
-            bedrock_client.list_foundation_models(MaxResults=1)
+            bedrock_client = session.client('bedrock', region_name=settings.aws_region)
+            bedrock_client.list_foundation_models()
             results["permissions"]["bedrock"] = True
             logger.info("Bedrock access verified")
         except ClientError as e:

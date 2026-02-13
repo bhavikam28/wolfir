@@ -5,12 +5,11 @@
  * - Incident case: Nova Canvas security visualization
  * - Demo case: Sample AWS architecture diagram with annotations
  */
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Image, X, CheckCircle2, AlertCircle, Loader2, Eye, Sparkles, Palette, FileText, Shield, Lightbulb } from 'lucide-react';
 import SampleArchitectureDiagram from '../Visualizations/SampleArchitectureDiagram';
 import IncidentArchitectureDiagram from '../Visualizations/IncidentArchitectureDiagram';
-import { novaCanvasMCPAPI } from '../../services/api';
 import type { Timeline } from '../../types/incident';
 import type { OrchestrationResponse } from '../../types/incident';
 
@@ -64,17 +63,57 @@ function deriveIncidentFindings(timeline: Timeline): { summary: string; security
     findings.push(attackPattern);
   }
 
-  const recommendations = [
-    'Revoke compromised IAM sessions and detach AdministratorAccess immediately',
-    'Terminate unauthorized EC2 instances and restore security group rules',
-    'Enable MFA for all IAM users with privileged access',
-    'Review CloudTrail for full attack timeline and affected resources',
-  ];
+  // Generate recommendations based on actual events, not generic boilerplate
+  const recommendations: string[] = [];
+  const actions = events.map((e: any) => (e.action || '').toLowerCase());
+  const resources = events.map((e: any) => (e.resource || '').toLowerCase());
+  const actors = events.map((e: any) => (e.actor || '').toLowerCase());
+  const allText = [...actions, ...resources].join(' ');
+
+  // IAM policy changes
+  if (actions.some(a => a.includes('putuserpolicy') || a.includes('attachuserpolicy') || a.includes('putrolepolicy'))) {
+    const affectedUsers = events
+      .filter((e: any) => (e.action || '').toLowerCase().includes('policy'))
+      .map((e: any) => e.resource || 'affected user')
+      .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+    recommendations.push(`Audit and detach suspicious inline policies from ${affectedUsers.join(', ')}`);
+  }
+  // Root user activity
+  if (actors.some(a => a.includes('root'))) {
+    recommendations.push('Investigate root user activity — root should rarely be used directly. Enable MFA and create alerts for root usage.');
+  }
+  // AssumeRole (non-service-linked)
+  if (actions.some(a => a.includes('assumerole')) && !resources.every(r => r.includes('awsservicerolefor') || r.includes('service-role'))) {
+    recommendations.push('Review AssumeRole events for unauthorized cross-account or privilege escalation activity');
+  }
+  // EC2 related
+  if (allText.includes('ec2') || allText.includes('instance')) {
+    recommendations.push('Review EC2 instances for unauthorized access or modifications');
+  }
+  // S3 / data access
+  if (allText.includes('s3') || allText.includes('getobject') || allText.includes('putobject')) {
+    recommendations.push('Audit S3 bucket access patterns and enable S3 access logging for affected buckets');
+  }
+  // Credential rotation
+  if (events.some((e: any) => (e.severity || '').toUpperCase() === 'CRITICAL')) {
+    const critActors = events
+      .filter((e: any) => (e.severity || '').toUpperCase() === 'CRITICAL')
+      .map((e: any) => e.actor || 'affected users')
+      .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+    recommendations.push(`Rotate credentials for ${critActors.join(', ')} immediately`);
+  }
+  // Always recommend CloudTrail review
+  recommendations.push('Review CloudTrail logs for the full incident timeline and any related events');
+
+  // Ensure MFA recommendation for IAM-related incidents
+  if (allText.includes('iam') || allText.includes('user') || allText.includes('role') || allText.includes('policy')) {
+    recommendations.push('Enable MFA for all IAM users involved in this incident');
+  }
 
   return {
     summary: `VisualAgent analysis of incident: ${rootCause} Attack pattern: ${attackPattern}`,
     security_findings: findings.slice(0, 8),
-    recommendations,
+    recommendations: recommendations.slice(0, 6),
   };
 }
 
@@ -86,13 +125,7 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [demoResult, setDemoResult] = useState<any>(null);
   const [demoLoading, setDemoLoading] = useState(false);
-  const [novaCanvasImage, setNovaCanvasImage] = useState<string | null>(null);
-  const [novaCanvasLoading, setNovaCanvasLoading] = useState(false);
-  const [novaCanvasError, setNovaCanvasError] = useState<string | null>(null);
-  const [novaCanvasTimedOut, setNovaCanvasTimedOut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const NOVA_CANVAS_TIMEOUT_MS = 20000;
 
   const incidentDerivedResult = useMemo(() => {
     if (!timeline?.events?.length) return null;
@@ -105,62 +138,6 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
   }, [timeline]);
 
   const displayResult = analysisResult || demoResult || incidentDerivedResult;
-  const hasIncidentData = !!timeline?.events?.length;
-
-  // Generate Nova Canvas security visualization when incident analysis completes
-  useEffect(() => {
-    if (!hasIncidentData || !orchestrationResult) {
-      setNovaCanvasImage(null);
-      setNovaCanvasError(null);
-      setNovaCanvasTimedOut(false);
-      return;
-    }
-    let cancelled = false;
-    setNovaCanvasTimedOut(false);
-    const incidentType = orchestrationResult.metadata?.incident_type || 'Security Incident';
-    const incidentId = orchestrationResult.incident_id || 'INC-000000';
-    let severity = 'HIGH';
-    const events = timeline?.events || [];
-    for (const e of events) {
-      const s = (e.severity || '').toUpperCase();
-      if (s === 'CRITICAL') { severity = 'CRITICAL'; break; }
-      if (s === 'HIGH' && severity !== 'CRITICAL') severity = 'HIGH';
-    }
-    setNovaCanvasLoading(true);
-    setNovaCanvasError(null);
-
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Nova Canvas timed out')), NOVA_CANVAS_TIMEOUT_MS)
-    );
-
-    Promise.race([
-      novaCanvasMCPAPI.generateReportCover(incidentType, severity, incidentId),
-      timeoutPromise,
-    ])
-      .then((res: any) => {
-        if (cancelled) return;
-        if (res?.success && res?.images?.[0]) {
-          const img = res.images[0];
-          setNovaCanvasImage(img.startsWith('data:') ? img : `data:image/png;base64,${img}`);
-        } else if (res?.image_base64) {
-          setNovaCanvasImage(`data:image/png;base64,${res.image_base64}`);
-        } else {
-          setNovaCanvasError(res?.error || 'Could not generate visualization');
-        }
-      })
-      .catch((err: any) => {
-        if (cancelled) return;
-        if (err?.message === 'Nova Canvas timed out') {
-          setNovaCanvasTimedOut(true);
-        } else {
-          setNovaCanvasError(err?.response?.data?.detail || err?.message || 'Nova Canvas unavailable');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setNovaCanvasLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [hasIncidentData, orchestrationResult?.incident_id, orchestrationResult?.metadata?.incident_type, timeline?.events]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -334,37 +311,20 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
                     <Palette className="w-3.5 h-3.5 text-violet-500" />
                     Security Visualization
                   </span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                    (novaCanvasError || novaCanvasTimedOut) && !novaCanvasLoading
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                      : 'bg-violet-50 text-violet-700 border-violet-200'
-                  }`}>
-                    {(novaCanvasError || novaCanvasTimedOut) && !novaCanvasLoading
-                      ? 'Powered by Nova Pro Analysis'
-                      : 'Powered by Nova Canvas'}
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-indigo-50 text-indigo-700 border-indigo-200">
+                    Live Incident Data
                   </span>
                 </div>
-                <div className="min-h-[280px] bg-slate-100 flex items-center justify-center">
-                  {novaCanvasLoading && !novaCanvasTimedOut && (
-                    <div className="text-center py-8">
-                      <div className="w-10 h-10 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-3" />
-                      <p className="text-xs text-slate-600">Generating security visualization...</p>
-                      <p className="text-[10px] text-slate-400 mt-1">Takes ~15–20 seconds</p>
-                    </div>
-                  )}
-                  {(novaCanvasError || novaCanvasTimedOut) && !novaCanvasLoading && timeline && (
-                    <div className="w-full p-4">
-                      <IncidentArchitectureDiagram
-                        timeline={timeline}
-                        orchestrationResult={orchestrationResult}
-                        securityFindings={displayResult?.analysis?.security_findings}
-                      />
-                    </div>
-                  )}
-                  {novaCanvasImage && !novaCanvasLoading && (
-                    <img src={novaCanvasImage} alt="Nova Canvas security visualization" className="w-full h-auto max-h-80 object-contain" />
-                  )}
-                </div>
+                {/* Data-driven architecture diagram from real incident data */}
+                {timeline && (
+                  <div className="w-full p-4 bg-white">
+                    <IncidentArchitectureDiagram
+                      timeline={timeline}
+                      orchestrationResult={orchestrationResult}
+                      securityFindings={displayResult?.analysis?.security_findings}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

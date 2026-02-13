@@ -62,6 +62,8 @@ class ReportCoverRequest(BaseModel):
     incident_type: str
     severity: str = "CRITICAL"
     incident_id: str = "INC-000000"
+    attack_pattern: str = ""
+    affected_services: List[str] = []
 
 
 class AttackPathVisualRequest(BaseModel):
@@ -313,6 +315,8 @@ async def canvas_report_cover(request: ReportCoverRequest) -> Dict[str, Any]:
         incident_type=request.incident_type,
         severity=request.severity,
         incident_id=request.incident_id,
+        attack_pattern=request.attack_pattern,
+        affected_services=request.affected_services,
     )
 
 

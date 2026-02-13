@@ -53,10 +53,11 @@ async def analyze_diagram(
         
         logger.info(f"Received diagram analysis request: {file.filename} ({len(image_data)} bytes)")
         
-        # Analyze the diagram
         analysis = await visual_agent.analyze_diagram(
             image_data=image_data,
-            context=context
+            context=context,
+            content_type=file.content_type,
+            filename=file.filename
         )
         
         return analysis
@@ -116,10 +117,11 @@ async def detect_drift(
         
         logger.info(f"Received drift detection request: {file.filename}")
         
-        # Detect drift
         drift_analysis = await visual_agent.detect_configuration_drift(
             image_data=image_data,
-            expected_config=expected_config_dict
+            expected_config=expected_config_dict,
+            content_type=file.content_type,
+            filename=file.filename
         )
         
         return drift_analysis

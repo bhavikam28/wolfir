@@ -198,6 +198,8 @@ class NovaCanvasMCPServer:
         incident_type: str,
         severity: str = "CRITICAL",
         incident_id: str = "INC-000000",
+        attack_pattern: str = "",
+        affected_services: List[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate a professional security incident report cover image.
@@ -209,10 +211,15 @@ class NovaCanvasMCPServer:
             incident_type: Type of incident (e.g., "Cryptocurrency Mining Attack")
             severity: Severity level (CRITICAL, HIGH, MEDIUM, LOW)
             incident_id: Incident identifier
+            attack_pattern: Description of the attack pattern detected
+            affected_services: List of AWS services involved in the incident
 
         Returns:
             Dict with base64-encoded cover image
         """
+        if affected_services is None:
+            affected_services = []
+
         severity_colors = {
             "CRITICAL": ["#DC2626", "#991B1B", "#1E1B4B"],
             "HIGH": ["#EA580C", "#C2410C", "#1E1B4B"],
@@ -222,11 +229,34 @@ class NovaCanvasMCPServer:
 
         colors = severity_colors.get(severity, severity_colors["HIGH"])
 
+        # Build incident-specific visual elements for the prompt
+        incident_lower = incident_type.lower()
+        visual_theme = "abstract digital shield icon, network nodes and connection lines"
+        if "crypto" in incident_lower or "mining" in incident_lower:
+            visual_theme = "cryptocurrency mining symbols, GPU server rack icons, blockchain patterns, overloaded compute nodes"
+        elif "exfil" in incident_lower or "data" in incident_lower:
+            visual_theme = "data stream flowing out of a secure vault, broken lock icon, database with arrows pointing outward"
+        elif "privilege" in incident_lower or "escalation" in incident_lower:
+            visual_theme = "ascending staircase of access levels, user icon gaining admin crown, broken access control barriers"
+        elif "unauthorized" in incident_lower or "access" in incident_lower:
+            visual_theme = "locked door with forced entry, warning barriers, intruder silhouette approaching secure zone"
+        elif "iam" in incident_lower or "policy" in incident_lower:
+            visual_theme = "identity management icons, key and lock symbols, policy document with warning signs"
+
+        services_visual = ""
+        if affected_services:
+            svc_names = ", ".join(affected_services[:5])
+            services_visual = f", cloud service icons for {svc_names}"
+
+        attack_visual = ""
+        if attack_pattern:
+            attack_visual = f", visual representation of {attack_pattern}"
+
         prompt = (
-            f"Professional cybersecurity incident report cover, modern enterprise design, "
-            f"dark background with glowing accents, abstract digital shield icon, "
-            f"network nodes and connection lines, subtle circuit board patterns, "
-            f"clean typography area at bottom, {severity.lower()} severity level indicator, "
+            f"Professional cybersecurity incident report cover for {incident_type}, "
+            f"modern enterprise design, dark background with {severity.lower()} severity glowing accents, "
+            f"{visual_theme}{services_visual}{attack_visual}, "
+            f"subtle circuit board patterns, clean typography area at bottom, "
             f"corporate security aesthetic, high quality, detailed, 4K resolution"
         )
 

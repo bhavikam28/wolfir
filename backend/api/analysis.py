@@ -110,17 +110,22 @@ async def analyze_real_cloudtrail(
         from services.cloudtrail_service import CloudTrailService
         cloudtrail_service_instance = CloudTrailService(profile=profile_to_use)
         
-        # Fetch real CloudTrail events
-        cloudtrail_events = await cloudtrail_service_instance.get_security_events(
-            days_back=days_back,
-            max_results=max_events
-        )
+        try:
+            cloudtrail_events = await cloudtrail_service_instance.get_security_events(
+                days_back=days_back,
+                max_results=max_events
+            )
+        except PermissionError as e:
+            raise HTTPException(
+                status_code=403,
+                detail=str(e)
+            ) from e
         
         if not cloudtrail_events:
             return {
                 "incident_id": f"INC-{uuid.uuid4().hex[:6].upper()}",
                 "status": "no_events",
-                "message": f"No security-relevant CloudTrail events found in the last {days_back} days",
+                "message": f"No security-relevant CloudTrail events found in the last {days_back} days. Ensure CloudTrail is enabled and IAM has cloudtrail:LookupEvents. See docs/IAM-POLICY-CLOUDTRAIL.md",
                 "analysis_time_ms": int((time.time() - start_time) * 1000),
                 "events_searched": 0
             }

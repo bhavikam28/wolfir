@@ -41,8 +41,24 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
 
     // Risk scores from orchestration
     const riskScores = orchestrationResult?.results?.risk_scores || [];
+    // Convert risk_level string to numeric score (backend returns { risk: { risk_level, confidence } })
+    const riskLevelToScore = (level: string): number => {
+      switch ((level || '').toUpperCase()) {
+        case 'CRITICAL': return 95;
+        case 'HIGH': return 75;
+        case 'MEDIUM': return 50;
+        case 'LOW': return 25;
+        default: return 0;
+      }
+    };
     const avgRiskScore = riskScores.length > 0
-      ? Math.round(riskScores.reduce((sum: number, r: any) => sum + (r.risk_score || 0), 0) / riskScores.length)
+      ? Math.round(riskScores.reduce((sum: number, r: any) => {
+          // Support both shapes: { risk_score: number } (demo) and { risk: { risk_level, confidence } } (real)
+          if (typeof r.risk_score === 'number') return sum + r.risk_score;
+          if (r.risk?.risk_level) return sum + riskLevelToScore(r.risk.risk_level);
+          if (r.risk?.severity) return sum + riskLevelToScore(r.risk.severity);
+          return sum;
+        }, 0) / riskScores.length)
       : Math.max(30, Math.round(100 - healthScore + 15));
 
     return {
@@ -121,6 +137,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               color: 'text-indigo-600',
               bg: 'bg-indigo-50',
               trend: null,
+              tooltip: `Total CloudTrail events matching security-relevant API actions (IAM, EC2, S3, Bedrock, Lambda, KMS, etc.) within the selected time range.`,
             },
             {
               label: 'Avg Risk Score',
@@ -130,6 +147,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               color: 'text-red-600',
               bg: 'bg-red-50',
               trend: 'high',
+              tooltip: `Average risk across top events scored by Nova Micro. Derived from risk_level: CRITICAL=95, HIGH=75, MEDIUM=50, LOW=25. Higher means more dangerous.`,
             },
             {
               label: 'AI Confidence',
@@ -138,6 +156,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               color: 'text-emerald-600',
               bg: 'bg-emerald-50',
               trend: null,
+              tooltip: `TemporalAgent's confidence in the timeline reconstruction. Based on event coverage, data quality, and correlation strength.`,
             },
             {
               label: 'Analysis Time',
@@ -146,6 +165,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               color: 'text-violet-600',
               bg: 'bg-violet-50',
               trend: null,
+              tooltip: `Total wall-clock time for the full orchestration pipeline (temporal analysis, risk scoring, remediation, and documentation).`,
             },
             {
               label: 'Agents Used',
@@ -154,6 +174,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               color: 'text-blue-600',
               bg: 'bg-blue-50',
               trend: null,
+              tooltip: `Number of specialized AI agents that ran: TemporalAgent (Nova 2 Lite), VisualAgent (Nova Pro), RiskScorer (Nova Micro), RemediationAgent (Nova 2 Lite), DocumentationAgent (Nova 2 Lite).`,
             },
             {
               label: 'Remediation Ready',
@@ -162,6 +183,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               color: 'text-emerald-600',
               bg: 'bg-emerald-50',
               trend: null,
+              tooltip: `Whether the RemediationAgent has generated an actionable step-by-step remediation plan for this incident.`,
             },
           ].map((metric, i) => (
             <motion.div
@@ -172,7 +194,17 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               className="bg-white rounded-xl border border-slate-200 p-4"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{metric.label}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{metric.label}</span>
+                  {metric.tooltip && (
+                    <span
+                      title={metric.tooltip}
+                      className="cursor-help text-slate-300 hover:text-slate-500 transition-colors"
+                    >
+                      <HelpCircle className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
                 <div className={`w-7 h-7 rounded-lg ${metric.bg} flex items-center justify-center`}>
                   <metric.icon className={`w-3.5 h-3.5 ${metric.color}`} />
                 </div>

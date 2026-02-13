@@ -123,68 +123,60 @@ class CloudTrailService:
         max_results: int = 100
     ) -> List[Dict[str, Any]]:
         """
-        Get security-relevant CloudTrail events
-        
-        Args:
-            days_back: How many days back to search
-            max_results: Maximum number of events
-            
-        Returns:
-            List of security events
+        Get security-relevant CloudTrail events (write/modify/delete only).
+
+        Uses CloudTrail LookupAttributes with ReadOnly=false to fetch all write events
+        across ANY AWS service (Bedrock, SageMaker, OpenSearch, etc.) — no hardcoded
+        event allowlist. Resilient to new AWS services.
         """
-        # Security-relevant event names
-        security_event_names = [
-            'CreateRole',
-            'AssumeRole',
-            'PutRolePolicy',
-            'AttachRolePolicy',
-            'CreateUser',
-            'PutUserPolicy',
-            'CreateAccessKey',
-            'AuthorizeSecurityGroupIngress',
-            'AuthorizeSecurityGroupEgress',
-            'RevokeSecurityGroupIngress',
-            'RevokeSecurityGroupEgress',
-            'ModifyInstanceAttribute',
-            'RunInstances',
-            'TerminateInstances',
-            'CreateBucket',
-            'PutBucketPolicy',
-            'PutObject',
-            'GetObject',
-            'DeleteBucket',
-            'DeleteObject'
-        ]
-        
         start_time = datetime.utcnow() - timedelta(days=days_back)
         end_time = datetime.utcnow()
-        
         all_events = []
-        
-        # Fetch events in batches (CloudTrail limits to 1 lookup attribute at a time)
-        for event_name in security_event_names[:10]:  # Limit to avoid too many calls
-            events = await self.lookup_events(
-                event_names=[event_name],
-                start_time=start_time,
-                end_time=end_time,
-                max_results=max_results // len(security_event_names[:10])
-            )
-            all_events.extend(events)
-            
-            if len(all_events) >= max_results:
-                break
-        
-        # Sort by time and remove duplicates
-        unique_events = {}
-        for event in all_events:
-            event_id = event.get('EventId')
-            if event_id and event_id not in unique_events:
-                unique_events[event_id] = event
-        
+        max_fetch = max(max_results * 5, 500)
+        pages_fetched = 0
+        max_pages = 50
+        try:
+            next_token = None
+            while len(all_events) < max_fetch and pages_fetched < max_pages:
+                params = {
+                    'StartTime': start_time,
+                    'EndTime': end_time,
+                    'MaxResults': 50,
+                    'LookupAttributes': [
+                        {'AttributeKey': 'ReadOnly', 'AttributeValue': 'false'}
+                    ],
+                }
+                if next_token:
+                    params['NextToken'] = next_token
+                response = await asyncio.to_thread(
+                    self.client.lookup_events,
+                    **params
+                )
+                events = response.get('Events', [])
+                pages_fetched += 1
+                all_events.extend(events)
+                next_token = response.get('NextToken')
+                if not next_token:
+                    break
+                if len(all_events) >= max_results:
+                    break
+            logger.info(f"CloudTrail: fetched {pages_fetched} pages, {len(all_events)} write events (ReadOnly=false) from last {days_back} days")
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', '')
+            if error_code == 'AccessDeniedException':
+                raise PermissionError(
+                    "CloudTrail access denied. Add cloudtrail:LookupEvents to IAM user. See docs/IAM-POLICY-CLOUDTRAIL.md"
+                ) from e
+            logger.error(f"CloudTrail get_security_events failed: {e}")
+            return []
+        unique = {}
+        for e in all_events:
+            eid = e.get('EventId')
+            if eid and eid not in unique:
+                unique[eid] = e
         sorted_events = sorted(
-            unique_events.values(),
-            key=lambda x: x.get('EventTime', ''),
+            unique.values(),
+            key=lambda x: str(x.get('EventTime', '')),
             reverse=True
         )
-        
         return sorted_events[:max_results]

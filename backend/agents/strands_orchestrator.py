@@ -133,7 +133,7 @@ def analyze_security_timeline(events_json: str, incident_type: str = "Unknown") 
         incident_type=incident_type
     ))
 
-    return json.dumps(result.dict() if hasattr(result, 'dict') else result)
+    return json.dumps(result.dict() if hasattr(result, 'dict') else result, default=str)
 
 
 @tool
@@ -153,7 +153,7 @@ def score_event_risk(event_json: str) -> str:
     event = json.loads(event_json) if isinstance(event_json, str) else event_json
     
     result = _run_async(agents["risk_scorer"].score_event_risk(event))
-    return json.dumps(result)
+    return json.dumps(result, default=str)
 
 
 @tool
@@ -184,7 +184,7 @@ def generate_remediation(root_cause: str, attack_pattern: str,
         blast_radius=blast_radius,
         timeline_events=timeline_events
     ))
-    return json.dumps(result)
+    return json.dumps(result, default=str)
 
 
 @tool
@@ -213,7 +213,7 @@ def generate_incident_documentation(incident_id: str, timeline_json: str,
         timeline=timeline,
         remediation_plan=remediation
     ))
-    return json.dumps(result)
+    return json.dumps(result, default=str)
 
 
 @tool
@@ -556,7 +556,7 @@ class StrandsOrchestrator:
         try:
             timeline_json = await asyncio.to_thread(
                 analyze_security_timeline,
-                events_json=json.dumps(events),
+                events_json=json.dumps(events, default=str),
                 incident_type=incident_type or "Unknown"
             )
             timeline = json.loads(timeline_json)
@@ -571,7 +571,7 @@ class StrandsOrchestrator:
         state["tools"]["risk_scorer"] = {"status": "RUNNING", "model": "amazon.nova-micro-v1:0"}
         try:
             critical_events = events[:5] if len(events) > 5 else events
-            tasks = [asyncio.to_thread(score_event_risk, event_json=json.dumps(e)) for e in critical_events]
+            tasks = [asyncio.to_thread(score_event_risk, event_json=json.dumps(e, default=str)) for e in critical_events]
             results = await asyncio.gather(*tasks, return_exceptions=True)
             risk_scores = []
             for i, result in enumerate(results):
@@ -588,41 +588,52 @@ class StrandsOrchestrator:
             logger.error(f"[{incident_id}] Risk scoring failed: {e}")
             state["tools"]["risk_scorer"] = {"status": "FAILED", "error": str(e)}
         
-        # Step 3: Remediation (Nova 2 Lite) — depends on timeline
+        # Step 3 & 4: Remediation + Documentation in parallel (both need timeline only)
         if state["results"].get("timeline"):
-            logger.info(f"[{incident_id}] Step 3: generate_remediation")
+            tl = state["results"]["timeline"]
             state["tools"]["remediation"] = {"status": "RUNNING", "model": "amazon.nova-2-lite-v1:0"}
-            try:
-                tl = state["results"]["timeline"]
-                remediation_json = await asyncio.to_thread(
+            state["tools"]["documentation"] = {"status": "RUNNING", "model": "amazon.nova-2-lite-v1:0"}
+            logger.info(f"[{incident_id}] Step 3+4: generate_remediation + generate_incident_documentation (parallel)")
+
+            async def run_remediation():
+                return await asyncio.to_thread(
                     generate_remediation,
                     root_cause=tl.get("root_cause", "Unknown"),
                     attack_pattern=tl.get("attack_pattern", "Unknown"),
                     blast_radius=tl.get("blast_radius", "Unknown"),
-                    timeline_events_json=json.dumps(tl.get("events", []))
+                    timeline_events_json=json.dumps(tl.get("events", []), default=str)
                 )
-                state["tools"]["remediation"]["status"] = "COMPLETED"
-                state["results"]["remediation_plan"] = json.loads(remediation_json)
-            except Exception as e:
-                logger.error(f"[{incident_id}] Remediation failed: {e}")
-                state["tools"]["remediation"] = {"status": "FAILED", "error": str(e)}
-        
-        # Step 4: Documentation (Nova 2 Lite) — depends on timeline + remediation
-        if state["results"].get("timeline") and state["results"].get("remediation_plan"):
-            logger.info(f"[{incident_id}] Step 4: generate_incident_documentation")
-            state["tools"]["documentation"] = {"status": "RUNNING", "model": "amazon.nova-2-lite-v1:0"}
-            try:
-                docs_json = await asyncio.to_thread(
+
+            async def run_documentation(remediation_json_str: str):
+                return await asyncio.to_thread(
                     generate_incident_documentation,
                     incident_id=incident_id,
-                    timeline_json=json.dumps(state["results"]["timeline"]),
-                    remediation_json=json.dumps(state["results"]["remediation_plan"])
+                    timeline_json=json.dumps(tl, default=str),
+                    remediation_json=remediation_json_str
                 )
-                state["tools"]["documentation"]["status"] = "COMPLETED"
-                state["results"]["documentation"] = json.loads(docs_json)
+
+            try:
+                rem_result, docs_result = await asyncio.gather(
+                    run_remediation(),
+                    run_documentation("{}"),  # Docs with empty remediation (parallel speed gain)
+                    return_exceptions=True
+                )
+                if isinstance(rem_result, Exception):
+                    logger.error(f"[{incident_id}] Remediation failed: {rem_result}")
+                    state["tools"]["remediation"] = {"status": "FAILED", "error": str(rem_result)}
+                else:
+                    state["tools"]["remediation"]["status"] = "COMPLETED"
+                    state["results"]["remediation_plan"] = json.loads(rem_result)
+                if isinstance(docs_result, Exception):
+                    logger.error(f"[{incident_id}] Documentation failed: {docs_result}")
+                    state["tools"]["documentation"] = {"status": "FAILED", "error": str(docs_result)}
+                else:
+                    state["tools"]["documentation"]["status"] = "COMPLETED"
+                    state["results"]["documentation"] = json.loads(docs_result)
             except Exception as e:
-                logger.error(f"[{incident_id}] Documentation failed: {e}")
-                state["tools"]["documentation"] = {"status": "FAILED", "error": str(e)}
+                logger.error(f"[{incident_id}] Remediation or Documentation failed: {e}")
+                state["tools"]["remediation"]["status"] = "FAILED"
+                state["tools"]["documentation"]["status"] = "FAILED"
         
         # Finalize
         total_time = int((time.time() - start_time) * 1000)

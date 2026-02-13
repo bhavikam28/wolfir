@@ -469,11 +469,19 @@ export const novaCanvasMCPAPI = {
   /**
    * Generate security report cover using Nova Canvas
    */
-  generateReportCover: async (incidentType: string, severity: string = 'CRITICAL', incidentId: string = 'INC-000000'): Promise<any> => {
+  generateReportCover: async (
+    incidentType: string,
+    severity: string = 'CRITICAL',
+    incidentId: string = 'INC-000000',
+    attackPattern: string = '',
+    affectedServices: string[] = [],
+  ): Promise<any> => {
     const response = await api.post('/api/mcp/nova-canvas/report-cover', {
       incident_type: incidentType,
       severity,
       incident_id: incidentId,
+      attack_pattern: attackPattern,
+      affected_services: affectedServices,
     });
     return response.data;
   },
