@@ -151,6 +151,87 @@ DEMO_REMEDIATION = SCENARIO_DATA["crypto-mining"]["remediation"]
 DEMO_RISK_SCORES = SCENARIO_DATA["crypto-mining"]["risk_scores"]
 
 
+def _build_demo_documentation(incident_id: str, incident_type: str, scenario: Dict[str, Any]) -> Dict[str, Any]:
+    """Build realistic JIRA/Slack/Confluence content for demo (replaces placeholder text)."""
+    timeline = scenario.get("timeline", {})
+    root_cause = timeline.get("root_cause", "Security incident detected.")
+    attack_pattern = timeline.get("attack_pattern", "See timeline for details.")
+    blast_radius = timeline.get("blast_radius", "Unknown.")
+    events = timeline.get("events", [])
+    steps = scenario.get("remediation", {}).get("steps", [])
+    step_list = "\n".join(f"- {s.get('action', 'Unknown')} ({s.get('severity', 'MEDIUM')})" for s in steps) or "- Review incident and remediate"
+    event_lines = "\n".join(
+        f"{i + 1}. {e.get('timestamp', '')} - {e.get('action', 'Event')} ({e.get('severity', 'N/A')})"
+        for i, e in enumerate(events[:8])
+    ) or "No events"
+    return {
+        "documentation": {
+            "jira": {
+                "title": f"SEC-{incident_id}",
+                "content": f"""[SEC] Security Incident {incident_id}
+
+**Summary:** {root_cause}
+
+**Priority:** Critical
+**Labels:** security, incident, aws
+**Affected Resources:** See timeline for impacted IAM, EC2, Security Groups
+**Root Cause:** {root_cause}
+**Attack Pattern:** {attack_pattern}
+**Blast Radius:** {blast_radius}
+
+**Remediation Steps:**
+{step_list}
+
+**Assignee:** Security Team""",
+            },
+            "slack": {
+                "title": "Security Alert",
+                "content": f"""🚨 *Security Incident* `{incident_id}`
+Post to #security-incidents
+
+*Root Cause:* {root_cause[:200]}{'...' if len(root_cause) > 200 else ''}
+*Remediation:* {len(steps)} steps
+<https://nova-sentinel.app/incidents/{incident_id}|View in Nova Sentinel>""",
+            },
+            "confluence": {
+                "title": f"Incident Postmortem: {incident_id}",
+                "content": f"""= Incident Postmortem: {incident_id} =
+
+h3. Timeline
+{event_lines}
+
+h3. Impact Analysis
+*Blast Radius:* {blast_radius}
+
+h3. Remediation
+{step_list}
+
+h3. Lessons Learned
+- Review least privilege for contractor/external roles
+- Enforce MFA for sensitive operations
+- Monitor security group changes""",
+            },
+        }
+    }
+
+
+def _enrich_step_classification(step: Dict[str, Any]) -> Dict[str, Any]:
+    """Add classification and reversible if missing."""
+    if step.get("classification"):
+        return step
+    action = (step.get("action", "") or "").lower()
+    automation = (step.get("automation", "") or "").lower()
+    if automation == "automated":
+        step["classification"] = "AUTO"
+    elif "delete" in action or "terminate" in action:
+        step["classification"] = "MANUAL"
+    else:
+        step["classification"] = "APPROVAL"
+    step.setdefault("reversible", True)
+    step.setdefault("rollback_command", step.get("api_call", ""))
+    return step
+
+
 def get_quick_demo_result(scenario_id: str, incident_type: str) -> Dict[str, Any]:
     """Return pre-computed orchestration result for instant demo (no Bedrock)."""
     scenario = SCENARIO_DATA.get(scenario_id, SCENARIO_DATA["crypto-mining"])
@@ -163,14 +244,17 @@ def get_quick_demo_result(scenario_id: str, incident_type: str) -> Dict[str, Any
             "temporal": {"status": "COMPLETED", "model": "amazon.nova-2-lite-v1:0"},
             "risk_scorer": {"status": "COMPLETED", "model": "amazon.nova-micro-v1:0"},
             "remediation": {"status": "COMPLETED", "model": "amazon.nova-2-lite-v1:0"},
-            "documentation": {"status": "COMPLETED", "model": "amazon.nova-2-lite-v1:0"},
+            "documentation": {"status": "COMPLETED", "model": "amazon.nova-micro-v1:0"},
         },
         "results": {
             "timeline": scenario["timeline"],
             "risk_scores": scenario["risk_scores"],
-            "remediation_plan": scenario["remediation"],
-            "documentation": {"summary": f"Incident {incident_id} — {incident_type}", "jira_ready": True},
+            "remediation_plan": {
+                **scenario["remediation"],
+                "steps": [_enrich_step_classification(dict(s)) for s in scenario["remediation"]["steps"]],
+            },
+            "documentation": _build_demo_documentation(incident_id, incident_type, scenario),
         },
         "model_used": "quick-demo (pre-computed)",
-        "metadata": {"scenario": scenario_id, "quick_demo": True},
+        "metadata": {"scenario": scenario_id, "quick_demo": True, "incident_type": incident_type},
     }

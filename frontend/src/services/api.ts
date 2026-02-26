@@ -201,6 +201,63 @@ export const documentationAPI = {
   },
 };
 
+export const remediationAPI = {
+  executeStep: async (stepId: string, incidentId: string, action: string, target: string): Promise<any> => {
+    const params = new URLSearchParams({ incident_id: incidentId, action, target, demo_mode: 'true' });
+    const response = await api.post(`/api/remediation/execute/${stepId}?${params}`);
+    return response.data;
+  },
+  getExecutionProofs: async (incidentId: string): Promise<{ proofs: any[] }> => {
+    const response = await api.get(`/api/remediation/execution-proof/${incidentId}`);
+    return response.data;
+  },
+};
+
+export const incidentHistoryAPI = {
+  list: async (accountId: string = 'demo-account'): Promise<{ count: number; incidents: any[] }> => {
+    const response = await api.get(`/api/incidents?account_id=${encodeURIComponent(accountId)}`);
+    return response.data;
+  },
+  stats: async (accountId: string = 'demo-account'): Promise<any> => {
+    const response = await api.get(`/api/incidents/stats?account_id=${encodeURIComponent(accountId)}`);
+    return response.data;
+  },
+  correlations: async (accountId: string = 'demo-account'): Promise<any> => {
+    const response = await api.get(`/api/incidents/correlations?account_id=${encodeURIComponent(accountId)}`);
+    return response.data;
+  },
+  getIncident: async (incidentId: string, accountId: string = 'demo-account'): Promise<any> => {
+    const response = await api.get(`/api/incidents/${incidentId}?account_id=${encodeURIComponent(accountId)}`);
+    return response.data;
+  },
+  search: async (query: string, accountId: string = 'demo-account'): Promise<{ count: number; incidents: any[] }> => {
+    const response = await api.post('/api/incidents/search', { query, account_id: accountId });
+    return response.data;
+  },
+};
+
+export const threatIntelAPI = {
+  lookup: async (ip: string): Promise<any> => {
+    const response = await api.post('/api/threat-intel/lookup', { ip });
+    return response.data;
+  },
+  enrichTimeline: async (events: any[]): Promise<{ cache: Array<{ ip: string; reputation: any }> }> => {
+    const response = await api.post('/api/threat-intel/enrich-timeline', { events });
+    return response.data;
+  },
+};
+
+export const reportAPI = {
+  exportPdf: async (incidentId: string, markdown: string, coverImageBase64?: string | null): Promise<Blob> => {
+    const response = await api.post('/api/report/export-pdf', {
+      incident_id: incidentId,
+      markdown,
+      cover_image_base64: coverImageBase64 || undefined,
+    }, { responseType: 'blob' });
+    return response.data;
+  },
+};
+
 export const voiceAPI = {
   /**
    * Send a voice query to Aria (Nova 2 Lite)

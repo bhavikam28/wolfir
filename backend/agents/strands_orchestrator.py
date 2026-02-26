@@ -34,6 +34,7 @@ from mcp_servers.cloudtrail_mcp import get_cloudtrail_mcp
 from mcp_servers.iam_mcp import get_iam_mcp
 from mcp_servers.cloudwatch_mcp import get_cloudwatch_mcp
 from mcp_servers.nova_canvas_mcp import get_nova_canvas_mcp
+from services.incident_memory import get_incident_memory
 from utils.logger import logger
 
 
@@ -432,6 +433,28 @@ def nova_canvas_generate_report_cover(incident_type: str, severity: str = "CRITI
         return json.dumps({"error": str(e), "source": "nova-canvas-mcp-server"})
 
 
+@tool
+def query_incident_history(account_id: str = "demo-account", limit: int = 5) -> str:
+    """Query recent incidents from cross-incident memory (DynamoDB).
+    
+    Use this to check if similar incidents occurred before, for campaign correlation.
+    
+    Args:
+        account_id: AWS account ID or logical account identifier
+        limit: Maximum number of recent incidents to return (default 5)
+    
+    Returns:
+        JSON with recent incidents: incident_id, timestamp, severity, attack_type, mitre_techniques.
+    """
+    try:
+        memory = get_incident_memory()
+        incidents = _run_async(memory.get_recent_incidents(account_id=account_id, limit=limit))
+        return json.dumps({"incidents": incidents, "account_id": account_id})
+    except Exception as e:
+        logger.warning(f"query_incident_history failed: {e}")
+        return json.dumps({"error": str(e), "incidents": [], "account_id": account_id})
+
+
 # ========== ALL STRANDS TOOLS ==========
 STRANDS_TOOLS = [
     # Core Nova agent tools
@@ -440,6 +463,7 @@ STRANDS_TOOLS = [
     generate_remediation,
     generate_incident_documentation,
     query_security_incident,
+    query_incident_history,
     # AWS MCP server tools
     cloudtrail_lookup,
     cloudtrail_anomaly_scan,
@@ -464,15 +488,16 @@ CORE ANALYSIS (Nova AI Models):
 3. generate_remediation — Step-by-step remediation plans (Nova 2 Lite)
 4. generate_incident_documentation — JIRA/Slack/Confluence docs (Nova 2 Lite)
 5. query_security_incident — Answer questions about incidents (Nova 2 Lite)
+6. query_incident_history — Query past incidents from cross-incident memory (campaign correlation)
 
 AWS MCP SERVER TOOLS:
-6. cloudtrail_lookup — Lookup CloudTrail events by category (cloudtrail-mcp-server)
-7. cloudtrail_anomaly_scan — Scan for security anomalies (cloudtrail-mcp-server)
-8. iam_audit — Audit IAM users/roles for issues (iam-mcp-server)
-9. iam_policy_analysis — Analyze specific IAM policies (iam-mcp-server)
-10. cloudwatch_security_check — Monitor security alarms and EC2 metrics (cloudwatch-mcp-server)
-11. cloudwatch_billing_check — Detect billing anomalies (cloudwatch-mcp-server)
-12. nova_canvas_generate_report_cover — Generate visual report covers (nova-canvas-mcp-server)
+7. cloudtrail_lookup — Lookup CloudTrail events by category (cloudtrail-mcp-server)
+8. cloudtrail_anomaly_scan — Scan for security anomalies (cloudtrail-mcp-server)
+9. iam_audit — Audit IAM users/roles for issues (iam-mcp-server)
+10. iam_policy_analysis — Analyze specific IAM policies (iam-mcp-server)
+11. cloudwatch_security_check — Monitor security alarms and EC2 metrics (cloudwatch-mcp-server)
+12. cloudwatch_billing_check — Detect billing anomalies (cloudwatch-mcp-server)
+13. nova_canvas_generate_report_cover — Generate visual report covers (nova-canvas-mcp-server)
 
 When analyzing an incident:
 - Start with cloudtrail_lookup or analyze_security_timeline to understand the attack
@@ -529,18 +554,21 @@ class StrandsOrchestrator:
         events: List[Dict[str, Any]],
         diagram_data: Optional[bytes] = None,
         incident_type: Optional[str] = None,
-        voice_query: Optional[str] = None
+        voice_query: Optional[str] = None,
+        account_id: str = "demo-account",
     ) -> Dict[str, Any]:
         """
         Execute deterministic pipeline using Strands tools.
         
         Calls each tool directly in dependency order for predictable demo behavior.
         Uses the same @tool-decorated functions that the Strands Agent would use.
+        Integrates incident memory: correlates at start (post-timeline), saves at end.
         """
         incident_id = f"INC-{uuid.uuid4().hex[:6].upper()}"
         start_time = time.time()
+        correlation_result = None
         
-        logger.info(f"[{incident_id}] Strands pipeline: starting deterministic execution")
+        logger.info(f"[{incident_id}] Strands pipeline: starting deterministic execution (account={account_id})")
         
         state = {
             "incident_id": incident_id,
@@ -565,6 +593,20 @@ class StrandsOrchestrator:
         except Exception as e:
             logger.error(f"[{incident_id}] Timeline failed: {e}")
             state["tools"]["temporal"] = {"status": "FAILED", "error": str(e)}
+        
+        # Correlation: query incident memory for past similar incidents
+        try:
+            memory = get_incident_memory()
+            partial_incident = {"incident_id": incident_id, "results": state["results"], "metadata": {"incident_type": incident_type}, "timeline": state["results"].get("timeline")}
+            correlation_result = await memory.correlate_incident(partial_incident, account_id=account_id)
+            state["results"]["correlation"] = {
+                "correlation_summary": correlation_result.correlation_summary,
+                "campaign_probability": correlation_result.campaign_probability,
+                "pattern_matches": len(correlation_result.pattern_matches),
+                "technique_overlaps": len(correlation_result.technique_overlaps),
+            }
+        except Exception as e:
+            logger.warning(f"[{incident_id}] Correlation failed: {e}")
         
         # Step 2: Risk Scoring (Nova Micro) — parallel for speed
         logger.info(f"[{incident_id}] Step 2: score_event_risk (parallel)")
@@ -647,6 +689,19 @@ class StrandsOrchestrator:
         
         logger.info(f"[{incident_id}] Strands pipeline complete in {total_time}ms")
         
+        # Save incident to memory for future correlation
+        try:
+            memory = get_incident_memory()
+            incident_data = {
+                "incident_id": incident_id,
+                "results": state["results"],
+                "metadata": {"incident_type": incident_type},
+                "timeline": state["results"].get("timeline"),
+            }
+            await memory.save_incident(incident_data, account_id=account_id)
+        except Exception as e:
+            logger.warning(f"[{incident_id}] Failed to save incident to memory: {e}")
+        
         return {
             "incident_id": incident_id,
             "status": "completed",
@@ -656,6 +711,7 @@ class StrandsOrchestrator:
             "model_used": "strands-agents-orchestration",
             "metadata": {
                 "incident_type": incident_type,
+                "account_id": account_id,
                 "tools_used": list(state["tools"].keys()),
                 "framework": "strands-agents",
                 "mcp_servers": [

@@ -62,7 +62,7 @@ Return ONLY valid JSON, no additional text."""
             response = await self.bedrock.invoke_nova_micro(
                 prompt=prompt,
                 max_tokens=500,
-                temperature=0.0  # Deterministic for risk scoring
+                temperature=0.1  # Low for risk scoring consistency
             )
             
             # Parse response
@@ -126,7 +126,7 @@ Return ONLY valid JSON, no additional text."""
             response = await self.bedrock.invoke_nova_micro(
                 prompt=prompt,
                 max_tokens=300,
-                temperature=0.0
+                temperature=0.1
             )
             
             risk_assessment = self._parse_risk_response(response['text'])

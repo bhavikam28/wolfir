@@ -7,6 +7,7 @@ import {
   Shield, CheckCircle2, AlertTriangle, ChevronDown,
   ChevronUp, Play, Clock, Terminal, Copy, Brain
 } from 'lucide-react';
+import { remediationAPI } from '../../services/api';
 
 interface RemediationStep {
   step: number;
@@ -26,6 +27,7 @@ interface RemediationPlanData {
 
 interface RemediationPlanProps {
   plan: RemediationPlanData | any;
+  incidentId?: string;
   onApprove?: (plan: RemediationPlanData) => void;
   onExecute?: (stepIndex: number) => void;
   executing?: boolean;
@@ -33,10 +35,11 @@ interface RemediationPlanProps {
 
 type StepStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
-const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onExecute, executing = false }) => {
+const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, onApprove, onExecute, executing = false }) => {
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
   const [approved, setApproved] = useState(false);
   const [stepStatuses, setStepStatuses] = useState<Record<number, StepStatus>>({});
+  const [stepProofs, setStepProofs] = useState<Record<number, any>>({});
 
   const toggleStep = (step: number) => {
     const newExpanded = new Set(expandedSteps);
@@ -185,16 +188,33 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
           const risk = (step.risk || step.risk_level || step.severity || 'MEDIUM').toUpperCase();
           const apiCall = step.api_call || step.command || step.cli_command || step.aws_cli_command;
           const riskIfSkipped = step.risk_if_skipped;
+          const classification = step.classification || (step.automation === 'automated' ? 'AUTO' : 'APPROVAL');
+          const reversible = step.reversible !== false;
           const automation = step.automation === 'automated' ? 'Automated' : 'Manual approval required';
           const status = stepStatuses[stepNumber] || 'pending';
           const isExpanded = expandedSteps.has(stepNumber);
+          const proof = stepProofs[stepNumber];
 
-          const handleExecute = (e: React.MouseEvent) => {
+          const handleExecute = async (e: React.MouseEvent) => {
             e.stopPropagation();
-            if (apiCall) {
-              navigator.clipboard?.writeText(apiCall);
-              setStepStatuses(prev => ({ ...prev, [stepNumber]: 'in_progress' }));
-              setTimeout(() => setStepStatuses(prev => ({ ...prev, [stepNumber]: 'completed' })), 1500);
+            setStepStatuses(prev => ({ ...prev, [stepNumber]: 'in_progress' }));
+            try {
+              if (incidentId && (classification === 'AUTO' || classification === 'APPROVAL')) {
+                const res = await remediationAPI.executeStep(
+                  `step-${stepNumber}`,
+                  incidentId,
+                  action,
+                  (target || 'unknown').toString()
+                );
+                if (res.execution_proof) {
+                  setStepProofs(prev => ({ ...prev, [stepNumber]: res.execution_proof }));
+                }
+              } else if (apiCall) {
+                navigator.clipboard?.writeText(apiCall);
+              }
+              setStepStatuses(prev => ({ ...prev, [stepNumber]: 'completed' }));
+            } catch {
+              setStepStatuses(prev => ({ ...prev, [stepNumber]: 'failed' }));
             }
             onExecute?.(index);
           };
@@ -230,10 +250,17 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
                     <h4 className="text-sm font-bold text-slate-900 truncate">{action}</h4>
                     <p className="text-[11px] text-slate-500 truncate">{target && `${target} · `}{reason}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                     <StatusBadge />
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getRiskStyles(risk)}`}>
                       {risk}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                      classification === 'AUTO' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                      classification === 'APPROVAL' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                      'bg-red-100 text-red-700 border border-red-200'
+                    }`}>
+                      {classification === 'AUTO' ? '🟢 AUTO' : classification === 'APPROVAL' ? '🟠 APPROVAL' : '🔴 MANUAL'}
                     </span>
                   </div>
                 </div>
@@ -261,11 +288,16 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
                           <p className="text-xs text-amber-700">{riskIfSkipped}</p>
                         </div>
                       )}
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-500">NovaActAgent:</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${step.automation === 'automated' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
-                          {automation}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-500">Classification:</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          classification === 'AUTO' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                          classification === 'APPROVAL' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                          'bg-red-100 text-red-700 border border-red-200'
+                        }`}>
+                          {classification === 'AUTO' ? '🟢 AUTO-EXECUTE' : classification === 'APPROVAL' ? '🟠 REQUIRES APPROVAL' : '🔴 MANUAL ONLY'}
                         </span>
+                        <span className="text-[10px] text-slate-600">{reversible ? '✅ Reversible' : '⚠️ Irreversible'}</span>
                       </div>
                       {apiCall && (
                         <div>
@@ -283,13 +315,33 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, onApprove, onEx
                           </code>
                         </div>
                       )}
-                      <button
-                        onClick={handleExecute}
-                        disabled={executing}
-                        className="btn-nova px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 hover:bg-indigo-700 transition-colors"
-                      >
-                        <Play className="w-3.5 h-3.5" /> {apiCall ? 'Copy Command' : 'Execute'} Step
-                      </button>
+                      {proof ? (
+                        <div className="rounded-lg border border-emerald-200 bg-slate-900 text-green-400 p-4 font-mono text-xs space-y-2">
+                          <div className="font-bold text-emerald-400">✅ REMEDIATION EXECUTED</div>
+                          <div>Action: {proof.action_type}</div>
+                          <div>Target: {proof.resource_arn}</div>
+                          <div>Executed By: {proof.executed_by}</div>
+                          <div>Status: {proof.status}</div>
+                          {proof.rollback_command && (
+                            <div className="pt-2 border-t border-slate-700">
+                              <span className="text-amber-400">Rollback: </span>{proof.rollback_command}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleExecute}
+                          disabled={executing}
+                          className={`px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 transition-colors ${
+                            classification === 'APPROVAL'
+                              ? 'bg-amber-600 text-white hover:bg-amber-700'
+                              : 'btn-nova bg-indigo-600 text-white hover:bg-indigo-700'
+                          }`}
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          {classification === 'APPROVAL' ? 'Approve & Execute' : classification === 'AUTO' ? 'Execute' : apiCall ? 'Copy Command' : 'Execute'} Step
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 )}

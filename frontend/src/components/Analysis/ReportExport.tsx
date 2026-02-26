@@ -9,7 +9,7 @@ import {
   Clock, Shield, AlertTriangle, Target, ChevronDown, ChevronUp, Loader2, Image
 } from 'lucide-react';
 import type { Timeline, OrchestrationResponse } from '../../types/incident';
-import { novaCanvasMCPAPI } from '../../services/api';
+import { novaCanvasMCPAPI, reportAPI } from '../../services/api';
 
 interface ReportExportProps {
   timeline: Timeline;
@@ -50,6 +50,7 @@ const ReportExport: React.FC<ReportExportProps> = ({
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const getSteps = () =>
     remediationPlan?.steps ||
@@ -185,6 +186,27 @@ ${REPORT_MODEL_ATTRIBUTION}
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const coverB64 = coverImage?.startsWith('data:') ? coverImage : coverImage ? `data:image/png;base64,${coverImage}` : null;
+      const blob = await reportAPI.exportPdf(incidentId || 'analysis', reportMarkdown, coverB64);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nova-sentinel-report-${incidentId || 'analysis'}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      // Fallback: trigger print (user can save as PDF)
+      handlePrintReport(!!coverImage, !coverImage);
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const handleGenerateCover = async () => {
@@ -342,6 +364,14 @@ ${REPORT_MODEL_ATTRIBUTION}
               </div>
             </motion.button>
             <div className="space-y-1.5">
+              <button
+                onClick={handleDownloadPdf}
+                disabled={pdfLoading}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-violet-300 bg-violet-100 text-violet-800 text-[11px] font-bold hover:bg-violet-200 transition-colors disabled:opacity-50"
+              >
+                {pdfLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                {pdfLoading ? 'Generating...' : 'Download PDF (Nova Canvas)'}
+              </button>
               <button
                 onClick={() => handlePrintReport(true, true)}
                 className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-bold hover:bg-slate-100 transition-colors"

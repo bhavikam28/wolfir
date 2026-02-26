@@ -30,9 +30,10 @@ import { formatAnalysisTime, formatLastAnalyzed } from './utils/formatting';
 import { hasAwsServicePrincipalInTimeline } from './utils/awsServiceDetection';
 import { demoAnalysisData } from './data/demoAnalysis';
 import { DEFAULT_DEMO_SCENARIOS } from './data/demoScenarios';
-import { getQuickDemoResult } from './data/quickDemoResult';
 import AgentProgress from './components/Analysis/AgentProgress';
 import VoiceAssistant from './components/Analysis/VoiceAssistant';
+import IncidentHistory from './components/Dashboard/IncidentHistory';
+import AIPipelineSecurity from './components/Dashboard/AIPipelineSecurity';
 
 type AppMode = 'landing' | 'demo' | 'console';
 
@@ -122,7 +123,8 @@ function App() {
             else if (scenarioId === 'unauthorized-access') events = (await demoAPI.getUnauthorizedAccessScenario()).events;
             return orchestrationAPI.analyzeIncident(events, undefined, incidentType);
           })()
-        : getQuickDemoResult(scenarioId);
+        : await demoAPI.getQuickDemo(scenarioId);
+      setBackendOffline(false); // Backend responded — no longer offline
       setOrchestrationResult(result);
 
       if (result.results.remediation_plan) {
@@ -609,6 +611,16 @@ function App() {
       case 'timeline':
         return <TimelineView timeline={analysisResult.timeline} />;
 
+      case 'incident-history':
+        return (
+          <IncidentHistory
+            accountId="demo-account"
+            onSelectIncident={(id) => {
+              // Could navigate to incident detail - for now no-op or show toast
+            }}
+          />
+        );
+
       case 'attack-path':
         return (
           <AttackPathDiagram
@@ -648,6 +660,7 @@ function App() {
         return remediationPlan ? (
           <RemediationPlan
             plan={remediationPlan}
+            incidentId={orchestrationResult?.incident_id || analysisResult?.incident_id}
             onApprove={async () => {
               try {
                 setLoading(true);
@@ -786,6 +799,9 @@ function App() {
           </div>
         );
 
+      case 'ai-pipeline':
+        return <AIPipelineSecurity />;
+
       case 'export':
         return analysisResult ? (
           <ReportExport
@@ -878,6 +894,9 @@ function App() {
           incidentContext={orchestrationResult?.results ? {
             timeline: orchestrationResult.results.timeline,
             remediation_plan: orchestrationResult.results.remediation_plan,
+            risk_scores: orchestrationResult.results.risk_scores,
+            incident_id: orchestrationResult.incident_id,
+            incident_type: orchestrationResult.metadata?.incident_type,
           } : undefined}
           incidentId={orchestrationResult?.incident_id || analysisResult?.incident_id}
           isAnalysisComplete={!!analysisResult && !loading}

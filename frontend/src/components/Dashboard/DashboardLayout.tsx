@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Shield, GitBranch, Scale, DollarSign,
-  FileText, Download, Mic, Image, Clock, 
+  FileText, Download, Mic, Image, Clock, Database,
   ChevronLeft, ChevronRight as ChevronRightIcon, ArrowLeft, Menu, X
 } from 'lucide-react';
 import NovaSentinelLogo from '../Logo';
@@ -18,7 +18,7 @@ export interface SidebarFeature {
   locked: boolean;
   badge?: string;
   badgeColor?: string;
-  group: 'analysis' | 'intelligence' | 'tools';
+  group: 'analysis' | 'intelligence' | 'tools' | 'ai_governance';
 }
 
 export const SIDEBAR_FEATURES: SidebarFeature[] = [
@@ -26,6 +26,7 @@ export const SIDEBAR_FEATURES: SidebarFeature[] = [
   { id: 'overview', label: 'Security Overview', icon: LayoutDashboard, locked: false, group: 'analysis' },
   { id: 'timeline', label: 'Incident Timeline', icon: Clock, locked: false, group: 'analysis' },
   { id: 'attack-path', label: 'Attack Path', icon: GitBranch, locked: false, group: 'analysis' },
+  { id: 'incident-history', label: 'Incident History', icon: Database, locked: false, group: 'analysis' },
   // Intelligence group
   { id: 'compliance', label: 'Compliance Mapping', icon: Scale, locked: false, badge: '6', badgeColor: 'bg-emerald-100 text-emerald-700', group: 'intelligence' },
   { id: 'cost', label: 'Cost Impact', icon: DollarSign, locked: false, group: 'intelligence' },
@@ -35,6 +36,7 @@ export const SIDEBAR_FEATURES: SidebarFeature[] = [
   { id: 'aria', label: 'Aria Voice AI', icon: Mic, locked: false, group: 'tools' },
   { id: 'documentation', label: 'Documentation', icon: FileText, locked: false, group: 'tools' },
   { id: 'export', label: 'Export Report', icon: Download, locked: false, group: 'tools' },
+  { id: 'ai-pipeline', label: 'AI Pipeline Security', icon: Shield, locked: false, group: 'ai_governance' },
 ];
 
 interface DashboardLayoutProps {
@@ -66,6 +68,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { key: 'analysis', label: 'Analysis' },
     { key: 'intelligence', label: 'Intelligence' },
     { key: 'tools', label: 'Tools' },
+    { key: 'ai_governance', label: 'AI Governance' },
   ];
 
   const renderSidebar = (isMobile = false) => (

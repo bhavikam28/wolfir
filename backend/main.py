@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-from api import analysis, demo, visual, remediation, voice, orchestration, storage, documentation, auth, mcp, nova_act
+from api import analysis, demo, visual, remediation, voice, orchestration, storage, documentation, auth, mcp, nova_act, incident_history, ai_security, threat_intel, report
 from utils.config import get_settings
 from utils.logger import logger
 
@@ -118,6 +118,10 @@ app.include_router(documentation.router)
 app.include_router(auth.router)
 app.include_router(mcp.router)
 app.include_router(nova_act.router)
+app.include_router(incident_history.router)
+app.include_router(ai_security.router)
+app.include_router(threat_intel.router)
+app.include_router(report.router)
 
 # Mount MCP SSE endpoint for standard MCP clients
 # This provides a standards-compliant MCP interface alongside our REST API

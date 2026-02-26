@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 
-def setup_logger(name: str = "secops-lens") -> logging.Logger:
+def setup_logger(name: str = "nova-sentinel") -> logging.Logger:
     """
     Configure and return a logger instance
     

@@ -106,8 +106,11 @@ async def get_quick_demo(scenario_id: str) -> Dict[str, Any]:
     
     Use this when you need a fast demo without Bedrock API calls.
     Real analysis uses /api/orchestration/analyze-incident.
+    Saves to incident memory so Incident History and Aria correlation work.
     """
     from utils.demo_results import get_quick_demo_result
+    from services.incident_memory import get_incident_memory
+
     names = {
         "crypto-mining": "Cryptocurrency Mining Attack",
         "data-exfiltration": "Data Exfiltration",
@@ -115,4 +118,20 @@ async def get_quick_demo(scenario_id: str) -> Dict[str, Any]:
         "unauthorized-access": "Unauthorized Access",
     }
     incident_type = names.get(scenario_id, "Security Incident")
-    return get_quick_demo_result(scenario_id, incident_type)
+    result = get_quick_demo_result(scenario_id, incident_type)
+
+    # Save to incident memory so Incident History and Aria correlation work
+    try:
+        memory = get_incident_memory()
+        incident_data = {
+            "incident_id": result["incident_id"],
+            "results": result["results"],
+            "metadata": result.get("metadata", {}),
+            "timeline": result["results"].get("timeline"),
+        }
+        await memory.save_incident(incident_data, account_id="demo-account")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Failed to save demo to incident memory: {e}")
+
+    return result

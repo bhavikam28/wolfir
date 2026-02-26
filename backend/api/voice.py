@@ -25,6 +25,7 @@ class VoiceQueryRequest(BaseModel):
     """Request model for text-based voice queries (Path A: Nova 2 Lite)"""
     query: str
     incident_context: Optional[Dict[str, Any]] = None
+    account_id: str = "demo-account"
 
 
 class AudioQueryRequest(BaseModel):
@@ -32,6 +33,7 @@ class AudioQueryRequest(BaseModel):
     audio_b64: str  # Base64-encoded audio data
     audio_format: str = "wav"  # Audio format (wav, pcm, webm)
     incident_context: Optional[Dict[str, Any]] = None
+    account_id: str = "demo-account"
 
 
 class VoiceSummaryRequest(BaseModel):
@@ -54,7 +56,8 @@ async def voice_query(request: VoiceQueryRequest) -> Dict[str, Any]:
         
         result = await voice_agent.process_voice_query(
             query_text=request.query,
-            incident_context=request.incident_context
+            incident_context=request.incident_context,
+            account_id=request.account_id or "demo-account",
         )
         
         return result
@@ -101,7 +104,8 @@ async def audio_query(request: AudioQueryRequest) -> Dict[str, Any]:
         result = await voice_agent.process_audio_query(
             audio_bytes=audio_bytes,
             audio_format=request.audio_format,
-            incident_context=request.incident_context
+            incident_context=request.incident_context,
+            account_id=request.account_id or "demo-account",
         )
         
         return result

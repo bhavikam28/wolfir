@@ -274,7 +274,7 @@ const IncidentArchitectureDiagram: React.FC<IncidentArchitectureDiagramProps> = 
         </span>
       </div>
       <div className="p-5 overflow-y-auto max-h-[480px] min-h-[320px] rounded-b-xl relative">
-        <div className="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50/50 px-5 py-4">
+        <div className="border-2 border-solid border-slate-300 rounded-xl bg-slate-50/50 px-5 py-4">
           <div className="text-sm font-semibold text-slate-600 mb-4">VPC (10.0.0.0/16)</div>
           <div className="space-y-6">
           {layout.map((row, ri) => {

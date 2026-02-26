@@ -10,6 +10,7 @@ import {
   MessageSquare, ChevronDown, ChevronUp,
   Shield, Search, FileText, DollarSign
 } from 'lucide-react';
+import { incidentHistoryAPI } from '../../services/api';
 
 interface VoiceAssistantProps {
   incidentContext?: any;
@@ -37,6 +38,7 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [incidentMemoryCount, setIncidentMemoryCount] = useState<number | null>(null);
   
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -47,6 +49,12 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Fetch incident memory count when Aria opens with analysis context
+  useEffect(() => {
+    if (!isOpen || !isAnalysisComplete) return;
+    incidentHistoryAPI.list('demo-account').then((r) => setIncidentMemoryCount(r.count ?? 0)).catch(() => setIncidentMemoryCount(null));
+  }, [isOpen, isAnalysisComplete]);
 
   // Initialize with welcome message
   useEffect(() => {
@@ -59,7 +67,7 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
           : "Hi, I'm Aria — Nova Sentinel's AI-powered security assistant. Start an analysis, and I can walk you through findings, explain threats, or recommend next steps. You can also ask me about AWS security best practices.",
         timestamp: new Date(),
         suggestions: isAnalysisComplete 
-          ? ['What is the root cause?', 'Explain the attack path', 'Show compliance impact', 'Estimate cost impact']
+          ? ['What is the root cause?', 'Explain the attack path', 'Show compliance impact', 'Have you seen this attack pattern before?']
           : ['How does Nova Sentinel work?', 'What scenarios can you analyze?', 'Explain multi-agent architecture']
       }]);
     }
@@ -373,6 +381,13 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
                 </button>
               </div>
             </div>
+
+            {/* Memory Badge */}
+            {isAnalysisComplete && incidentMemoryCount !== null && incidentMemoryCount > 0 && (
+              <div className="px-4 py-1.5 bg-slate-50/80 border-b border-slate-100 flex-shrink-0">
+                <span className="text-[10px] text-slate-600 font-medium">🧠 Memory: {incidentMemoryCount} past incident{incidentMemoryCount !== 1 ? 's' : ''} loaded</span>
+              </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

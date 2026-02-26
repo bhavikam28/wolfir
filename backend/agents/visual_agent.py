@@ -103,7 +103,7 @@ Provide a detailed analysis in JSON format."""
                 image_data=image_data,
                 image_format=image_format,
                 max_tokens=4000,
-                temperature=0.1
+                temperature=0.25
             )
             
             analysis_text = response.get("text", "")
@@ -182,7 +182,7 @@ Provide findings in JSON format with:
                 image_data=image_data,
                 image_format=image_format,
                 max_tokens=3000,
-                temperature=0.1
+                temperature=0.25
             )
 
             analysis_text = response.get("text", "")

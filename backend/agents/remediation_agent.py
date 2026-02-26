@@ -104,7 +104,7 @@ IMPORTANT: Each step MUST include a clear "reason" field explaining why this rem
             response = await self.bedrock.invoke_nova_lite(
                 prompt=prompt,
                 max_tokens=4000,
-                temperature=0.2
+                temperature=0.35
             )
             
             plan_text = response.get("text", "")
@@ -200,7 +200,8 @@ Provide validation in JSON format with:
                 else:
                     raise ValueError("No JSON found")
             
-            return json.loads(json_text)
+            plan = json.loads(json_text)
+            return self._ensure_step_defaults(plan)
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.warning(f"Could not parse plan JSON: {e}")
@@ -212,6 +213,33 @@ Provide validation in JSON format with:
                 "approval_required": True,
                 "raw_plan": text
             }
+
+    def _ensure_step_defaults(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        """Add default values for fields expected by frontend."""
+        for step in plan.get("steps", []) or []:
+            if isinstance(step, dict):
+                step.setdefault("requires_approval", step.get("risk_level") in ("HIGH", "CRITICAL"))
+                step.setdefault("rollback_command", step.get("command", ""))
+                step.setdefault("estimated_time", "2 minutes")
+                step.setdefault("risk_level", step.get("risk", "MEDIUM"))
+                step.setdefault("classification", self._classify_step(step))
+                step.setdefault("reversible", bool("rollback" in str(step.get("rollback_command", "")).lower() or "undo" in str(step.get("reason", "")).lower()))
+        return plan
+
+    def _classify_step(self, step: Dict[str, Any]) -> str:
+        """Classify step as AUTO | APPROVAL | MANUAL based on action/resource."""
+        action = (step.get("action", "") or "").lower()
+        target = (step.get("target", "") or "").lower()
+        automation = (step.get("automation", "") or "").lower()
+        if automation == "automated":
+            return "AUTO"
+        if "delete" in action or "terminate" in action or "remove" in action and "policy" not in action:
+            return "MANUAL"
+        if "revoke" in action or "detach" in action or "disable" in action or "restrict" in action:
+            return "APPROVAL"
+        if "enable" in action or "tag" in action or "block" in action:
+            return "AUTO"
+        return "APPROVAL"
     
     def _parse_validation(self, text: str) -> Dict[str, Any]:
         """Parse validation results from text response"""

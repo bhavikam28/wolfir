@@ -73,7 +73,7 @@ class DocumentationAgent:
         response = await self.bedrock.invoke_nova_lite(
             prompt=user_prompt,
             max_tokens=4000,
-            temperature=0.2
+            temperature=0.65
         )
         
         documentation_text = response.get("text", "")

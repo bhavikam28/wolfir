@@ -27,6 +27,7 @@ import base64
 from typing import Dict, Any, Optional
 
 from services.bedrock_service import BedrockService
+from services.incident_memory import get_incident_memory
 from utils.logger import logger
 
 
@@ -49,7 +50,8 @@ class VoiceAgent:
     async def process_voice_query(
         self,
         query_text: str,
-        incident_context: Optional[Dict[str, Any]] = None
+        incident_context: Optional[Dict[str, Any]] = None,
+        account_id: str = "demo-account",
     ) -> Dict[str, Any]:
         """
         Process a text-based voice query about security incidents.
@@ -71,6 +73,11 @@ class VoiceAgent:
             
             # Build context from current incident
             context_str = self._build_context_string(incident_context)
+            # Inject incident memory (past incidents + correlation) for Aria
+            if incident_context:
+                memory_ctx = await self._get_memory_context(incident_context, account_id)
+                if memory_ctx:
+                    context_str = f"{memory_ctx}\n\n{context_str}" if context_str else memory_ctx
             
             prompt = self._build_aria_prompt(query_text, context_str)
             
@@ -118,7 +125,8 @@ class VoiceAgent:
         self,
         audio_bytes: bytes,
         audio_format: str = "wav",
-        incident_context: Optional[Dict[str, Any]] = None
+        incident_context: Optional[Dict[str, Any]] = None,
+        account_id: str = "demo-account",
     ) -> Dict[str, Any]:
         """
         Process raw audio input using Nova 2 Sonic (speech-to-speech).
@@ -145,6 +153,10 @@ class VoiceAgent:
             
             # Build system prompt with incident context
             context_str = self._build_context_string(incident_context)
+            if incident_context:
+                memory_ctx = await self._get_memory_context(incident_context, account_id)
+                if memory_ctx:
+                    context_str = f"{memory_ctx}\n\n{context_str}" if context_str else memory_ctx
             system_prompt = (
                 "You are Aria, Nova Sentinel's AI security intelligence assistant. "
                 "You help security teams investigate and respond to AWS cloud security incidents. "
@@ -371,6 +383,24 @@ Return JSON with:
                 context_str += f"  * {s.get('action', 'Unknown')}\n"
         
         return context_str
+    
+    async def _get_memory_context(self, incident_context: Dict[str, Any], account_id: str) -> Optional[str]:
+        """Fetch incident memory context (past incidents + correlation) for Aria's prompt."""
+        try:
+            memory = get_incident_memory()
+            current = {
+                "incident_id": incident_context.get("incident_id", "current"),
+                "results": {
+                    "timeline": incident_context.get("timeline"),
+                    "risk_scores": incident_context.get("risk_scores", []),
+                },
+                "metadata": {"incident_type": incident_context.get("incident_type", "Unknown")},
+                "timeline": incident_context.get("timeline"),
+            }
+            return await memory.get_correlation_context_for_aria(account_id, current)
+        except Exception as e:
+            logger.warning(f"Incident memory context unavailable: {e}")
+            return None
     
     def _build_aria_prompt(self, query_text: str, context_str: str) -> str:
         """Build the Aria system prompt for text-based queries."""

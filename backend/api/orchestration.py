@@ -21,7 +21,8 @@ orchestrator = StrandsOrchestrator()
 async def analyze_incident(
     events: str = Form(...),  # JSON string of events
     diagram: Optional[UploadFile] = File(None),
-    incident_type: Optional[str] = Form(None)
+    incident_type: Optional[str] = Form(None),
+    account_id: Optional[str] = Form(default="demo-account"),
 ) -> Dict[str, Any]:
     """
     Orchestrate full incident analysis using Strands Agents SDK.
@@ -61,7 +62,8 @@ async def analyze_incident(
         result = await orchestrator.plan_and_execute(
             events=events_list,
             diagram_data=diagram_data,
-            incident_type=incident_type
+            incident_type=incident_type,
+            account_id=account_id or "demo-account",
         )
         
         # Upload diagram to S3 if provided

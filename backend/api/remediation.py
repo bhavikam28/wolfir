@@ -1,14 +1,26 @@
 """
-Remediation API endpoints
+Remediation API endpoints — plan generation, execution, approval
 """
-from fastapi import APIRouter, HTTPException
-from typing import Dict, Any
+import asyncio
+from fastapi import APIRouter, HTTPException, Query
+from typing import Dict, Any, Optional
+from dataclasses import asdict
 
 from agents.remediation_agent import RemediationAgent
+from services.remediation_executor import RemediationExecutor, ExecutionResult
+from services.approval_manager import (
+    create_pending_approval,
+    get_pending,
+    approve_and_get,
+    list_pending,
+    store_execution_proof,
+    get_execution_proofs,
+)
 from utils.logger import logger
 
 router = APIRouter(prefix="/api/remediation", tags=["remediation"])
 remediation_agent = RemediationAgent()
+executor = RemediationExecutor(demo_mode=True)
 
 
 @router.post("/generate-plan")
@@ -87,11 +99,70 @@ async def validate_plan(
         )
 
 
+@router.post("/execute/{step_id}")
+async def execute_step(
+    step_id: str,
+    incident_id: str = Query(...),
+    action: str = Query(...),
+    target: str = Query(...),
+    demo_mode: bool = Query(True),
+) -> Dict[str, Any]:
+    """Execute a specific remediation step (AUTO or approved)."""
+    try:
+        exec = RemediationExecutor(demo_mode=demo_mode)
+        action_lower = (action or "").lower()
+        result: Optional[ExecutionResult] = None
+        if "tag" in action_lower or "quarantine" in action_lower:
+            result = await exec.execute_quarantine_tag(f"arn:aws:iam::123456789012:role/{target}", incident_id)
+        elif "deny" in action_lower or "policy" in action_lower:
+            result = await exec.execute_deny_policy(target, ["iam:*"], incident_id)
+        elif "disable" in action_lower and "key" in action_lower:
+            result = await exec.execute_disable_access_key("AKIAEXAMPLE", target, incident_id)
+        else:
+            result = await exec.execute_deny_policy(target, ["*"], incident_id)
+        proof = asdict(result)
+        store_execution_proof(incident_id, proof)
+        return {"status": "success", "execution_proof": proof}
+    except Exception as e:
+        logger.error(f"Execute step failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/approve/{approval_token}")
+async def approve_remediation(approval_token: str) -> Dict[str, Any]:
+    """Approve a pending remediation and execute."""
+    p = approve_and_get(approval_token)
+    if not p:
+        raise HTTPException(status_code=404, detail="Approval not found or already processed")
+    exec = RemediationExecutor(demo_mode=True)
+    result = await exec.execute_disable_access_key(
+        p["params"].get("access_key_id", "AKIAEXAMPLE"),
+        p.get("target", "unknown"),
+        p.get("incident_id", "INC-DEMO"),
+    )
+    store_execution_proof(p["incident_id"], asdict(result))
+    return {"status": "approved", "execution_proof": asdict(result)}
+
+
+@router.get("/execution-proof/{incident_id}")
+async def get_execution_proof(incident_id: str) -> Dict[str, Any]:
+    """Get all execution proofs for an incident."""
+    proofs = get_execution_proofs(incident_id)
+    return {"incident_id": incident_id, "proofs": proofs, "count": len(proofs)}
+
+
+@router.get("/pending-approvals")
+async def get_pending_approvals(incident_id: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """List all pending human approvals."""
+    items = list_pending(incident_id)
+    return {"pending": items, "count": len(items)}
+
+
 @router.get("/health")
 async def health_check() -> Dict[str, str]:
     """Health check endpoint"""
     return {
         "status": "healthy",
         "service": "remediation-api",
-        "model": "amazon.nova-lite-v1:0"
+        "model": "amazon.nova-lite-v1:0",
     }

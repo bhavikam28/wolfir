@@ -3,7 +3,7 @@
  * Dynamic graph from real CloudTrail timeline, with static fallback for demo.
  * Minimap, search, export PNG/SVG, pinch-zoom, MITRE ATT&CK links
  */
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { Timeline } from '../../types/incident';
 import type { OrchestrationResponse } from '../../types/incident';
 import { motion } from 'framer-motion';
@@ -12,6 +12,9 @@ import {
   Wifi, Server, User, Database, Eye, Lock, Cloud, Zap,
   ZoomIn, ZoomOut, Maximize2, Minimize2, Search, Download
 } from 'lucide-react';
+import { threatIntelAPI } from '../../services/api';
+
+const IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/;
 
 // ─── MITRE ATT&CK mappings ────────────────────────────────────────────────────
 
@@ -57,6 +60,13 @@ interface EdgeDef {
   color: string;
   label?: string;
   delay: number;
+}
+
+function extractIpFromNode(node: { label?: string; subLabel?: string; resourceId?: string; detail?: string } | undefined): string | null {
+  if (!node) return null;
+  const text = [node.label, node.subLabel, node.resourceId, node.detail].filter(Boolean).join(' ');
+  const match = text.match(IPV4_REGEX);
+  return match ? match[0] : null;
 }
 
 // ─── Dynamic AWS service detection (ARN/eventSource parsing, no hardcoded services) ─
@@ -337,11 +347,12 @@ function buildGraphFromTimeline(
       icon: Network,
       label: 'Entry Point',
       subLabel: 'API / Network',
-      detail: 'Traffic passes through your public endpoints (API Gateway, ALB, or direct access).',
+      detail: 'Traffic passes through your public endpoints (API Gateway, ALB, or direct access). Example external IP: 198.51.100.100',
       color: '#334155',
       bg: '#E2E8F0',
       severity: 'medium',
       mitreId: 'T1190',
+      resourceId: '198.51.100.100',
     });
     nodes.push({
       id: 'narrative_vpc',
@@ -597,6 +608,8 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [threatIntelData, setThreatIntelData] = useState<any>(null);
+  const [threatIntelLoading, setThreatIntelLoading] = useState(false);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const lastPinchDistRef = useRef<number | null>(null);
   const graphRef = useRef<HTMLDivElement>(null);
@@ -766,6 +779,22 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    const ip = extractIpFromNode(detailPanelNode);
+    if (!ip) {
+      setThreatIntelData(null);
+      return;
+    }
+    let cancelled = false;
+    setThreatIntelLoading(true);
+    setThreatIntelData(null);
+    threatIntelAPI.lookup(ip)
+      .then((data) => { if (!cancelled) setThreatIntelData(data); })
+      .catch(() => { if (!cancelled) setThreatIntelData({ ip, error: 'Threat intel unavailable' }); })
+      .finally(() => { if (!cancelled) setThreatIntelLoading(false); });
+    return () => { cancelled = true; };
+  }, [detailPanelNode?.id]);
 
   const handleNodeHover = (nodeId: string | null, ev?: React.MouseEvent) => {
     if (isDragging) return;
@@ -1143,7 +1172,7 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
 
         {/* Minimap — when zoomed or panned */}
         {showMinimap && (
-          <div className="absolute bottom-3 right-3 z-20 w-32 h-24 rounded-lg border-2 border-slate-300 bg-white/95 shadow-lg overflow-hidden pointer-events-none">
+          <div className="absolute bottom-3 right-3 z-20 w-32 h-24 rounded-lg border-2 border-solid border-slate-300 bg-white/95 shadow-lg overflow-hidden pointer-events-none">
             <svg width="128" height="96" viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
               {EDGES.map((edge, i) => {
                 const from = nodeMap[edge.from];
@@ -1234,6 +1263,26 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
                   <a href={MITRE_MAP[detailPanelNode.mitreId]?.url ?? `https://attack.mitre.org/techniques/${detailPanelNode.mitreId}/`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-600 hover:underline mt-1 inline-block">
                     Learn more on MITRE ATT&CK →
                   </a>
+                </div>
+              )}
+              {(threatIntelLoading || threatIntelData) && extractIpFromNode(detailPanelNode) && (
+                <div className="mt-2 p-3 rounded-lg bg-slate-900 text-slate-100 border border-slate-700">
+                  <p className="text-[10px] font-bold text-amber-400 flex items-center gap-1.5">🛡️ Threat Intelligence</p>
+                  {threatIntelLoading ? (
+                    <p className="text-[10px] text-slate-400 mt-1">Loading reputation…</p>
+                  ) : threatIntelData?.error ? (
+                    <p className="text-[10px] text-slate-400 mt-1">{threatIntelData.error}</p>
+                  ) : (
+                    <div className="mt-1.5 text-[10px] space-y-0.5">
+                      <p><span className="text-slate-400">IP {threatIntelData?.ip}</span> — {threatIntelData?.abuse_score ?? 0}% abuse confidence, reported {threatIntelData?.reports ?? 0} times</p>
+                      {(threatIntelData?.categories?.length > 0) && (
+                        <p className="text-slate-400">Categories: {threatIntelData.categories.join(', ')}</p>
+                      )}
+                      {threatIntelData?.source === 'demo' && (
+                        <p className="text-[9px] text-slate-500 italic">Demo mode — add ABUSEIPDB_API_KEY or VIRUSTOTAL_API_KEY for live data</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {props.onNavigateToRemediation && (detailPanelNode.severity === 'critical' || detailPanelNode.severity === 'high') && (
