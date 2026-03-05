@@ -47,7 +47,7 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
     }
   };
 
-  const completedCount = agentConfig.filter(a => a.status === 'COMPLETED').length;
+  const completedCount = agentConfig.filter(a => a.status === 'COMPLETED' || a.status === 'SKIPPED').length;
   const progressPercent = (completedCount / agentConfig.length) * 100;
 
   return (

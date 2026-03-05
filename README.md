@@ -73,7 +73,7 @@ Actually executes AWS API calls (not just plans). Before/after state snapshots, 
 - **MCP**: FastMCP with 4 AWS MCP servers (22 tools)
 - **Deployment**: Vercel (frontend), Local/EC2 (backend)
 
-## 🚀 Quick Start
+## 🚀 Quick Start / Setup
 
 ### Prerequisites
 - Python 3.11+
@@ -88,6 +88,12 @@ python main.py
 # API runs on http://localhost:8000
 ```
 
+Or with hot-reload:
+```bash
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
 ### Frontend
 ```bash
 cd frontend
@@ -96,12 +102,14 @@ npm run dev
 # App runs on http://localhost:5173
 ```
 
-### Demo
+### Demo Flow
 1. Open http://localhost:5173
-2. Click "Demo Scenarios"
-3. Run "IAM Privilege Escalation" — watch the full pipeline execute
-4. Navigate through: Timeline → Attack Path → Remediation → AI Security
-5. Ask Aria: "Have we seen this attack before?"
+2. Click **Launch Console** or **Try Demo**
+3. In Demo mode: select a scenario (e.g. Cryptocurrency Mining, IAM Privilege Escalation)
+4. Watch the 5-agent pipeline execute in real time
+5. Navigate: Security Overview → Incident Timeline → Attack Path → Compliance → Cost Impact → Remediation → AI Pipeline Security
+6. Ask **Aria** (voice assistant): "What is the root cause?" or "Have we seen this attack before?"
+7. Export reports (PDF, clipboard, print)
 
 ## 📊 Performance
 

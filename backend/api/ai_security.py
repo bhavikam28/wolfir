@@ -36,8 +36,14 @@ async def get_governance() -> Dict[str, Any]:
 
 @router.post("/scan")
 async def trigger_scan(body: Optional[Dict[str, Any]] = Body(default={})) -> Dict[str, Any]:
-    """Trigger manual security scan."""
+    """Trigger manual security scan and refresh ATLAS status."""
     input_text = (body or {}).get("input_text", "")
     injection = scan_for_prompt_injection(input_text)
     validation = validate_model_output(input_text) if input_text else {"valid": True, "issues": []}
-    return {"prompt_injection": injection, "output_validation": validation}
+    report = generate_atlas_report()
+    return {
+        "prompt_injection": injection,
+        "output_validation": validation,
+        "techniques": report["techniques"],
+        "summary": report.get("invocation_summary", {}),
+    }

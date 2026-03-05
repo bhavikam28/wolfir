@@ -20,6 +20,12 @@ from botocore.exceptions import ClientError
 from utils.config import get_settings
 from utils.logger import logger
 
+try:
+    from services.ai_pipeline_monitor import record_invocation
+except ImportError:
+    def record_invocation(_: str) -> None:
+        pass
+
 
 class BedrockService:
     """Wrapper for Amazon Bedrock Runtime API"""
@@ -106,6 +112,10 @@ class BedrockService:
 
             response_body = json.loads(response['body'].read())
             
+            try:
+                record_invocation(self.settings.nova_lite_model_id)
+            except Exception:
+                pass
             return {
                 "text": response_body['output']['message']['content'][0]['text'],
                 "stop_reason": response_body.get('stopReason', 'end_turn'),
@@ -167,7 +177,10 @@ class BedrockService:
             message = output.get("message", {})
             msg_content = message.get("content", [])
             text = msg_content[0].get("text", "") if msg_content else ""
-
+            try:
+                record_invocation(self.settings.nova_pro_model_id)
+            except Exception:
+                pass
             return {
                 "text": text,
                 "stop_reason": response.get("stopReason", "end_turn"),
@@ -222,7 +235,10 @@ class BedrockService:
                 )
 
             response_body = json.loads(response['body'].read())
-            
+            try:
+                record_invocation(self.settings.nova_micro_model_id)
+            except Exception:
+                pass
             return {
                 "text": response_body['output']['message']['content'][0]['text'],
                 "stop_reason": response_body.get('stopReason', 'end_turn'),

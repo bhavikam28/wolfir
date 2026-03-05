@@ -89,6 +89,7 @@ function App() {
     try {
       const data = await demoAPI.listScenarios();
       setScenarios(data.scenarios?.length ? data.scenarios : DEFAULT_DEMO_SCENARIOS);
+      setBackendOffline(false);
     } catch {
       setScenarios(DEFAULT_DEMO_SCENARIOS);
     }
@@ -97,6 +98,12 @@ function App() {
   useEffect(() => {
     healthCheck().then((ok) => setBackendOffline(!ok));
   }, []);
+
+  useEffect(() => {
+    if (mode === 'demo' || mode === 'console') {
+      healthCheck().then((ok) => setBackendOffline(!ok));
+    }
+  }, [mode]);
 
   const resetAnalysis = () => {
     setAnalysisResult(null);
