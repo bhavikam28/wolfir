@@ -590,19 +590,19 @@ function App() {
               </div>
             </div>
 
-            {/* Agent Progress */}
-            {orchestrationResult && <AgentProgress agents={orchestrationResult.agents} />}
-
-            {/* Disclaimer: Analysis assumes potential malice — manual validation recommended */}
-            <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 flex items-start gap-3">
+            {/* Disclaimer: Prominent — analysis assumes potential malice */}
+            <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-amber-800">Analysis disclaimer</p>
+                <p className="text-xs font-bold text-amber-800">Analysis disclaimer</p>
                 <p className="text-[11px] text-amber-700 leading-relaxed mt-0.5">
                   This analysis assumes potential malicious activity. Legitimate admin or account owner usage may be flagged as suspicious. Always validate findings manually before treating them as confirmed breaches.
                 </p>
               </div>
             </div>
+
+            {/* Agent Progress */}
+            {orchestrationResult && <AgentProgress agents={orchestrationResult.agents} />}
 
             {/* Low event count warning — dynamic for real AWS */}
             {typeof (analysisResult as any)?.events_analyzed === 'number' && (analysisResult as any).events_analyzed <= 5 && typeof (analysisResult as any)?.time_range_days === 'number' && (

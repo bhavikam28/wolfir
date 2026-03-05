@@ -111,21 +111,37 @@ class TemporalAgent:
             logger.info(f"Parsed analysis: timeline events={len(analysis.get('timeline', []))}, root_cause={bool(analysis.get('root_cause'))}")
 
             # No-threat path: if Nova indicates routine activity, trust it and avoid fallback fabrication
-            root_cause = analysis.get('root_cause', '')
+            root_cause = str(analysis.get('root_cause', ''))
+            root_lower = root_cause.lower()
             confidence = float(analysis.get('confidence', 0.5))
+            event_count = len(trimmed_events)
+
+            # Explicit no-threat keywords
             is_no_threat = (
                 confidence < 0.5
-                or 'no security threats' in str(root_cause).lower()
-                or 'routine' in str(root_cause).lower()
-                or 'no threat' in str(root_cause).lower()
+                or 'no security threats' in root_lower
+                or 'routine' in root_lower
+                or 'no threat' in root_lower
+                or 'no external threat detected' in root_lower
             )
+            # Hedging language = Nova unsure, likely routine (e.g. "could be legitimate admin—verify")
+            has_hedging = (
+                'legitimate' in root_lower or 'verify with stakeholders' in root_lower
+                or 'could be' in root_lower or 'alternatively' in root_lower
+                or 'account owner' in root_lower or 'admin maintenance' in root_lower
+            )
+            # Few events + hedging = cap confidence, treat as low-threat
+            few_events_routine = event_count <= 10 and has_hedging and confidence > 0.5
+
             if is_no_threat and not analysis.get('timeline'):
-                # Use minimal timeline with honest no-threat conclusion
                 analysis["timeline"] = []
                 analysis["root_cause"] = analysis.get("root_cause") or "No security threats detected — routine AWS operations."
                 analysis["attack_pattern"] = "N/A - routine activity only"
                 analysis["blast_radius"] = "None"
                 analysis["confidence"] = min(confidence, 0.3)
+            elif few_events_routine:
+                # Nova hedged — cap confidence; low event count + hedging = likely routine
+                analysis["confidence"] = min(confidence, 0.4)
             
             # Build Timeline object
             timeline_events_data = analysis.get('timeline', [])

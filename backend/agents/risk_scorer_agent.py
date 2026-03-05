@@ -102,10 +102,12 @@ Event:
 
 Consider:
 - The API action being performed
-- The user/role performing it
+- The user/role performing it (Root or account owner = often routine admin)
 - The resource being accessed
 - The source IP address
 - Any error codes
+
+CALIBRATION: GetCallerIdentity is routine (every AWS SDK uses it) — score LOW. PutCredentials/credential refresh from known IPs in dev environments (Cloud9, SSM) is routine — score LOW-MEDIUM. CreatePolicyVersion by the account owner for their own project is normal IAM admin — score MEDIUM max, not HIGH.
 
 Classify as one of: LOW, MEDIUM, HIGH, CRITICAL
 

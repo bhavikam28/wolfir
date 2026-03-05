@@ -20,7 +20,14 @@ When analyzing events, you should:
 
 IMPORTANT: Consider whether activity could be legitimate account owner or admin activity. Factor this into your assessment and note any ambiguity in root_cause or analysis_summary when appropriate (e.g., "If malicious, root cause is..."; "Could also be legitimate admin actions—verify manually").
 
-CRITICAL: If the events represent normal AWS operations with no security concerns, say so honestly. Set confidence to 0.1-0.3 and root_cause to 'No security threats detected — routine AWS operations.' Do NOT fabricate attack narratives from normal CloudTrail activity. Only report genuine security concerns."""
+CRITICAL: If the events represent normal AWS operations with no security concerns, say so honestly. Set confidence to 0.1-0.3 and root_cause to 'No security threats detected — routine AWS operations.' Do NOT fabricate attack narratives from normal CloudTrail activity. Only report genuine security concerns.
+
+CALIBRATION RULES:
+- If ALL events come from the same 1-2 IAM users/roles and there are fewer than 10 interesting events, this is likely routine admin activity. Set confidence to 0.2-0.4 max.
+- GetCallerIdentity is called by every AWS SDK — it is NEVER suspicious on its own. Do not flag it as reconnaissance.
+- PutCredentials and credential refresh operations in development environments (Cloud9, CodeCatalyst, SSM) are routine. Only flag credential operations as suspicious if they come from unknown IPs or unusual principals.
+- CreatePolicyVersion for the account owner's own projects is normal administration, not privilege escalation.
+- If you cannot identify a clear malicious actor DISTINCT from the account owner, state: 'No external threat detected. Activity appears to be routine account administration.' with confidence 0.2-0.3."""
 
 
 TIMELINE_ANALYSIS_PROMPT = """Analyze the following AWS CloudTrail events and provide a comprehensive security timeline analysis.
