@@ -99,17 +99,27 @@ const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
 
       {/* Mode toggle & Info */}
       {onUseFullAIChange && (
-        <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-          <span className="text-xs text-slate-600">Default: instant demo (~2s). Toggle for full Nova AI (~30s):</span>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={useFullAI}
-              onChange={(e) => onUseFullAIChange(e.target.checked)}
-              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-            />
-            <span className="text-xs font-medium text-slate-700">Use full AI analysis</span>
-          </label>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <span className="text-xs text-slate-600">Default: instant demo (~2s). Toggle for full Nova AI:</span>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useFullAI}
+                onChange={(e) => onUseFullAIChange(e.target.checked)}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-xs font-medium text-slate-700">Use full AI analysis</span>
+            </label>
+          </div>
+          {useFullAI && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-800">
+                This calls live Bedrock APIs and takes ~45 seconds. Requires backend running.
+              </p>
+            </div>
+          )}
         </div>
       )}
       <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">
@@ -117,7 +127,7 @@ const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
         <p className="text-xs text-indigo-600 leading-relaxed">
           {useFullAI
             ? 'Full 5-agent Nova AI pipeline: Detection (Nova Pro), Investigation (Nova 2 Lite), Classification (Nova Micro), Remediation, Documentation.'
-            : 'Instant demo uses pre-computed results. Enable "Use full AI analysis" above to run the full Nova pipeline (~30s).'}
+            : 'Instant demo uses pre-computed results. Enable "Use full AI analysis" above to run the full Nova pipeline (~45s).'}
         </p>
       </div>
     </div>

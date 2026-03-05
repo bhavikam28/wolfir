@@ -12,6 +12,7 @@ from utils.prompts import (
     TIMELINE_ANALYSIS_SYSTEM_PROMPT,
     TIMELINE_ANALYSIS_PROMPT
 )
+from utils.event_filter import filter_interesting_events
 from utils.logger import logger
 
 
@@ -44,6 +45,20 @@ class TemporalAgent:
         start_time = time.time()
 
         try:
+            # Pre-filter routine events (PutLogEvents, AssumeRole from AWS services, etc.)
+            # to avoid hallucinated incident narratives from mundane activity
+            events = filter_interesting_events(events)
+            if len(events) == 0:
+                logger.info("All events filtered as routine — returning no-threat timeline")
+                return Timeline(
+                    events=[],
+                    root_cause="No threat detected",
+                    attack_pattern="N/A - routine activity only",
+                    blast_radius="None",
+                    confidence=0.95,
+                    analysis_summary="All CloudTrail events were routine operations (logging, service churn, AWS service AssumeRole). No security-relevant activity detected."
+                )
+
             # Truncate to fit context window — avoid ValidationException from oversized input
             if len(events) > self.MAX_EVENTS_FOR_ANALYSIS:
                 logger.warning(f"Truncating {len(events)} events to {self.MAX_EVENTS_FOR_ANALYSIS}")
@@ -94,6 +109,23 @@ class TemporalAgent:
             # Parse the response
             analysis = self._parse_analysis_response(response_text)
             logger.info(f"Parsed analysis: timeline events={len(analysis.get('timeline', []))}, root_cause={bool(analysis.get('root_cause'))}")
+
+            # No-threat path: if Nova indicates routine activity, trust it and avoid fallback fabrication
+            root_cause = analysis.get('root_cause', '')
+            confidence = float(analysis.get('confidence', 0.5))
+            is_no_threat = (
+                confidence < 0.5
+                or 'no security threats' in str(root_cause).lower()
+                or 'routine' in str(root_cause).lower()
+                or 'no threat' in str(root_cause).lower()
+            )
+            if is_no_threat and not analysis.get('timeline'):
+                # Use minimal timeline with honest no-threat conclusion
+                analysis["timeline"] = []
+                analysis["root_cause"] = analysis.get("root_cause") or "No security threats detected — routine AWS operations."
+                analysis["attack_pattern"] = "N/A - routine activity only"
+                analysis["blast_radius"] = "None"
+                analysis["confidence"] = min(confidence, 0.3)
             
             # Build Timeline object
             timeline_events_data = analysis.get('timeline', [])
@@ -101,9 +133,10 @@ class TemporalAgent:
             
             built_events = self._build_timeline_events(timeline_events_data)
             logger.info(f"Built {len(built_events)} TimelineEvent objects")
-            
-            # Fallback: If Nova didn't return events, build from raw CloudTrail events
-            if len(built_events) == 0 and len(trimmed_events) > 0:
+
+            # Fallback: If Nova didn't return events, build from raw — but NOT when no-threat
+            # (fallback would fabricate incident narrative from routine events)
+            if len(built_events) == 0 and len(trimmed_events) > 0 and not is_no_threat:
                 logger.warning("Nova returned no timeline events, building fallback timeline from raw CloudTrail events")
                 built_events = self._build_fallback_timeline(trimmed_events)
                 logger.info(f"Built {len(built_events)} fallback TimelineEvent objects from raw events")

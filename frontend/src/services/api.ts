@@ -43,10 +43,11 @@ export const analysisAPI = {
   /**
    * Analyze REAL CloudTrail events from your AWS account
    */
-  analyzeRealCloudTrail: async (daysBack: number = 7, maxEvents: number = 100, profile?: string): Promise<AnalysisResponse> => {
+  analyzeRealCloudTrail: async (daysBack: number = 7, maxEvents: number = 100, profile?: string, fetchOnly = true): Promise<AnalysisResponse> => {
     const params = new URLSearchParams({
       days_back: daysBack.toString(),
       max_events: maxEvents.toString(),
+      fetch_only: fetchOnly.toString(),
     });
     if (profile) {
       params.append('profile', profile);
@@ -115,6 +116,27 @@ export const demoAPI = {
 };
 
 export const orchestrationAPI = {
+  /**
+   * Single-call AWS mode: fetch CloudTrail server-side and run full orchestration.
+   */
+  analyzeFromCloudTrail: async (
+    daysBack: number,
+    maxEvents: number,
+    profile?: string,
+    accountId?: string
+  ): Promise<OrchestrationResponse & { status?: string; message?: string }> => {
+    const params = new URLSearchParams({
+      days_back: daysBack.toString(),
+      max_events: maxEvents.toString(),
+      account_id: accountId || 'demo-account',
+    });
+    if (profile) params.append('profile', profile);
+    const response = await api.post(
+      `/api/orchestration/analyze-from-cloudtrail?${params.toString()}`
+    );
+    return response.data;
+  },
+
   /**
    * Orchestrate full incident analysis using multiple agents
    */
@@ -216,8 +238,8 @@ export const documentationAPI = {
 };
 
 export const remediationAPI = {
-  executeStep: async (stepId: string, incidentId: string, action: string, target: string): Promise<any> => {
-    const params = new URLSearchParams({ incident_id: incidentId, action, target, demo_mode: 'true' });
+  executeStep: async (stepId: string, incidentId: string, action: string, target: string, demoMode = false): Promise<any> => {
+    const params = new URLSearchParams({ incident_id: incidentId, action, target, demo_mode: String(demoMode) });
     const response = await api.post(`/api/remediation/execute/${stepId}?${params}`);
     return response.data;
   },

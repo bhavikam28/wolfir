@@ -88,19 +88,6 @@ const LandingHero: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-24 w-full">
         <div className="text-center max-w-4xl mx-auto">
-          {/* Badge — green pulse */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.04] border border-white/[0.1] mb-12"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-sm font-mono text-cyan-400 tracking-wide uppercase text-[11px]">
-              Amazon Nova AI Hackathon 2026
-            </span>
-          </motion.div>
-
           {/* Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 32 }}
@@ -248,7 +235,7 @@ const LandingHero: React.FC = () => {
               { name: 'Nova Pro', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
               { name: 'Nova 2 Lite', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
               { name: 'Nova Micro', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-              { name: 'Nova 2 Sonic', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+              { name: 'Nova 2 Sonic (ready)', color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
               { name: 'Nova Act', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
             ].map((tech) => (
               <span key={tech.name} className={`px-4 py-1.5 rounded-full text-xs font-bold border ${tech.color}`}>

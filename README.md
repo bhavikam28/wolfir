@@ -4,7 +4,6 @@
 
 > From alert to resolution in under 60 seconds. Not with one model, but with 5 specialized Nova models working together like a real security team.
 
-[![Amazon Nova AI Hackathon 2026](https://img.shields.io/badge/Amazon%20Nova%20AI-Hackathon%202026-6366f1)](https://amazonnova.devpost.com/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-22d3ee)](https://nova-sentinel.vercel.app)
 
 ---
@@ -53,7 +52,7 @@ Actually executes AWS API calls (not just plans). Before/after state snapshots, 
 | **Nova Pro** | Visual architecture analysis | Multimodal — reads diagram images |
 | **Nova 2 Lite** | Temporal analysis, remediation, docs | Fast, accurate text reasoning |
 | **Nova Micro** | Risk classification (0-100) | Ultra-fast, deterministic (temp=0.1) |
-| **Nova 2 Sonic** | Voice investigation (Aria) | Real-time conversational audio |
+| **Nova 2 Sonic** | Voice (Aria) | Integration-ready; requires WebSocket streaming. Aria uses Nova 2 Lite + browser TTS today. |
 | **Nova Canvas** | Report cover art generation | Image generation |
 
 ## 🔧 AWS Services
@@ -131,8 +130,8 @@ npm run dev
 
 ## 📄 License
 
-Built for the Amazon Nova AI Hackathon 2026.
+AI-powered security intelligence built with Amazon Nova.
 
 ---
 
-**#AmazonNova** | **#NovaSentinel** | **#AIforSecurity**
+**#AmazonNova** | **#Nova Sentinel** | **#AIforSecurity**

@@ -9,7 +9,7 @@ export const demoAnalysisData: AnalysisResponse = {
   timeline: {
     events: [
       {
-        timestamp: "2025-01-15T14:23:00Z",
+        timestamp: "2026-01-15T14:23:00Z",
         actor: "admin@company.com",
         action: "CreateRole",
         resource: "IAM Role: contractor-temp",
@@ -18,7 +18,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Initial setup of a role that could be abused — foundation for privilege escalation.",
       },
       {
-        timestamp: "2025-01-18T09:45:00Z",
+        timestamp: "2026-01-18T09:45:00Z",
         actor: "admin@company.com",
         action: "AttachRolePolicy",
         resource: "IAM Role: contractor-temp",
@@ -27,7 +27,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Attached overly permissive policy",
       },
       {
-        timestamp: "2025-01-19T04:00:00Z",
+        timestamp: "2026-01-19T04:00:00Z",
         actor: "contractor-session",
         action: "AuthorizeSecurityGroupIngress",
         resource: "Security Group: sg-abc123",
@@ -36,7 +36,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Opened SSH access to internet",
       },
       {
-        timestamp: "2025-01-19T04:38:00Z",
+        timestamp: "2026-01-19T04:38:00Z",
         actor: "attacker-session",
         action: "DescribeInstances",
         resource: "EC2 Instances",
@@ -45,7 +45,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Reconnaissance activity",
       },
       {
-        timestamp: "2025-01-19T04:53:00Z",
+        timestamp: "2026-01-19T04:53:00Z",
         actor: "attacker-session",
         action: "RunInstances",
         resource: "EC2 Instances",
@@ -54,7 +54,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Launched unauthorized instances",
       },
       {
-        timestamp: "2025-01-19T10:38:00Z",
+        timestamp: "2026-01-19T10:38:00Z",
         actor: "attacker-session",
         action: "AuthorizeSecurityGroupIngress",
         resource: "Security Group: sg-def456",
@@ -63,7 +63,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Further exposed infrastructure",
       },
       {
-        timestamp: "2025-01-19T11:23:00Z",
+        timestamp: "2026-01-19T11:23:00Z",
         actor: "attacker-session",
         action: "CreateAccessKey",
         resource: "IAM User: backup-user",
@@ -72,7 +72,7 @@ export const demoAnalysisData: AnalysisResponse = {
         significance: "Created persistence mechanism",
       },
       {
-        timestamp: "2025-02-04T08:23:00Z",
+        timestamp: "2026-02-04T08:23:00Z",
         actor: "guardduty.amazonaws.com",
         action: "GuardDutyFinding",
         resource: "EC2 Instance: i-abc123",

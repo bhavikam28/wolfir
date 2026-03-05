@@ -18,6 +18,7 @@ def create_pending_approval(
     step_action: str,
     target: str,
     execution_params: Dict[str, Any],
+    demo_mode: bool = False,
 ) -> str:
     token = str(uuid.uuid4())
     _pending[token] = {
@@ -27,6 +28,7 @@ def create_pending_approval(
         "step_action": step_action,
         "target": target,
         "params": execution_params,
+        "demo_mode": demo_mode,
         "created_at": datetime.utcnow().isoformat(),
         "status": "PENDING",
     }

@@ -25,11 +25,12 @@ import ComplianceMapping from './components/Analysis/ComplianceMapping';
 import CostImpact from './components/Analysis/CostImpact';
 import SecurityPostureDashboard from './components/Analysis/SecurityPostureDashboard';
 import ReportExport from './components/Analysis/ReportExport';
-import { analysisAPI, demoAPI, orchestrationAPI, visualAPI, documentationAPI, authAPI, incidentHistoryAPI, healthCheck } from './services/api';
+import { demoAPI, orchestrationAPI, visualAPI, documentationAPI, authAPI, incidentHistoryAPI, healthCheck } from './services/api';
 import type { AnalysisResponse, DemoScenario, OrchestrationResponse } from './types/incident';
 import { formatAnalysisTime, formatLastAnalyzed } from './utils/formatting';
 import { hasAwsServicePrincipalInTimeline } from './utils/awsServiceDetection';
 import { demoAnalysisData } from './data/demoAnalysis';
+import { getQuickDemoResult } from './data/quickDemoResult';
 import { DEFAULT_DEMO_SCENARIOS } from './data/demoScenarios';
 import AgentProgress from './components/Analysis/AgentProgress';
 import VoiceAssistant from './components/Analysis/VoiceAssistant';
@@ -127,24 +128,29 @@ function App() {
     setError(null);
     resetAnalysis();
 
-    try {
-      let incidentType = 'Unknown';
-      if (scenarioId === 'crypto-mining') incidentType = 'Cryptocurrency Mining Attack';
-      else if (scenarioId === 'data-exfiltration') incidentType = 'Data Exfiltration';
-      else if (scenarioId === 'privilege-escalation') incidentType = 'Privilege Escalation';
-      else if (scenarioId === 'unauthorized-access') incidentType = 'Unauthorized Access';
+    const useClientSideFallback = backendOffline || !useFullAI;
 
-      const result = useFullAI
-        ? await (async () => {
-            let events: any[] = [];
-            if (scenarioId === 'crypto-mining') events = (await demoAPI.getCryptoMiningScenario()).events;
-            else if (scenarioId === 'data-exfiltration') events = (await demoAPI.getDataExfiltrationScenario()).events;
-            else if (scenarioId === 'privilege-escalation') events = (await demoAPI.getPrivilegeEscalationScenario()).events;
-            else if (scenarioId === 'unauthorized-access') events = (await demoAPI.getUnauthorizedAccessScenario()).events;
-            return orchestrationAPI.analyzeIncident(events, undefined, incidentType);
-          })()
-        : await demoAPI.getQuickDemo(scenarioId);
-      setBackendOffline(false); // Backend responded — no longer offline
+    try {
+      let result;
+
+      if (useClientSideFallback) {
+        result = getQuickDemoResult(scenarioId);
+      } else {
+        let incidentType = 'Unknown';
+        if (scenarioId === 'crypto-mining') incidentType = 'Cryptocurrency Mining Attack';
+        else if (scenarioId === 'data-exfiltration') incidentType = 'Data Exfiltration';
+        else if (scenarioId === 'privilege-escalation') incidentType = 'Privilege Escalation';
+        else if (scenarioId === 'unauthorized-access') incidentType = 'Unauthorized Access';
+
+        let events: any[] = [];
+        if (scenarioId === 'crypto-mining') events = (await demoAPI.getCryptoMiningScenario()).events;
+        else if (scenarioId === 'data-exfiltration') events = (await demoAPI.getDataExfiltrationScenario()).events;
+        else if (scenarioId === 'privilege-escalation') events = (await demoAPI.getPrivilegeEscalationScenario()).events;
+        else if (scenarioId === 'unauthorized-access') events = (await demoAPI.getUnauthorizedAccessScenario()).events;
+        result = await orchestrationAPI.analyzeIncident(events, undefined, incidentType);
+        setBackendOffline(false);
+      }
+
       setOrchestrationResult(result);
 
       if (result.results.remediation_plan) {
@@ -156,18 +162,26 @@ function App() {
           incident_id: result.incident_id,
           timeline: result.results.timeline,
           analysis_time_ms: result.analysis_time_ms,
-          model_used: 'Multi-Agent Orchestration (Nova 2 Lite, Nova Pro, Nova Micro)',
+          model_used: useClientSideFallback ? 'Instant demo (client-side)' : 'Multi-Agent Orchestration (Nova 2 Lite, Nova Pro, Nova Micro)',
         });
       } else {
         setAnalysisResult(demoAnalysisData);
       }
     } catch (err: any) {
       console.error('Orchestration error:', err);
-      setAnalysisResult(demoAnalysisData);
-      setError(err.message || 'Using demo data due to an error.');
+      const fallback = getQuickDemoResult(scenarioId);
+      setOrchestrationResult(fallback);
+      setRemediationPlan(fallback.results.remediation_plan);
+      setAnalysisResult({
+        incident_id: fallback.incident_id,
+        timeline: fallback.results.timeline ?? demoAnalysisData.timeline,
+        analysis_time_ms: fallback.analysis_time_ms,
+        model_used: 'Instant demo (fallback)',
+      });
+      setError(err.message || 'Backend unreachable. Showing instant demo.');
     } finally {
       setLoading(false);
-      setIncidentHistoryRefreshTrigger((t) => t + 1); // Auto-refresh Incident History
+      setIncidentHistoryRefreshTrigger((t) => t + 1);
     }
   };
 
@@ -177,51 +191,42 @@ function App() {
       setError(null);
       resetAnalysis();
 
-      const realAnalysis = await analysisAPI.analyzeRealCloudTrail(daysBack, maxEvents, awsProfile);
-      
-      if ((realAnalysis as any).status === 'no_events') {
-        const msg = (realAnalysis as any).message || `No security events found in the last ${daysBack} days.`;
+      // Single backend call: fetch CloudTrail + run orchestration (no double analysis)
+      const result = await orchestrationAPI.analyzeFromCloudTrail(
+        daysBack,
+        maxEvents,
+        awsProfile,
+        awsAccountId || undefined
+      );
+
+      if ((result as any).status === 'no_events') {
+        const msg = (result as any).message || `No security events found in the last ${daysBack} days.`;
         setError(msg);
         setLoading(false);
         return;
       }
 
-      // Use raw CloudTrail events for orchestration — dynamic analysis from actual data
-      const rawEvents = (realAnalysis as any).raw_events;
-      const cloudtrailEvents = Array.isArray(rawEvents) && rawEvents.length > 0
-        ? rawEvents
-        : (realAnalysis.timeline?.events || []).map((e: any) => ({
-            eventTime: typeof e.timestamp === 'string' ? e.timestamp : e.timestamp?.toISOString?.() || '',
-            eventName: e.action || 'Unknown',
-            userIdentity: { userName: e.actor || 'Unknown', type: 'IAMUser' },
-            requestParameters: { resource: e.resource || 'Unknown' },
-            sourceIPAddress: (e.details as any)?.sourceIP || 'Unknown',
-            awsRegion: 'us-east-1',
-          }));
-
-      const incidentLabel = `Real AWS (last ${daysBack} days, ${cloudtrailEvents.length} events)`;
-      const acctId = awsAccountId || undefined;
-      const result = await orchestrationAPI.analyzeIncident(cloudtrailEvents, undefined, incidentLabel, acctId);
       setOrchestrationResult(result);
 
-      if (result.results.remediation_plan) {
+      if (result.results?.remediation_plan) {
         setRemediationPlan(result.results.remediation_plan);
       }
 
+      const tl = result.results?.timeline;
+      const eventsCount = (result as any).events_analyzed ?? tl?.events?.length ?? 0;
       const derivedIncidentType =
         result.metadata?.incident_type ||
-        result.results?.timeline?.attack_pattern ||
-        result.results?.timeline?.root_cause ||
-        incidentLabel;
+        tl?.attack_pattern ||
+        tl?.root_cause ||
+        `Real AWS (last ${daysBack} days)`;
 
       setAnalysisResult({
         incident_id: result.incident_id,
-        timeline: result.results.timeline || realAnalysis.timeline,
-        analysis_time_ms: result.analysis_time_ms || realAnalysis.analysis_time_ms,
+        timeline: tl,
+        analysis_time_ms: result.analysis_time_ms || 0,
         model_used: 'Multi-Agent Orchestration (Real AWS)',
         incident_type: derivedIncidentType,
-        // Pass for dynamic UI (low-event warning, attack path, cost calibration)
-        events_analyzed: cloudtrailEvents.length,
+        events_analyzed: eventsCount,
         time_range_days: daysBack,
       } as any);
     } catch (err: any) {
@@ -730,6 +735,7 @@ function App() {
           <RemediationPlan
             plan={remediationPlan}
             incidentId={orchestrationResult?.incident_id || analysisResult?.incident_id}
+            demoMode={mode === 'demo'}
             onApprove={async () => {
               try {
                 setLoading(true);
@@ -1148,12 +1154,12 @@ function App() {
               <span className="text-base font-bold text-white">Nova Sentinel</span>
             </div>
             <p className="text-sm text-slate-400 text-center mb-4">
-              Built with Amazon Nova for the Amazon Nova AI Hackathon 2026
+              AI-powered security intelligence · Powered by Amazon Nova
             </p>
             <div className="flex gap-4 text-xs text-slate-500">
               <span>#AmazonNova</span>
               <span>·</span>
-              <span>#NovaSentinel</span>
+              <span>#Nova Sentinel</span>
               <span>·</span>
               <span>© 2026</span>
             </div>

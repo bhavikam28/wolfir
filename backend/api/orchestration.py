@@ -5,10 +5,12 @@ All orchestration routes now use the StrandsOrchestrator, which coordinates
 multi-agent analysis using real @tool-decorated Strands tools and AWS MCP servers.
 """
 import json
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+import uuid
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Query
 from typing import Dict, Any, Optional, List
 
 from agents.strands_orchestrator import StrandsOrchestrator, STRANDS_TOOLS
+from services.cloudtrail_service import CloudTrailService
 from utils.logger import logger
 
 router = APIRouter(prefix="/api/orchestration", tags=["orchestration"])
@@ -138,6 +140,67 @@ async def list_incidents() -> Dict[str, Any]:
             status_code=500,
             detail=f"Failed to list incidents: {str(e)}"
         )
+
+
+@router.post("/analyze-from-cloudtrail")
+async def analyze_from_cloudtrail(
+    days_back: int = Query(7, ge=1, le=90),
+    max_events: int = Query(100, ge=10, le=500),
+    profile: Optional[str] = Query(None),
+    account_id: Optional[str] = Query(default="demo-account"),
+) -> Dict[str, Any]:
+    """
+    Single-call AWS mode: fetch CloudTrail events server-side and run full orchestration.
+    Replaces the two-step flow (fetch + orchestrate) with one request.
+    """
+    try:
+        cloudtrail_service = CloudTrailService(profile=profile)
+        try:
+            cloudtrail_events = await cloudtrail_service.get_security_events(
+                days_back=days_back,
+                max_results=max_events,
+            )
+        except PermissionError as e:
+            raise HTTPException(status_code=403, detail=str(e)) from e
+
+        if not cloudtrail_events:
+            return {
+                "incident_id": f"INC-{uuid.uuid4().hex[:6].upper()}",
+                "status": "no_events",
+                "message": f"No security-relevant CloudTrail events found in the last {days_back} days.",
+                "results": {},
+                "metadata": {"incident_type": "No events"},
+            }
+
+        # Format events for orchestrator (extract from CloudTrailEvent if needed)
+        formatted_events = []
+        for event in cloudtrail_events:
+            if "CloudTrailEvent" in event:
+                try:
+                    formatted_events.append(json.loads(event["CloudTrailEvent"]))
+                except (json.JSONDecodeError, TypeError):
+                    formatted_events.append(event)
+            else:
+                formatted_events.append(event)
+
+        incident_label = f"Real AWS (last {days_back} days, {len(formatted_events)} events)"
+        result = await orchestrator.plan_and_execute(
+            events=formatted_events,
+            diagram_data=None,
+            incident_type=incident_label,
+            account_id=account_id or "demo-account",
+        )
+        result["status"] = "analyzed"
+        result["events_analyzed"] = len(formatted_events)
+        result["time_range_days"] = days_back
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logger.error(f"Analyze-from-cloudtrail failed: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/health")

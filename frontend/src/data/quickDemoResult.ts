@@ -9,12 +9,12 @@ import type { Timeline } from '../types/incident';
 // --- CRYPTO-MINING ---
 const CRYPTO_TIMELINE: Timeline = {
   events: [
-    { timestamp: "2025-01-15T14:23:00Z", actor: "admin@company.com", action: "CreateRole", resource: "IAM Role: contractor-temp", severity: "MEDIUM", details: "Created a temporary role with AdministratorAccess policy", significance: "Foundation for privilege escalation." },
-    { timestamp: "2025-01-18T09:45:00Z", actor: "admin@company.com", action: "AttachRolePolicy", resource: "IAM Role: contractor-temp", severity: "HIGH", details: "Attached AdministratorAccess managed policy", significance: "Enabled full account takeover." },
-    { timestamp: "2025-01-19T04:00:00Z", actor: "contractor-session", action: "AuthorizeSecurityGroupIngress", resource: "Security Group: sg-abc123", severity: "HIGH", details: "Modified security group to allow SSH from 0.0.0.0/0", significance: "Opened initial access vector." },
-    { timestamp: "2025-01-19T04:38:00Z", actor: "attacker-session", action: "DescribeInstances", resource: "EC2 Instances", severity: "MEDIUM", details: "Enumerated all EC2 instances", significance: "Reconnaissance activity." },
-    { timestamp: "2025-01-19T04:53:00Z", actor: "attacker-session", action: "RunInstances", resource: "EC2 Instances", severity: "HIGH", details: "Launched 3 GPU instances for crypto mining", significance: "Resource abuse and impact." },
-    { timestamp: "2025-02-04T08:23:00Z", actor: "guardduty.amazonaws.com", action: "GuardDutyFinding", resource: "EC2 Instance: i-abc123", severity: "CRITICAL", details: "Detected cryptocurrency mining activity", significance: "Confirmed malicious activity." },
+    { timestamp: "2026-01-15T14:23:00Z", actor: "admin@company.com", action: "CreateRole", resource: "IAM Role: contractor-temp", severity: "MEDIUM", details: "Created a temporary role with AdministratorAccess policy", significance: "Foundation for privilege escalation." },
+    { timestamp: "2026-01-18T09:45:00Z", actor: "admin@company.com", action: "AttachRolePolicy", resource: "IAM Role: contractor-temp", severity: "HIGH", details: "Attached AdministratorAccess managed policy", significance: "Enabled full account takeover." },
+    { timestamp: "2026-01-19T04:00:00Z", actor: "contractor-session", action: "AuthorizeSecurityGroupIngress", resource: "Security Group: sg-abc123", severity: "HIGH", details: "Modified security group to allow SSH from 0.0.0.0/0", significance: "Opened initial access vector." },
+    { timestamp: "2026-01-19T04:38:00Z", actor: "attacker-session", action: "DescribeInstances", resource: "EC2 Instances", severity: "MEDIUM", details: "Enumerated all EC2 instances", significance: "Reconnaissance activity." },
+    { timestamp: "2026-01-19T04:53:00Z", actor: "attacker-session", action: "RunInstances", resource: "EC2 Instances", severity: "HIGH", details: "Launched 3 GPU instances for crypto mining", significance: "Resource abuse and impact." },
+    { timestamp: "2026-02-04T08:23:00Z", actor: "guardduty.amazonaws.com", action: "GuardDutyFinding", resource: "EC2 Instance: i-abc123", severity: "CRITICAL", details: "Detected cryptocurrency mining activity", significance: "Confirmed malicious activity." },
   ],
   root_cause: "IAM role with excessive privileges (AdministratorAccess) was created for a contractor and later assumed by an attacker.",
   attack_pattern: "Privilege escalation via IAM role assumption, reconnaissance, lateral movement, and crypto mining deployment.",
@@ -26,9 +26,9 @@ const CRYPTO_TIMELINE: Timeline = {
 // --- DATA EXFILTRATION ---
 const DATA_EXFIL_TIMELINE: Timeline = {
   events: [
-    { timestamp: "2025-02-01T10:00:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/customer-pii/database-export.csv", severity: "HIGH", details: "Downloaded customer PII database export from sensitive bucket", significance: "Initial data exfiltration of sensitive records." },
-    { timestamp: "2025-02-01T10:05:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/financial-records/q4-2024.csv", severity: "HIGH", details: "Downloaded financial records", significance: "Additional sensitive data theft." },
-    { timestamp: "2025-02-01T10:10:00Z", actor: "data-analyst", action: "ListBucket", resource: "S3 Bucket: company-sensitive-data", severity: "MEDIUM", details: "Listed bucket contents to discover more files", significance: "Reconnaissance to locate additional data to exfiltrate." },
+    { timestamp: "2026-02-01T10:00:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/customer-pii/database-export.csv", severity: "HIGH", details: "Downloaded customer PII database export from sensitive bucket", significance: "Initial data exfiltration of sensitive records." },
+    { timestamp: "2026-02-01T10:05:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/financial-records/q4-2024.csv", severity: "HIGH", details: "Downloaded financial records", significance: "Additional sensitive data theft." },
+    { timestamp: "2026-02-01T10:10:00Z", actor: "data-analyst", action: "ListBucket", resource: "S3 Bucket: company-sensitive-data", severity: "MEDIUM", details: "Listed bucket contents to discover more files", significance: "Reconnaissance to locate additional data to exfiltrate." },
   ],
   root_cause: "IAM user data-analyst had excessive S3 read permissions on the company-sensitive-data bucket; credentials may have been compromised or misused.",
   attack_pattern: "Unauthorized access to sensitive S3 data via GetObject and ListBucket from external IP. Multiple large downloads suggest data exfiltration.",
@@ -40,10 +40,10 @@ const DATA_EXFIL_TIMELINE: Timeline = {
 // --- PRIVILEGE ESCALATION ---
 const PRIV_ESCAL_TIMELINE: Timeline = {
   events: [
-    { timestamp: "2025-02-10T14:00:00Z", actor: "junior-dev", action: "ConsoleLogin", resource: "AWS Console", severity: "LOW", details: "IAM user with limited permissions logged in", significance: "Initial access as low-privilege user." },
-    { timestamp: "2025-02-10T14:15:00Z", actor: "junior-dev", action: "AssumeRole", resource: "IAM Role: AdminRole", severity: "CRITICAL", details: "Assumed AdminRole to gain elevated privileges", significance: "Privilege escalation via role assumption." },
-    { timestamp: "2025-02-10T14:30:00Z", actor: "admin-session", action: "CreateUser", resource: "IAM User: backdoor-admin", severity: "HIGH", details: "Created new IAM user while assuming admin role", significance: "Persistence mechanism." },
-    { timestamp: "2025-02-10T14:32:00Z", actor: "admin-session", action: "AttachUserPolicy", resource: "IAM User: backdoor-admin", severity: "CRITICAL", details: "Attached AdministratorAccess to backdoor-admin user", significance: "Established permanent admin backdoor." },
+    { timestamp: "2026-02-10T14:00:00Z", actor: "junior-dev", action: "ConsoleLogin", resource: "AWS Console", severity: "LOW", details: "IAM user with limited permissions logged in", significance: "Initial access as low-privilege user." },
+    { timestamp: "2026-02-10T14:15:00Z", actor: "junior-dev", action: "AssumeRole", resource: "IAM Role: AdminRole", severity: "CRITICAL", details: "Assumed AdminRole to gain elevated privileges", significance: "Privilege escalation via role assumption." },
+    { timestamp: "2026-02-10T14:30:00Z", actor: "admin-session", action: "CreateUser", resource: "IAM User: backdoor-admin", severity: "HIGH", details: "Created new IAM user while assuming admin role", significance: "Persistence mechanism." },
+    { timestamp: "2026-02-10T14:32:00Z", actor: "admin-session", action: "AttachUserPolicy", resource: "IAM User: backdoor-admin", severity: "CRITICAL", details: "Attached AdministratorAccess to backdoor-admin user", significance: "Established permanent admin backdoor." },
   ],
   root_cause: "junior-dev had permission to assume AdminRole; after escalation, created backdoor-admin user with AdministratorAccess for persistence.",
   attack_pattern: "Insider threat — limited user assumed overly permissive AdminRole, then created backdoor IAM user with full admin access.",
@@ -55,9 +55,9 @@ const PRIV_ESCAL_TIMELINE: Timeline = {
 // --- UNAUTHORIZED ACCESS ---
 const UNAUTH_ACCESS_TIMELINE: Timeline = {
   events: [
-    { timestamp: "2025-02-05T08:00:00Z", actor: "external-user", action: "AssumeRole", resource: "IAM Role (attempt)", severity: "MEDIUM", details: "AccessDenied — failed to assume role from external IP 198.51.100.100", significance: "Initial failed access attempt." },
-    { timestamp: "2025-02-05T08:05:00Z", actor: "external-user", action: "GetObject", resource: "S3: company-secrets/api-keys/production.env", severity: "CRITICAL", details: "Downloaded production API keys from secrets bucket", significance: "Compromised credentials used to access sensitive data." },
-    { timestamp: "2025-02-05T08:10:00Z", actor: "external-user", action: "ListBucket", resource: "S3 Bucket: company-secrets", severity: "HIGH", details: "Listed secrets bucket to discover more sensitive files", significance: "Reconnaissance of sensitive data." },
+    { timestamp: "2026-02-05T08:00:00Z", actor: "external-user", action: "AssumeRole", resource: "IAM Role (attempt)", severity: "MEDIUM", details: "AccessDenied — failed to assume role from external IP 198.51.100.100", significance: "Initial failed access attempt." },
+    { timestamp: "2026-02-05T08:05:00Z", actor: "external-user", action: "GetObject", resource: "S3: company-secrets/api-keys/production.env", severity: "CRITICAL", details: "Downloaded production API keys from secrets bucket", significance: "Compromised credentials used to access sensitive data." },
+    { timestamp: "2026-02-05T08:10:00Z", actor: "external-user", action: "ListBucket", resource: "S3 Bucket: company-secrets", severity: "HIGH", details: "Listed secrets bucket to discover more sensitive files", significance: "Reconnaissance of sensitive data." },
   ],
   root_cause: "External actor (IP 198.51.100.100) accessed sensitive resources using compromised credentials for external-user. S3 bucket company-secrets was accessible.",
   attack_pattern: "External unauthorized access. Stolen/leaked credentials used to bypass IAM and access production secrets.",

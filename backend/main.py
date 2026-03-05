@@ -95,9 +95,16 @@ app = FastAPI(
 )
 
 # Configure CORS
-_cors_origins = ["http://localhost:5173", "http://localhost:3000"]
+_cors_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://nova-sentinel.vercel.app",
+    "https://www.nova-sentinel.vercel.app",
+]
 if os.environ.get("FRONTEND_URL"):
-    _cors_origins.append(os.environ["FRONTEND_URL"])
+    url = os.environ["FRONTEND_URL"].rstrip("/")
+    if url not in _cors_origins:
+        _cors_origins.append(url)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,

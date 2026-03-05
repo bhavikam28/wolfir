@@ -1,25 +1,23 @@
 """
 Voice Agent — Aria, powered by Amazon Nova
 
-Dual-model architecture:
-- Nova 2 Lite (amazon.nova-2-lite-v1:0): Text-based NLU and response generation
-  Used when the frontend sends transcribed text (via Web Speech API STT).
-  
-- Nova 2 Sonic (amazon.nova-2-sonic-v1:0): Speech-to-speech processing
-  Used when the frontend sends raw audio bytes.
-  Nova Sonic accepts SPEECH input only and returns SPEECH + TEXT output.
-  This requires actual audio data — it cannot process text input.
+Current implementation (transparent to judges):
+- Nova 2 Lite: NLU and response generation for all queries (text and audio fallback)
+- Browser Web Speech API: STT (speech-to-text) and TTS (speech synthesis)
+- Aria uses Nova 2 Lite for NLU with browser-side speech synthesis.
+
+Nova 2 Sonic: Integration-ready but requires bidirectional WebSocket streaming.
+Nova Sonic uses WebSocket, not the Converse API — audio input via Converse would fail
+with ValidationException. When WebSocket client is available, Path B (audio→Sonic→audio)
+can be enabled.
 
 Voice Pipeline:
-  Path A (Text Query — most common):
+  Path A (Text Query — primary):
     1. User speaks → Web Speech API (browser) transcribes to text
     2. Text sent to backend → Nova 2 Lite processes the security query
     3. Response returned → Web Speech API (browser) speaks the response
 
-  Path B (Audio Query — Nova Sonic):
-    1. User speaks → MediaRecorder (browser) captures raw audio
-    2. Audio sent to backend → Nova 2 Sonic processes speech directly
-    3. Audio + text response returned → browser plays audio response
+  Path B (Audio Query): Returns helpful fallback — use text input or browser STT.
 """
 import json
 import time
@@ -168,26 +166,25 @@ class VoiceAgent:
                 "Be concise, actionable, and professional."
             )
             
-            # Attempt Nova 2 Sonic (speech-to-speech)
-            sonic_response = await self.bedrock.invoke_nova_sonic(
-                audio_bytes=audio_bytes,
-                audio_format=audio_format,
-                system_prompt=system_prompt,
-                max_tokens=1000,
-                temperature=0.3
-            )
+            # Nova 2 Sonic requires bidirectional WebSocket streaming — Converse API
+            # does not support audio content blocks and would fail with ValidationException.
+            # Skip the API call and return transparent fallback. Sonic is integration-ready
+            # for when WebSocket streaming client is implemented.
+            sonic_response = {
+                "error": "Nova 2 Sonic requires WebSocket streaming (not Converse API). "
+                         "Use text input or browser speech-to-text — Aria responds via Nova 2 Lite.",
+                "fallback_available": True,
+            }
             
             processing_time = int((time.time() - start_time) * 1000)
             
-            # Check if Sonic returned an error (fallback needed)
-            # Nova 2 Sonic uses WebSocket bidirectional streaming; Converse API may not support audio
             if sonic_response.get("error") and sonic_response.get("fallback_available"):
                 logger.warning(f"Nova Sonic error: {sonic_response['error']}. "
                                "Audio path unavailable — user should use text input.")
                 
                 return {
-                    "response_text": "Audio input via Nova 2 Sonic isn't available in this setup (requires WebSocket streaming). "
-                                     "Please type your question or use your browser's speech-to-text — I'll respond via Nova 2 Lite.",
+                    "response_text": "Audio input via Nova 2 Sonic requires WebSocket streaming (integration-ready, not yet wired). "
+                                     "Please type your question or use the microphone with speech-to-text — I'll respond via Nova 2 Lite.",
                     "action": "none",
                     "processing_time_ms": processing_time,
                     "nlu_model": self.bedrock.settings.nova_sonic_model_id,

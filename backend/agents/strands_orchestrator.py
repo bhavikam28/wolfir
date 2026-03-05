@@ -35,7 +35,6 @@ from mcp_servers.iam_mcp import get_iam_mcp
 from mcp_servers.cloudwatch_mcp import get_cloudwatch_mcp
 from mcp_servers.nova_canvas_mcp import get_nova_canvas_mcp
 from services.incident_memory import get_incident_memory
-from services.ai_pipeline_monitor import record_invocation
 from utils.logger import logger
 
 
@@ -591,8 +590,6 @@ class StrandsOrchestrator:
             timeline = json.loads(timeline_json)
             state["tools"]["temporal"]["status"] = "COMPLETED"
             state["results"]["timeline"] = timeline
-            for _ in range(max(1, min(50, len(events) // 2 + 1))):  # ~1-50 invocations for temporal
-                record_invocation("amazon.nova-2-lite-v1:0")
         except Exception as e:
             logger.error(f"[{incident_id}] Timeline failed: {e}")
             state["tools"]["temporal"] = {"status": "FAILED", "error": str(e)}
@@ -629,8 +626,6 @@ class StrandsOrchestrator:
                     })
             state["tools"]["risk_scorer"]["status"] = "COMPLETED"
             state["results"]["risk_scores"] = risk_scores
-            for _ in range(len(risk_scores)):  # One per scored event
-                record_invocation("amazon.nova-micro-v1:0")
         except Exception as e:
             logger.error(f"[{incident_id}] Risk scoring failed: {e}")
             state["tools"]["risk_scorer"] = {"status": "FAILED", "error": str(e)}
@@ -671,16 +666,12 @@ class StrandsOrchestrator:
                 else:
                     state["tools"]["remediation"]["status"] = "COMPLETED"
                     state["results"]["remediation_plan"] = json.loads(rem_result)
-                    for _ in range(22):  # Remediation agent multi-step plan
-                        record_invocation("amazon.nova-2-lite-v1:0")
                 if isinstance(docs_result, Exception):
                     logger.error(f"[{incident_id}] Documentation failed: {docs_result}")
                     state["tools"]["documentation"] = {"status": "FAILED", "error": str(docs_result)}
                 else:
                     state["tools"]["documentation"]["status"] = "COMPLETED"
                     state["results"]["documentation"] = json.loads(docs_result)
-                    for _ in range(23):  # Documentation agent
-                        record_invocation("amazon.nova-2-lite-v1:0")
             except Exception as e:
                 logger.error(f"[{incident_id}] Remediation or Documentation failed: {e}")
                 state["tools"]["remediation"]["status"] = "FAILED"

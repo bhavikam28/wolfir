@@ -49,6 +49,7 @@ interface RemediationPlanData {
 interface RemediationPlanProps {
   plan: RemediationPlanData | any;
   incidentId?: string;
+  demoMode?: boolean;
   onApprove?: (plan: RemediationPlanData) => void;
   onExecute?: (stepIndex: number) => void;
   executing?: boolean;
@@ -56,7 +57,7 @@ interface RemediationPlanProps {
 
 type StepStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
-const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, onApprove, onExecute, executing = false }) => {
+const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, demoMode = false, onApprove, onExecute, executing = false }) => {
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
   const [approved, setApproved] = useState(false);
   const [stepStatuses, setStepStatuses] = useState<Record<number, StepStatus>>({});
@@ -197,22 +198,26 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, onA
           </div>
         </div>
 
-        {/* Impact assessment + Estimated time + Progress bar */}
-        <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-slate-200">
+        {/* Impact assessment + Estimated time + Progress bar — single line, aligned */}
+        <div className="flex flex-nowrap items-center gap-4 mt-4 pt-4 border-t border-slate-200">
           {estTimeStr && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Est. time: <strong>{estTimeStr}</strong></span>
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 shrink-0">
+              <Clock className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">Est. time: <strong>{estTimeStr}</strong></span>
             </div>
           )}
-          <div className="text-xs text-slate-600">
-            Impact: <strong>{impactAssessment.resources_affected ?? steps.length} resources</strong> affected
-            {impactAssessment.iam_policies_to_modify != null && <>, <strong>{impactAssessment.iam_policies_to_modify} IAM policies</strong> to modify</>}
+          <div className="flex items-center text-xs text-slate-600 shrink-0">
+            <span className="whitespace-nowrap">
+              Impact: <strong>{impactAssessment.resources_affected ?? steps.length} resources</strong> affected
+              {impactAssessment.iam_policies_to_modify != null && (
+                <>, <strong>{impactAssessment.iam_policies_to_modify} IAM policies</strong> to modify</>
+              )}
+            </span>
           </div>
           <div className="flex-1 min-w-[120px]">
-            <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
-              <span>Remediation Progress</span>
-              <span>{progressPct}%</span>
+            <div className="flex items-center justify-between gap-2 text-[10px] font-bold text-slate-500 mb-1">
+              <span className="whitespace-nowrap">Remediation Progress</span>
+              <span className="shrink-0">{progressPct}%</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <motion.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
@@ -257,7 +262,8 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, onA
                   `step-${stepNumber}`,
                   incidentId,
                   action,
-                  (target || 'unknown').toString()
+                  (target || 'unknown').toString(),
+                  demoMode
                 );
                 if (res.execution_proof) {
                   setStepProofs(prev => ({ ...prev, [stepNumber]: res.execution_proof }));

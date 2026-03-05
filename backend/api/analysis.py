@@ -83,23 +83,17 @@ async def health_check() -> Dict[str, str]:
 async def analyze_real_cloudtrail(
     days_back: int = Query(7, ge=1, le=90),
     max_events: int = Query(100, ge=10, le=500),
-    profile: Optional[str] = Query(None, description="AWS profile name (optional)")
+    profile: Optional[str] = Query(None, description="AWS profile name (optional)"),
+    fetch_only: bool = Query(False, description="If true, only fetch events (no analysis). Use for orchestration pipeline.")
 ):
     """
-    Analyze real CloudTrail events from your AWS account
+    Fetch and optionally analyze real CloudTrail events from your AWS account.
     
-    This endpoint:
-    1. Fetches real CloudTrail events from your AWS account
-    2. Filters for security-relevant events
-    3. Uses Nova 2 Lite to analyze and build timeline
-    4. Identifies root causes and attack patterns
+    When fetch_only=true: Returns raw events only (no Nova analysis). Frontend passes these
+    to /api/orchestration/analyze-incident for single-pass full pipeline.
     
-    Args:
-        days_back: How many days back to fetch events (1-90)
-        max_events: Maximum number of events to analyze (10-500)
-        
-    Returns:
-        Timeline analysis with root cause and insights
+    When fetch_only=false: Fetches + runs temporal analysis (legacy, causes double analysis
+    if frontend also calls orchestration).
     """
     try:
         start_time = time.time()
@@ -147,9 +141,20 @@ async def analyze_real_cloudtrail(
             else:
                 formatted_events.append(event)
         
-        logger.info(f"Fetched {len(formatted_events)} CloudTrail events, starting analysis")
+        logger.info(f"Fetched {len(formatted_events)} CloudTrail events")
         
-        # Perform temporal analysis using Nova 2 Lite
+        if fetch_only:
+            analysis_time = int((time.time() - start_time) * 1000)
+            return {
+                "incident_id": f"INC-{uuid.uuid4().hex[:6].upper()}",
+                "status": "fetched",
+                "raw_events": formatted_events,
+                "analysis_time_ms": analysis_time,
+                "events_analyzed": len(formatted_events),
+                "time_range_days": days_back,
+                "data_source": "real_cloudtrail",
+            }
+        
         timeline = await temporal_agent.analyze_timeline(
             events=formatted_events,
             incident_type="Real CloudTrail Analysis"
@@ -167,12 +172,11 @@ async def analyze_real_cloudtrail(
         
         logger.info(f"Real CloudTrail analysis complete: {incident_id} in {analysis_time}ms")
         
-        # Add metadata and raw events — frontend needs raw_events for orchestration (dynamic analysis)
         response_dict = response.dict()
         response_dict['data_source'] = 'real_cloudtrail'
         response_dict['events_analyzed'] = len(formatted_events)
         response_dict['time_range_days'] = days_back
-        response_dict['raw_events'] = formatted_events  # Full CloudTrail for orchestration pipeline
+        response_dict['raw_events'] = formatted_events
         
         return response_dict
         

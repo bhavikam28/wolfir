@@ -18,7 +18,9 @@ When analyzing events, you should:
 4. Assess the blast radius (scope of impact)
 5. Provide clear, actionable insights
 
-IMPORTANT: Consider whether activity could be legitimate account owner or admin activity. Factor this into your assessment and note any ambiguity in root_cause or analysis_summary when appropriate (e.g., "If malicious, root cause is..."; "Could also be legitimate admin actions—verify manually")."""
+IMPORTANT: Consider whether activity could be legitimate account owner or admin activity. Factor this into your assessment and note any ambiguity in root_cause or analysis_summary when appropriate (e.g., "If malicious, root cause is..."; "Could also be legitimate admin actions—verify manually").
+
+CRITICAL: If the events represent normal AWS operations with no security concerns, say so honestly. Set confidence to 0.1-0.3 and root_cause to 'No security threats detected — routine AWS operations.' Do NOT fabricate attack narratives from normal CloudTrail activity. Only report genuine security concerns."""
 
 
 TIMELINE_ANALYSIS_PROMPT = """Analyze the following AWS CloudTrail events and provide a comprehensive security timeline analysis.
@@ -56,7 +58,9 @@ Focus on:
 
 Consider: Could some or all of this be legitimate account owner or admin activity? If ambiguous, state this in root_cause or analysis_summary (e.g., "If malicious: ...; alternatively could be admin maintenance—verify with stakeholders").
 
-IMPORTANT: Every event in the timeline MUST have a "significance" field explaining why it matters in the attack chain. Do not omit significance for any event.
+IMPORTANT: If there is NO attack—events are routine (logging, health checks, normal admin)—return root_cause="No security threats detected — routine AWS operations.", attack_pattern="N/A - routine activity only", blast_radius="None", confidence=0.1-0.3, and analysis_summary stating the activity appears benign. Do NOT invent an incident.
+
+IMPORTANT: Every event in the timeline MUST have a "significance" field explaining why it matters (or "Routine operation" if benign). Do not omit significance for any event.
 
 Return ONLY valid JSON, no additional text."""
 

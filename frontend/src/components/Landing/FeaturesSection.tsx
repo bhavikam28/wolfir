@@ -307,7 +307,7 @@ const FeaturesSection: React.FC = () => {
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                   <Mic className="w-5 h-5 text-emerald-400" />
                 </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold">Nova 2 Sonic</span>
+                <span className="px-2 py-0.5 bg-slate-500/10 text-slate-400 border border-slate-500/20 rounded-full text-[10px] font-bold" title="Integration-ready; requires WebSocket streaming client">Nova 2 Sonic (ready)</span>
               </div>
               <h4 className="font-bold text-sm mb-1">Voice Investigation</h4>
               <p className="text-xs text-slate-400">Hands-free analysis with natural language commands</p>

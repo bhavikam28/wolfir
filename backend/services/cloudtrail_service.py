@@ -14,6 +14,36 @@ from utils.logger import logger
 # Common regions to query — CloudTrail LookupEvents is per-region
 DEFAULT_REGIONS = ["us-east-1", "us-east-2", "us-west-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-southeast-1"]
 
+# Routine/noise events to filter out before analysis (avoids hallucinated incidents)
+NOISE_EVENTS = frozenset({
+    "PutLogEvents", "CreateLogStream", "CreateLogGroup",
+    "DescribeLogGroups", "DescribeLogStreams", "FilterLogEvents",
+    "GetLogEvents", "TestMetricFilter", "PutMetricData",
+    "GetMetricData", "DescribeAlarms", "ListMetrics",
+    "BatchGetImage", "GetDownloadUrlForLayer", "GetAuthorizationToken",
+    "DescribeRepositories", "InitiateLayerUpload", "UploadLayerPart",
+    "CompleteLayerUpload", "PutImage", "ListImages",
+    "GetBucketLocation", "GetBucketAcl", "HeadBucket",
+    "GetBucketVersioning", "GetBucketEncryption",
+    "GetBucketPolicy", "GetBucketTagging",
+    "DescribeTable", "ListTables",
+    "GetParameters", "GetParameter", "DescribeParameters",
+    "GenerateDataKey", "Decrypt", "Encrypt",
+    "DescribeKey", "ListKeys",
+    "GetHostedZone", "ListResourceRecordSets",
+    "DescribeCertificate", "ListCertificates",
+    "LookupEvents",
+})
+
+# Security-relevant read events (recon, credential access, data access)
+SECURITY_READ_EVENT_NAMES = [
+    "GetSecretValue", "GetObject", "ListObjects", "ListObjectsV2",
+    "DescribeInstances", "DescribeSecurityGroups", "DescribeVolumes",
+    "ListUsers", "ListRoles", "ListAccessKeys", "GetCallerIdentity",
+    "ListBuckets", "GetBucketPolicy", "GetBucketAcl",
+    "AssumeRole", "GetSessionToken",
+]
+
 
 class CloudTrailService:
     """Service for fetching real CloudTrail events"""
@@ -127,8 +157,11 @@ class CloudTrailService:
         start_time: datetime,
         end_time: datetime,
         max_per_region: int,
+        read_only: Optional[bool] = None,
     ) -> List[Dict[str, Any]]:
-        """Fetch write events for a single region with pagination and rate limiting."""
+        """Fetch events for a single region with pagination and rate limiting.
+        read_only: None = no filter, True = read events only, False = write events only.
+        """
         client = self.session.client('cloudtrail', region_name=region)
         all_events = []
         next_token = None
@@ -140,10 +173,11 @@ class CloudTrailService:
                     'StartTime': start_time,
                     'EndTime': end_time,
                     'MaxResults': 50,
-                    'LookupAttributes': [
-                        {'AttributeKey': 'ReadOnly', 'AttributeValue': 'false'}
-                    ],
                 }
+                if read_only is not None:
+                    params['LookupAttributes'] = [
+                        {'AttributeKey': 'ReadOnly', 'AttributeValue': str(read_only).lower()}
+                    ]
                 if next_token:
                     params['NextToken'] = next_token
                 response = await asyncio.to_thread(
@@ -156,7 +190,6 @@ class CloudTrailService:
                 next_token = response.get('NextToken')
                 if not next_token:
                     break
-                # Rate limit: CloudTrail allows 2 req/sec per account per region
                 await asyncio.sleep(0.6)
         except ClientError as e:
             if e.response.get('Error', {}).get('Code') == 'AccessDeniedException':
@@ -166,6 +199,17 @@ class CloudTrailService:
             logger.warning(f"CloudTrail fetch failed for {region}: {e}")
         return all_events
 
+    def _extract_event_name(self, event: Dict[str, Any]) -> str:
+        """Extract event name from CloudTrail event (CloudTrailEvent JSON or EventName)."""
+        if 'CloudTrailEvent' in event:
+            try:
+                import json
+                ct = json.loads(event['CloudTrailEvent'])
+                return ct.get('eventName', '') or ''
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return event.get('EventName', '') or ''
+
     async def get_security_events(
         self,
         days_back: int = 7,
@@ -173,9 +217,9 @@ class CloudTrailService:
         regions: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """
-        Get security-relevant CloudTrail events (write/modify/delete only).
-        Queries multiple regions to maximize event retrieval — CloudTrail LookupEvents
-        is regional, so a single region may miss activity in others.
+        Get security-relevant CloudTrail events (write + security-relevant read).
+        Pass 1: Write events (ReadOnly=false) — CreateRole, AttachRolePolicy, etc.
+        Pass 2: Security-relevant read events (GetSecretValue, GetObject, DescribeInstances, etc.)
         """
         start_time = datetime.utcnow() - timedelta(days=days_back)
         end_time = datetime.utcnow()
@@ -189,7 +233,7 @@ class CloudTrailService:
                 break
             try:
                 region_events = await self._fetch_region_events(
-                    region, start_time, end_time, per_region
+                    region, start_time, end_time, per_region, read_only=False
                 )
                 for e in region_events:
                     eid = e.get('EventId')
@@ -197,21 +241,66 @@ class CloudTrailService:
                         seen_ids.add(eid)
                         all_events.append(e)
                 if region_events:
-                    logger.info(f"CloudTrail {region}: fetched {len(region_events)} write events")
-                await asyncio.sleep(0.5)  # Brief delay between regions
+                    logger.info(f"CloudTrail {region}: {len(region_events)} write events")
+                await asyncio.sleep(0.5)
             except PermissionError:
                 raise
             except Exception as e:
                 logger.warning(f"CloudTrail fetch error for {region}: {e}")
+
+        read_per_region = max(20, per_region // 2)
+        for region in regions_to_query:
+            if len(all_events) >= max_results:
+                break
+            try:
+                read_events = await self._fetch_region_events(
+                    region, start_time, end_time, read_per_region, read_only=True
+                )
+                added = 0
+                for e in read_events:
+                    eid = e.get('EventId')
+                    if eid and eid not in seen_ids:
+                        name = self._extract_event_name(e)
+                        if name in SECURITY_READ_EVENT_NAMES:
+                            seen_ids.add(eid)
+                            all_events.append(e)
+                            added += 1
+                if added:
+                    logger.info(f"CloudTrail {region}: {added} security-relevant read events")
+                await asyncio.sleep(0.5)
+            except PermissionError:
+                raise
+            except Exception as e:
+                logger.warning(f"CloudTrail read fetch error for {region}: {e}")
 
         sorted_events = sorted(
             all_events,
             key=lambda x: str(x.get('EventTime', '')),
             reverse=True
         )
-        result = sorted_events[:max_results]
+        # Filter out noise events; keep events with errorCode (failed attempts are interesting)
+        def _has_error(ev: Dict[str, Any]) -> bool:
+            if ev.get("errorCode"):
+                return True
+            ct = ev.get("CloudTrailEvent")
+            if isinstance(ct, str) and "errorCode" in ct:
+                try:
+                    import json
+                    parsed = json.loads(ct)
+                    return bool(parsed.get("errorCode")) if isinstance(parsed, dict) else False
+                except Exception:
+                    return True  # Keep if we can't parse
+            return False
+
+        filtered = [
+            e for e in sorted_events
+            if self._extract_event_name(e) not in NOISE_EVENTS or _has_error(e)
+        ]
+        result = filtered[:max_results]
+        if len(filtered) < len(sorted_events):
+            logger.info(f"Filtered {len(sorted_events) - len(filtered)} noise events")
         logger.info(
-            f"CloudTrail: {len(result)} unique write events from {len(regions_to_query)} regions "
-            f"(last {days_back} days, ReadOnly=false)"
+            f"CloudTrail: {len(result)} unique events (write + security read) from {len(regions_to_query)} regions "
+            f"(last {days_back} days)"
         )
         return result

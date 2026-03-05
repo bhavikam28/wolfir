@@ -78,7 +78,7 @@ This report was generated using the following Amazon Nova AI models:
 | Amazon Nova Micro | Risk scoring and classification |
 | Amazon Nova Canvas | Report cover and security visualizations |
 
-*Nova Sentinel — Built for the Amazon Nova AI Hackathon 2026. Infrastructure: MCP Server, Strands Agents Framework.*
+*Nova Sentinel — AI-powered AWS security analysis. Infrastructure: MCP Server, Strands Agents Framework.*
 `;
 
 const ReportExport: React.FC<ReportExportProps> = ({

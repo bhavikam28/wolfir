@@ -3,7 +3,7 @@ Voice API endpoints — Aria voice assistant
 
 Dual-model voice architecture:
 - /api/voice/query — Text input, uses Nova 2 Lite for NLU (browser STT/TTS)
-- /api/voice/audio — Audio input, uses Nova 2 Sonic for speech-to-speech
+- /api/voice/audio — Audio input; Nova 2 Sonic integration-ready (WebSocket); fallback to text
 - /api/voice/summary — Text summary generation, uses Nova 2 Lite
 - /api/voice/process-command — Intent detection, uses Nova 2 Lite
 """

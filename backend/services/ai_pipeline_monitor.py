@@ -76,23 +76,36 @@ def validate_model_output(output: str, expected_format: str = "json") -> Dict[st
     return {"valid": len(issues) == 0, "issues": issues or ["OK"]}
 
 
-def _seed_demo_invocations() -> None:
-    """Seed invocation counter for demo — AML.T0040 shows WARNING when pipeline has run."""
-    if sum(_invocation_counts.values()) > 0:
-        return
-    # Seed enough to trigger anomaly (total > baseline * 3, baseline ~20 for 60min)
-    for _ in range(45):
-        record_invocation("amazon.nova-2-lite-v1:0")
-    for _ in range(18):
-        record_invocation("amazon.nova-micro-v1:0")
-    for _ in range(8):
-        record_invocation("amazon.nova-pro-v1:0")
+def _get_demo_invocation_overlay() -> Dict[str, Any]:
+    """
+    Return synthetic invocation summary for display only when real counts are zero.
+    Does NOT modify _invocation_counts — avoids polluting real data in long-running backends.
+    """
+    total = sum(_invocation_counts.values())
+    if total > 0:
+        return None  # Use real data
+    baseline = _baseline_calls * 2  # ~20 for 60min
+    synthetic_total = 71  # Enough to trigger WARNING (total > baseline * 3)
+    return {
+        "total_invocations": synthetic_total,
+        "by_model": {
+            "amazon.nova-2-lite-v1:0": 45,
+            "amazon.nova-micro-v1:0": 18,
+            "amazon.nova-pro-v1:0": 8,
+        },
+        "anomaly_detected": True,
+        "anomaly_reason": f"Demo overlay: {synthetic_total} calls (baseline ~{baseline}) — run analysis for real counts",
+    }
 
 
 def generate_atlas_report() -> Dict[str, Any]:
     """Generate MITRE ATLAS threat assessment and NIST AI RMF mapping."""
-    _seed_demo_invocations()
     inv = monitor_invocation_patterns()
+    # When no real invocations, use display-only overlay so AML.T0040 shows WARNING
+    # without polluting _invocation_counts (avoids inflated counts after real pipeline runs)
+    overlay = _get_demo_invocation_overlay()
+    if overlay is not None:
+        inv = overlay
     techniques = [
         {"id": "AML.T0051", "name": "Prompt Injection", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "Pattern scanning active"},
         {"id": "AML.T0016", "name": "Obtain Capabilities", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "No unusual model access"},

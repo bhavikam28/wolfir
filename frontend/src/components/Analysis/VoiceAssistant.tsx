@@ -354,7 +354,7 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white">Aria</h3>
-                  <p className="text-[10px] text-white/70">Security Intelligence by Nova 2 Lite</p>
+                  <p className="text-[10px] text-white/70" title="Nova 2 Lite for NLU + browser speech synthesis. Nova Sonic: integration-ready (WebSocket streaming).">Nova 2 Lite + browser TTS</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">

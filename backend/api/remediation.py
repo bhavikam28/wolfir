@@ -20,7 +20,6 @@ from utils.logger import logger
 
 router = APIRouter(prefix="/api/remediation", tags=["remediation"])
 remediation_agent = RemediationAgent()
-executor = RemediationExecutor(demo_mode=True)
 
 
 @router.post("/generate-plan")
@@ -105,7 +104,7 @@ async def execute_step(
     incident_id: str = Query(...),
     action: str = Query(...),
     target: str = Query(...),
-    demo_mode: bool = Query(True),
+    demo_mode: bool = Query(False),
 ) -> Dict[str, Any]:
     """Execute a specific remediation step (AUTO or approved)."""
     try:
@@ -134,7 +133,9 @@ async def approve_remediation(approval_token: str) -> Dict[str, Any]:
     p = approve_and_get(approval_token)
     if not p:
         raise HTTPException(status_code=404, detail="Approval not found or already processed")
-    exec = RemediationExecutor(demo_mode=True)
+    # Use demo_mode from approval if stored; default False for real execution
+    demo_mode = p.get("demo_mode", False)
+    exec = RemediationExecutor(demo_mode=demo_mode)
     result = await exec.execute_disable_access_key(
         p["params"].get("access_key_id", "AKIAEXAMPLE"),
         p.get("target", "unknown"),

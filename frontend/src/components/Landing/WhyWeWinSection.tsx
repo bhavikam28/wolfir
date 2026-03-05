@@ -46,7 +46,7 @@ const WhyWeWinSection: React.FC = () => {
             </p>
             <div className="font-mono text-xs text-green-400 p-3 bg-green-500/[0.04] border border-green-500/[0.08] rounded-lg leading-relaxed">
               → Before: {`{"policies": ["ReadOnly"]}`}<br />
-              &nbsp;&nbsp;After: + &quot;NovaSentinel-EmergencyDeny&quot;
+              &nbsp;&nbsp;After: + &quot;Nova Sentinel-EmergencyDeny&quot;
             </div>
           </div>
 
