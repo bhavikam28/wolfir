@@ -1,6 +1,6 @@
 /**
  * Hardcoded Demo Analysis Data
- * Used for reliable hackathon demo (no API dependency)
+ * Used for reliable demo when backend is offline (no API dependency)
  */
 import type { AnalysisResponse } from '../types/incident';
 

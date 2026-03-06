@@ -39,6 +39,7 @@ import VoiceAssistant from './components/Analysis/VoiceAssistant';
 import IncidentHistory from './components/Dashboard/IncidentHistory';
 import AIPipelineSecurity from './components/Dashboard/AIPipelineSecurity';
 import DemoChecklist from './components/Dashboard/DemoChecklist';
+import AgenticQuery from './components/Analysis/AgenticQuery';
 
 type AppMode = 'landing' | 'demo' | 'console';
 
@@ -771,6 +772,9 @@ function App() {
             <p className="text-sm text-slate-500">Remediation plan not yet generated.</p>
           </div>
         );
+
+      case 'agentic-query':
+        return <AgenticQuery />;
 
       case 'visual':
         return (

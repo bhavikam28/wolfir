@@ -1,6 +1,6 @@
 /**
  * AWS Authentication Tab - Premium card-based auth selector
- * Secure connection for judges to link their AWS accounts
+ * Secure connection to link AWS accounts
  */
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';

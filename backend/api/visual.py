@@ -66,9 +66,7 @@ async def analyze_diagram(
         raise
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in diagram analysis: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in diagram analysis: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Diagram analysis failed: {str(e)}"
@@ -130,9 +128,7 @@ async def detect_drift(
         raise
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in drift detection: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in drift detection: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Drift detection failed: {str(e)}"

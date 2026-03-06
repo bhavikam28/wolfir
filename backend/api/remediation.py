@@ -58,9 +58,7 @@ async def generate_plan(
         
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error generating remediation plan: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error generating remediation plan: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Remediation plan generation failed: {str(e)}"
@@ -89,9 +87,7 @@ async def validate_plan(
         
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error validating plan: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error validating plan: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Plan validation failed: {str(e)}"

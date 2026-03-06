@@ -1,5 +1,5 @@
 /**
- * Demo Checklist — Collapsible panel for hackathon demos
+ * Demo Checklist — Collapsible panel for demo flows
  * Tracks: Run scenario → Show timeline → Show remediation → Show AI security → Show incident history
  */
 import { useState } from 'react';

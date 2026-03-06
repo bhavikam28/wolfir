@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Shield, GitBranch, Scale, DollarSign,
   FileText, Download, Mic, Image, Clock, Database,
-  ChevronLeft, ChevronRight as ChevronRightIcon, ArrowLeft, Menu, X
+  ChevronLeft, ChevronRight as ChevronRightIcon, ArrowLeft, Menu, X, Zap
 } from 'lucide-react';
 import NovaSentinelLogo from '../Logo';
 
@@ -26,6 +26,7 @@ export const SIDEBAR_FEATURES: SidebarFeature[] = [
   { id: 'overview', label: 'Security Overview', icon: LayoutDashboard, locked: false, group: 'analysis' },
   { id: 'timeline', label: 'Incident Timeline', icon: Clock, locked: false, group: 'analysis' },
   { id: 'attack-path', label: 'Attack Path', icon: GitBranch, locked: false, group: 'analysis' },
+  { id: 'agentic-query', label: 'Autonomous Agent', icon: Zap, locked: false, group: 'analysis' },
   { id: 'incident-history', label: 'Incident History', icon: Database, locked: false, group: 'analysis' },
   // Intelligence group
   { id: 'compliance', label: 'Compliance Mapping', icon: Scale, locked: false, badge: '6', group: 'intelligence' },

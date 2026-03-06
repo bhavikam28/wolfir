@@ -60,12 +60,10 @@ async def analyze_timeline(request: AnalysisRequest):
         
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in timeline analysis endpoint: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in timeline analysis endpoint: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Timeline analysis failed: {str(e)}\n\nTraceback:\n{error_trace}"
+            detail=f"Timeline analysis failed: {str(e)}"
         )
 
 
@@ -182,12 +180,10 @@ async def analyze_real_cloudtrail(
         
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in real CloudTrail analysis: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in real CloudTrail analysis: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Real CloudTrail analysis failed: {str(e)}\n\nTraceback:\n{error_trace}"
+            detail=f"Real CloudTrail analysis failed: {str(e)}"
         )
 
 
@@ -232,12 +228,10 @@ async def score_risk(
         
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in risk scoring: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in risk scoring: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Risk scoring failed: {str(e)}\n\nTraceback:\n{error_trace}"
+            detail=f"Risk scoring failed: {str(e)}"
         )
 
 
@@ -279,12 +273,10 @@ async def score_event_risk(
         
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in event risk scoring: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in event risk scoring: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Event risk scoring failed: {str(e)}\n\nTraceback:\n{error_trace}"
+            detail=f"Event risk scoring failed: {str(e)}"
         )
 
 
@@ -305,10 +297,8 @@ async def test_bedrock():
         }
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Bedrock test failed: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Bedrock test failed: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Bedrock test failed: {str(e)}\n\nTraceback:\n{error_trace}"
+            detail=f"Bedrock test failed: {str(e)}"
         )

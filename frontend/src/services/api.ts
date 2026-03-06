@@ -162,6 +162,15 @@ export const orchestrationAPI = {
     const response = await api.get('/api/orchestration/incidents');
     return response.data;
   },
+
+  /**
+   * Agentic query — Agent autonomously plans and executes tools.
+   * Agent autonomously plans and executes tools based on the prompt.
+   */
+  agentQuery: async (prompt: string): Promise<{ response: string; framework: string; mode: string }> => {
+    const response = await api.post('/api/orchestration/agent-query', { prompt });
+    return response.data;
+  },
 };
 
 export const visualAPI = {

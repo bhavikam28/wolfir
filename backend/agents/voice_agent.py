@@ -1,7 +1,7 @@
 """
 Voice Agent — Aria, powered by Amazon Nova
 
-Current implementation (transparent to judges):
+Current implementation:
 - Nova 2 Lite: NLU and response generation for all queries (text and audio fallback)
 - Browser Web Speech API: STT (speech-to-text) and TTS (speech synthesis)
 - Aria uses Nova 2 Lite for NLU with browser-side speech synthesis.

@@ -124,7 +124,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
         )}
       </div>
 
-      {/* Cross-Incident Correlation — from current run (judges love this) */}
+      {/* Cross-Incident Correlation — from current run */}
       {orchestrationResult?.results?.correlation && orchestrationResult.results.correlation.campaign_probability > 0.5 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}

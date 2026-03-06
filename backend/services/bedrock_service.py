@@ -20,6 +20,16 @@ from botocore.exceptions import ClientError
 from utils.config import get_settings
 from utils.logger import logger
 
+# Retry config for Bedrock throttling
+BEDROCK_RETRY_MAX_ATTEMPTS = 2
+BEDROCK_RETRY_DELAY_SEC = 2.0
+
+
+def _is_throttling(e: ClientError) -> bool:
+    """Check if error is throttling-related."""
+    code = e.response.get("Error", {}).get("Code", "")
+    return code in ("ThrottlingException", "ServiceQuotaExceededException", "TooManyRequestsException")
+
 try:
     from services.ai_pipeline_monitor import record_invocation
 except ImportError:
@@ -98,17 +108,27 @@ class BedrockService:
             
             logger.info(f"Invoking Nova 2 Lite ({self.settings.nova_lite_model_id})")
 
-            async with self._throttle():
-                response = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        self.client.invoke_model,
-                        modelId=self.settings.nova_lite_model_id,
-                        contentType="application/json",
-                        accept="application/json",
-                        body=json.dumps(request_body),
-                    ),
-                    timeout=60.0,
-                )
+            last_error = None
+            for attempt in range(BEDROCK_RETRY_MAX_ATTEMPTS):
+                try:
+                    async with self._throttle():
+                        response = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                self.client.invoke_model,
+                                modelId=self.settings.nova_lite_model_id,
+                                contentType="application/json",
+                                accept="application/json",
+                                body=json.dumps(request_body),
+                            ),
+                            timeout=60.0,
+                        )
+                    break
+                except ClientError as e:
+                    if _is_throttling(e) and attempt < BEDROCK_RETRY_MAX_ATTEMPTS - 1:
+                        logger.warning(f"Nova 2 Lite throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s (attempt {attempt + 1}/{BEDROCK_RETRY_MAX_ATTEMPTS})")
+                        await asyncio.sleep(BEDROCK_RETRY_DELAY_SEC)
+                    else:
+                        raise
 
             response_body = json.loads(response['body'].read())
             
@@ -159,19 +179,28 @@ class BedrockService:
             logger.info(f"Invoking Nova Pro ({self.settings.nova_pro_model_id}, multimodal: {image_data is not None})")
 
             # Converse API handles bytes natively — invoke_model + json.dumps would fail
-            async with self._throttle():
-                response = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        self.client.converse,
-                        modelId=self.settings.nova_pro_model_id,
-                        messages=[{"role": "user", "content": content}],
-                        inferenceConfig={
-                            "maxTokens": max_tokens,
-                            "temperature": temperature,
-                        },
-                    ),
-                    timeout=60.0,
-                )
+            for attempt in range(BEDROCK_RETRY_MAX_ATTEMPTS):
+                try:
+                    async with self._throttle():
+                        response = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                self.client.converse,
+                                modelId=self.settings.nova_pro_model_id,
+                                messages=[{"role": "user", "content": content}],
+                                inferenceConfig={
+                                    "maxTokens": max_tokens,
+                                    "temperature": temperature,
+                                },
+                            ),
+                            timeout=60.0,
+                        )
+                    break
+                except ClientError as e:
+                    if _is_throttling(e) and attempt < BEDROCK_RETRY_MAX_ATTEMPTS - 1:
+                        logger.warning(f"Nova Pro throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s (attempt {attempt + 1}/{BEDROCK_RETRY_MAX_ATTEMPTS})")
+                        await asyncio.sleep(BEDROCK_RETRY_DELAY_SEC)
+                    else:
+                        raise
 
             output = response.get("output", {})
             message = output.get("message", {})
@@ -222,17 +251,26 @@ class BedrockService:
             
             logger.info(f"Invoking Nova Micro ({self.settings.nova_micro_model_id})")
 
-            async with self._throttle():
-                response = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        self.client.invoke_model,
-                        modelId=self.settings.nova_micro_model_id,
-                        contentType="application/json",
-                        accept="application/json",
-                        body=json.dumps(request_body),
-                    ),
-                    timeout=60.0,
-                )
+            for attempt in range(BEDROCK_RETRY_MAX_ATTEMPTS):
+                try:
+                    async with self._throttle():
+                        response = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                self.client.invoke_model,
+                                modelId=self.settings.nova_micro_model_id,
+                                contentType="application/json",
+                                accept="application/json",
+                                body=json.dumps(request_body),
+                            ),
+                            timeout=60.0,
+                        )
+                    break
+                except ClientError as e:
+                    if _is_throttling(e) and attempt < BEDROCK_RETRY_MAX_ATTEMPTS - 1:
+                        logger.warning(f"Nova Micro throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s (attempt {attempt + 1}/{BEDROCK_RETRY_MAX_ATTEMPTS})")
+                        await asyncio.sleep(BEDROCK_RETRY_DELAY_SEC)
+                    else:
+                        raise
 
             response_body = json.loads(response['body'].read())
             try:

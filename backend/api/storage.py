@@ -52,9 +52,7 @@ async def save_incident(
             
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error saving incident: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error saving incident: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save incident: {str(e)}"
@@ -241,9 +239,7 @@ async def upload_diagram(
         raise
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error uploading diagram: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error uploading diagram: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to upload diagram: {str(e)}"

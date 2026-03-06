@@ -8,8 +8,14 @@ import json
 import uuid
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Query
 from typing import Dict, Any, Optional, List
+from pydantic import BaseModel
 
 from agents.strands_orchestrator import StrandsOrchestrator, STRANDS_TOOLS
+
+
+class AgentQueryRequest(BaseModel):
+    """Request for agentic query — Agent plans its own tool sequence."""
+    prompt: str
 from services.cloudtrail_service import CloudTrailService
 from utils.logger import logger
 
@@ -90,9 +96,7 @@ async def analyze_incident(
         raise
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"Error in Strands analysis: {e}")
-        logger.error(f"Traceback: {error_trace}")
+        logger.error(f"Error in Strands analysis: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Orchestrated analysis failed: {str(e)}"
@@ -203,6 +207,37 @@ async def analyze_from_cloudtrail(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/agent-query")
+async def agent_query(request: AgentQueryRequest) -> Dict[str, Any]:
+    """
+    Agentic query — the Strands Agent autonomously plans and executes tools.
+    
+    Unlike the deterministic pipeline (analyze-incident), this lets the Agent
+    decide which tools to call based on the prompt. Demonstrates real agentic
+    reasoning: "Investigate this IAM role for privilege escalation",
+    "Scan CloudTrail for anomalies in the last 7 days", etc.
+    
+    The Agent can call: CloudTrail lookup, IAM audit, CloudWatch checks,
+    incident history, timeline analysis, remediation, and more.
+    """
+    prompt = request.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="prompt must be a non-empty string")
+    
+    try:
+        logger.info(f"Agentic query: {prompt[:80]}...")
+        response = await orchestrator.agent_query(prompt)
+        return {
+            "response": response,
+            "framework": "strands-agents",
+            "mode": "autonomous",
+            "message": "Agent autonomously planned and executed tools based on your prompt.",
+        }
+    except Exception as e:
+        logger.error(f"Agentic query failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Agent query failed: {str(e)}")
+
+
 @router.get("/health")
 async def health_check() -> Dict[str, Any]:
     """Health check endpoint"""
@@ -212,5 +247,6 @@ async def health_check() -> Dict[str, Any]:
         "framework": "strands-agents (real SDK)",
         "tools_registered": len(STRANDS_TOOLS),
         "agents": ["temporal", "risk_scorer", "remediation", "documentation"],
-        "mcp_servers": ["cloudtrail", "iam", "cloudwatch", "nova-canvas"]
+        "mcp_servers": ["cloudtrail", "iam", "cloudwatch", "nova-canvas"],
+        "agentic_query": "POST /api/orchestration/agent-query",
     }

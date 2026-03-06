@@ -12,7 +12,7 @@ This service does THREE things:
 2. CORRELATE: Before any new analysis, query past incidents for pattern matches
 3. INJECT: Feed correlation context into Aria's system prompt
 
-Uses boto3 directly — no ORM. Kept simple for hackathon reliability.
+Uses boto3 directly — no ORM. Kept simple for reliability.
 """
 import json
 import hashlib
