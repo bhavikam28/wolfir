@@ -1,7 +1,7 @@
 /**
  * Features Section - Premium White Theme
  * Full content: Attack path, pipeline, MCP servers, bento grid, dashboard
- * Big-tech cloud security aesthetic (Wiz, CrowdStrike, Orca)
+ * Enterprise cloud security aesthetic
  */
 import React from 'react';
 import { motion } from 'framer-motion';

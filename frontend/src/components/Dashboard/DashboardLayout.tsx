@@ -1,6 +1,5 @@
 /**
  * Dashboard Layout - Enterprise sidebar + main content area
- * Inspired by Wiz.io, CrowdStrike Falcon, AWS Console
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +18,7 @@ export interface SidebarFeature {
   badge?: string;
   badgeColor?: string;
   group: 'analysis' | 'intelligence' | 'tools' | 'ai_governance';
+  requiresAnalysis?: boolean;
 }
 
 export const SIDEBAR_FEATURES: SidebarFeature[] = [

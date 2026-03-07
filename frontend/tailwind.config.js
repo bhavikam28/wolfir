@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Wiz.io-inspired palette
+        // Premium palette
         wiz: {
           50: '#f0f4ff',
           100: '#dbe4ff',
