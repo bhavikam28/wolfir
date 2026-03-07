@@ -87,7 +87,7 @@ app = FastAPI(
     description=(
         "AI-Powered Security Incident Response using Amazon Nova — "
         "Strands Agents SDK + MCP Server + 5 Nova Bedrock Models + Nova Act SDK + "
-        "4 AWS MCP Servers (CloudTrail, IAM, CloudWatch, Nova Canvas)"
+        "5 AWS MCP Servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas)"
     ),
     version="3.0.0",
     docs_url="/docs",
@@ -208,7 +208,7 @@ async def health_check():
             "nova_canvas": settings.nova_canvas_model_id,
         },
         "frameworks": {
-            "mcp": "MCP Server (FastMCP) — 22 tools, 4 AWS MCP servers",
+            "mcp": "MCP Server (FastMCP) — 5 AWS MCP servers, 14 Strands tools",
             "strands": "Strands Agents SDK — 12 @tool decorators",
             "nova_act": "Nova Act SDK — browser automation",
         },

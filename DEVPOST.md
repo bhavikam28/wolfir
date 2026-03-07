@@ -14,7 +14,7 @@ Security teams get **11,000+ alerts per day** and investigate **<5%**. Nova Sent
 - **AI Pipeline Self-Monitoring** — "Who protects the AI?" Monitors its own Bedrock pipeline for MITRE ATLAS threats.
 - **Agentic Pivot** — When timeline confidence is low, the agent runs CloudTrail anomaly scan before proceeding. Conditional reasoning, not a fixed pipeline.
 
-**Tech:** Strands Agents SDK, 4 AWS MCP servers (22 tools), FastAPI, React, Vite.
+**Tech:** Strands Agents SDK, 5 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas), 14 Strands @tool functions, FastAPI, React, Vite.
 
 **#AmazonNova** | **#NovaSentinel** | **#AIforSecurity**
 

@@ -26,8 +26,8 @@ CloudTrail Alert
 │  Pro    │  Lite    │  Micro   │ estrator│ Lite   │
 │ Detect  │Investigate│ Classify │Remediate│Document│
 ├─────────┴──────────┴──────────┴────────┴────────┤
-│  4 AWS MCP Servers (CloudTrail, IAM, CW, Canvas) │
-│  22 MCP Tools · 12 Strands @tool Functions       │
+│  5 MCP Servers (CloudTrail, IAM, CW, Security Hub, Canvas) │
+│  14 Strands @tool Functions · 5 Nova Models       │
 └──────────────────────────────────────────────────┘
       ↓              ↓             ↓
   DynamoDB     CloudTrail      JIRA/Slack/
@@ -69,7 +69,7 @@ Actually executes AWS API calls (not just plans). Before/after state snapshots, 
 
 - **Backend**: Python, FastAPI, Strands Agents SDK, boto3
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion
-- **MCP**: FastMCP with 4 AWS MCP servers (22 tools)
+- **MCP**: FastMCP with 5 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas). 14 Strands @tool functions.
 - **Deployment**: Vercel (frontend), Local/EC2 (backend)
 
 ## 🚀 Quick Start / Setup

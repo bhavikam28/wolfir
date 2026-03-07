@@ -500,6 +500,7 @@ STRANDS_TOOLS = [
     iam_policy_analysis,
     cloudwatch_security_check,
     cloudwatch_billing_check,
+    securityhub_get_findings,
     nova_canvas_generate_report_cover,
 ]
 
@@ -569,7 +570,7 @@ class StrandsOrchestrator:
         self.execution_history: List[Dict[str, Any]] = []
         self._agent = None
         logger.info(f"StrandsOrchestrator initialized with {len(STRANDS_TOOLS)} Strands tools "
-                     f"(6 core + 8 AWS MCP server tools)")
+                     f"(6 core Nova + 8 AWS MCP server tools)")
     
     @property
     def agent(self) -> Agent:
@@ -771,6 +772,7 @@ class StrandsOrchestrator:
                 "cloudtrail-mcp-server",
                 "iam-mcp-server",
                 "cloudwatch-mcp-server",
+                "securityhub-mcp-server",
                 "nova-canvas-mcp-server",
             ],
             "sdk_version": "real",

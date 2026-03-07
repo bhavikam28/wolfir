@@ -337,10 +337,10 @@ const FeaturesSection: React.FC = () => {
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-200 mb-5">
               <Network className="w-4 h-4 text-violet-600" />
-              <span className="text-sm font-semibold text-violet-700">4 AWS MCP Servers</span>
+              <span className="text-sm font-semibold text-violet-700">5 AWS MCP Servers</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-              4 AWS MCP Servers, Unified Pipeline
+              5 AWS MCP Servers, Unified Pipeline
             </h2>
             <p className="text-base text-slate-600 max-w-2xl mx-auto">
               Orchestrates official AWS MCP servers through Strands Agents SDK —
