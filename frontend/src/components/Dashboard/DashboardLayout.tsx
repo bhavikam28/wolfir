@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Shield, GitBranch, Scale, DollarSign,
   FileText, Download, Mic, Image, Clock, Database,
-  ChevronLeft, ChevronRight as ChevronRightIcon, ArrowLeft, Menu, X, Zap
+  ChevronLeft, ChevronRight as ChevronRightIcon, ArrowLeft, Menu, X, Zap, Lock
 } from 'lucide-react';
 import NovaSentinelLogo from '../Logo';
 
@@ -135,26 +135,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <div className="space-y-0.5">
                 {features.map((feature) => {
                   const isActive = activeFeature === feature.id;
+                  const isLocked = !hasAnalysis && feature.requiresAnalysis;
                   
                   return (
                     <button
                       key={feature.id}
                       onClick={() => {
+                        if (isLocked) return;
                         onFeatureChange(feature.id);
                         if (isMobile) setMobileOpen(false);
                       }}
-                      title={collapsed ? feature.label : undefined}
+                      title={collapsed ? feature.label : isLocked ? `${feature.label} — run analysis first` : undefined}
+                      disabled={isLocked}
                       className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                        isActive
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        isLocked
+                          ? 'text-slate-400 cursor-not-allowed opacity-70'
+                          : isActive
+                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                       } ${collapsed ? 'justify-center' : ''}`}
                     >
-                      <feature.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
+                      {isLocked ? (
+                        <Lock className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                      ) : (
+                        <feature.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
+                      )}
                       {!collapsed && (
                         <>
                           <span className="flex-1 text-left truncate">{feature.label}</span>
-                          {feature.badge && (
+                          {feature.badge && !isLocked && (
                             <span className={`px-1.5 py-0.5 text-[8px] font-bold rounded-full ${
                               isActive ? 'bg-white/20 text-white' : feature.badgeColor || 'bg-slate-100 text-slate-500'
                             }`}>

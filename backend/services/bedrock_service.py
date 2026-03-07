@@ -230,7 +230,8 @@ class BedrockService:
         self,
         prompt: str,
         max_tokens: int = 500,
-        temperature: float = 0.0
+        temperature: float = 0.0,
+        system_prompt: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Invoke Nova Micro model for fast classification.
@@ -238,10 +239,11 @@ class BedrockService:
         Uses amazon.nova-micro-v1:0 — ultra-fast, deterministic.
         """
         try:
+            user_text = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
             request_body = {
                 "messages": [{
                     "role": "user",
-                    "content": [{"text": prompt}]
+                    "content": [{"text": user_text}]
                 }],
                 "inferenceConfig": {
                     "max_new_tokens": max_tokens,

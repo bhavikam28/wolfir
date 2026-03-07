@@ -143,6 +143,20 @@ aws iam put-user-policy \
   }'
 ```
 
+## Optional: Restrict by Source IP (Production)
+
+For production, add IAM conditions to limit where API calls can originate:
+
+```json
+"Condition": {
+  "IpAddress": {
+    "aws:SourceIp": ["YOUR_OFFICE_IP/32", "YOUR_VPN_CIDR"]
+  }
+}
+```
+
+Add this `Condition` block to each Statement to restrict CloudTrail, Bedrock, and DynamoDB calls to trusted IPs. Omit for development or when IPs vary.
+
 ## After Adding the Policy
 
 1. **Wait ~30 seconds** for IAM changes to propagate
@@ -154,3 +168,4 @@ aws iam put-user-policy \
 - **CloudTrail must be enabled** in your account. Enable it in: CloudTrail → Trails → Create trail (or use the default management-events trail).
 - **Bedrock model access**: In **Bedrock** → **Model access** (left sidebar), request access to Nova models (e.g. Amazon Nova Lite, Nova Pro). IAM allows the API call, but model access must be enabled per-account.
 - **Region**: Uses the region from your profile/config (e.g. `us-east-1`). Use `us-east-1` in the policy `Resource` if your app runs there.
+- **CloudTrail regions**: Nova Sentinel queries 12 regions by default (US, EU, Asia-Pacific). Set `CLOUDTRAIL_REGIONS=us-east-1,ap-northeast-1` to limit or customize.

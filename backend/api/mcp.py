@@ -10,7 +10,7 @@ Three interfaces:
 Uses the real mcp package (FastMCP) and real strands-agents SDK.
 """
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 
 from mcp_server import MCP_SERVER_INFO, mcp_server
@@ -18,6 +18,7 @@ from agents.strands_orchestrator import StrandsOrchestrator, STRANDS_TOOLS
 from mcp_servers.cloudtrail_mcp import get_cloudtrail_mcp
 from mcp_servers.iam_mcp import get_iam_mcp
 from mcp_servers.cloudwatch_mcp import get_cloudwatch_mcp
+from mcp_servers.security_hub_mcp import get_security_hub_mcp
 from mcp_servers.nova_canvas_mcp import get_nova_canvas_mcp
 from utils.logger import logger
 
@@ -106,6 +107,7 @@ async def list_tools() -> Dict[str, Any]:
             "cloudtrail-mcp-server",
             "iam-mcp-server",
             "cloudwatch-mcp-server",
+            "securityhub-mcp-server",
             "nova-canvas-mcp-server",
         ],
     }
@@ -141,6 +143,7 @@ async def tool_call(request: ToolCallRequest) -> Dict[str, Any]:
             cloudwatch_api_metrics,
             cloudwatch_ec2_security,
             cloudwatch_billing_anomalies,
+            securityhub_get_findings,
             nova_canvas_generate_image,
             nova_canvas_generate_with_colors,
             nova_canvas_security_report_cover,
@@ -169,6 +172,8 @@ async def tool_call(request: ToolCallRequest) -> Dict[str, Any]:
             "cloudwatch_api_metrics": cloudwatch_api_metrics,
             "cloudwatch_ec2_security": cloudwatch_ec2_security,
             "cloudwatch_billing_anomalies": cloudwatch_billing_anomalies,
+            # Security Hub MCP
+            "securityhub_get_findings": securityhub_get_findings,
             # Nova Canvas MCP
             "nova_canvas_generate_image": nova_canvas_generate_image,
             "nova_canvas_generate_with_colors": nova_canvas_generate_with_colors,
@@ -285,6 +290,21 @@ async def cw_billing(days_back: int = 7) -> Dict[str, Any]:
     """Check for billing anomalies."""
     cw = get_cloudwatch_mcp()
     return await cw.get_billing_anomalies(days_back)
+
+
+# ================================================================
+# SECURITY HUB MCP ENDPOINTS
+# ================================================================
+
+@router.get("/securityhub/findings")
+async def securityhub_findings(
+    severity: Optional[str] = None,
+    max_results: int = 50,
+    days_back: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Get Security Hub findings (GuardDuty, Inspector, etc.)."""
+    sh = get_security_hub_mcp()
+    return await sh.get_findings(severity=severity, max_results=max_results, days_back=days_back)
 
 
 # ================================================================

@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, RefreshCw, ExternalLink, FileText, XCircle, Target, Map, BarChart2, Settings, Sparkles, Eye, DollarSign } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, ExternalLink, FileText, XCircle, Target, Map, BarChart2, Settings, Sparkles, Eye, DollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import api from '../../services/api';
 
@@ -155,7 +155,7 @@ const COST_TABLE_DATA = [
 ];
 
 export default function AIPipelineSecurity() {
-  const [status, setStatus] = useState<{ techniques?: Technique[]; summary?: { by_model?: Record<string, number>; total_invocations?: number } } | null>(null);
+  const [status, setStatus] = useState<{ techniques?: Technique[]; summary?: { by_model?: Record<string, number>; total_invocations?: number }; is_simulated?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [lastScannedAt, setLastScannedAt] = useState<Date | null>(null);
@@ -205,40 +205,58 @@ export default function AIPipelineSecurity() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner */}
+      {/* Differentiator Hero — "Who protects the AI?" */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 text-white"
+        className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-900 via-violet-900 to-slate-900 p-8 md:p-10 text-white shadow-xl border border-indigo-500/20"
       >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <Shield className="w-10 h-10 text-indigo-400 flex-shrink-0" />
+        {/* Accent glow */}
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/10 via-transparent to-violet-500/10 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+        <div className="relative flex flex-wrap items-start justify-between gap-6">
+          <div className="flex items-start gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center flex-shrink-0 border border-white/20">
+              <Shield className="w-7 h-7 text-indigo-300" />
+            </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold mb-1">AI Pipeline Security</h2>
-                <span
-                  title="Nova Sentinel monitors its own AI pipeline for threats using MITRE ATLAS, the threat framework built specifically for AI/ML systems."
-                  className="cursor-help text-slate-400 hover:text-slate-300"
-                >
-                  <HelpCircle className="w-4 h-4" />
+              <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 text-[10px] font-bold uppercase tracking-wider mb-3 border border-amber-500/30">
+                Industry Differentiator
+              </span>
+              <h2 className="text-xl md:text-2xl font-bold mb-2 text-white">
+                Who protects the AI?
+              </h2>
+              <p className="text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
+                While other SOC tools secure your infrastructure, Nova Sentinel also secures its own AI pipeline — the first incident response platform that monitors itself for MITRE ATLAS threats.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-indigo-400" />
+                  6 MITRE ATLAS techniques
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <BarChart2 className="w-3.5 h-3.5 text-violet-400" />
+                  Real-time invocation monitoring
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                  NIST AI RMF aligned
                 </span>
               </div>
-              <p className="text-sm text-slate-300 max-w-2xl">
-                In an era where AI systems are themselves attack surfaces, Nova Sentinel monitors the security of its own AI pipeline using MITRE ATLAS, the threat framework built specifically for AI/ML systems.
-              </p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-2">
             {lastScannedAt && (
-              <span className="text-[11px] text-slate-300">Last scanned: {formatLastScanned()}</span>
+              <span className="text-[11px] text-slate-400">Last scanned: {formatLastScanned()}</span>
             )}
             <button
               onClick={handleScanNow}
               disabled={scanning || loading}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25 transition-all"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
               {scanning ? 'Scanning...' : 'Scan Now'}
             </button>
           </div>
@@ -273,8 +291,15 @@ export default function AIPipelineSecurity() {
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm flex-shrink-0">
                 <BarChart2 className="w-4.5 h-4.5 text-white" />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Bedrock Invocation Monitor</h3>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-bold text-slate-900">Bedrock Invocation Monitor</h3>
+                  {status?.is_simulated && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                      Simulated — run analysis for real data
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Invocation distribution across Nova models during incident analysis pipeline.
                 </p>
@@ -513,8 +538,13 @@ export default function AIPipelineSecurity() {
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm flex-shrink-0">
                 <DollarSign className="w-4.5 h-4.5 text-white" />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Model Cost & Usage</h3>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-bold text-slate-900">Model Cost & Usage</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                    Estimated (typical incident)
+                  </span>
+                </div>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Per-agent stats for incident analysis. Nova models with estimated token cost.
                 </p>

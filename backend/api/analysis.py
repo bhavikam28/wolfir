@@ -82,7 +82,9 @@ async def analyze_real_cloudtrail(
     days_back: int = Query(7, ge=1, le=90),
     max_events: int = Query(100, ge=10, le=500),
     profile: Optional[str] = Query(None, description="AWS profile name (optional)"),
-    fetch_only: bool = Query(False, description="If true, only fetch events (no analysis). Use for orchestration pipeline.")
+    fetch_only: bool = Query(False, description="If true, only fetch events (no analysis). Use for orchestration pipeline."),
+    org_trail: bool = Query(False, description="Query organization trail in management account (org-wide events)"),
+    target_role_arn: Optional[str] = Query(None, description="Assume this role for cross-account CloudTrail access"),
 ):
     """
     Fetch and optionally analyze real CloudTrail events from your AWS account.
@@ -100,7 +102,11 @@ async def analyze_real_cloudtrail(
         logger.info(f"Starting real CloudTrail analysis (last {days_back} days, max {max_events} events, profile: {profile_to_use})")
 
         from services.cloudtrail_service import CloudTrailService
-        cloudtrail_service_instance = CloudTrailService(profile=profile_to_use)
+        cloudtrail_service_instance = CloudTrailService(
+            profile=profile_to_use,
+            org_trail=org_trail,
+            target_role_arn=target_role_arn,
+        )
         
         try:
             cloudtrail_events = await cloudtrail_service_instance.get_security_events(

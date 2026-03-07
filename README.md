@@ -2,7 +2,7 @@
 
 **Autonomous Security Incident Response Powered by Amazon Nova**
 
-> From alert to resolution, autonomously. Not with one model, but with 5 specialized Nova models working together like a real security team.
+> Security teams get **11,000+ alerts per day** and investigate **<5%**. Nova Sentinel changes that — from alert to resolution, autonomously. Built with **5 Amazon Nova models** working together like a real security team.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-22d3ee)](https://nova-sentinel.vercel.app)
 
@@ -10,7 +10,7 @@
 
 ## What is Nova Sentinel?
 
-Nova Sentinel is an **agentic incident response pipeline** that autonomously detects, investigates, classifies, remediates, and documents cloud security threats. It uses 5 Amazon Nova AI models in coordinated orchestration, each chosen for what it does best.
+Nova Sentinel is an **agentic incident response pipeline** that autonomously detects, investigates, classifies, remediates, and documents cloud security threats. **This is built with 5 Amazon Nova models** (Nova Pro, Nova 2 Lite, Nova Micro, Nova 2 Sonic, Nova Canvas) in coordinated orchestration, each chosen for what it does best.
 
 **This is not a dashboard or SIEM. It's an autonomous multi-agent system that takes action.**
 

@@ -1,20 +1,21 @@
 /**
- * Why Nova Sentinel Wins — 3 differentiators
+ * Under the Hood — How Nova Sentinel Works
+ * 3 differentiators: Memory, Execution, AI Self-Defense
  * Premium white theme
  */
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const WhyWeWinSection: React.FC = () => {
+const UnderTheHoodSection: React.FC = () => {
   return (
     <div className="py-20 bg-gradient-to-b from-slate-50 to-white border-y border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="text-[11px] font-semibold text-indigo-600 uppercase tracking-[0.2em] mb-3">
-            Why We Stand Out
+            Under the Hood
           </div>
-          <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-            Security for the AI Era, Not the Cloud Era
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
+            How Nova Sentinel Works
           </h2>
           <p className="text-base text-slate-600 max-w-2xl mx-auto">
             Multi-model specialization. Persistent cross-incident memory. Autonomous remediation with human-in-loop. And AI pipeline self-monitoring with MITRE ATLAS — who protects the AI? Nova Sentinel does.
@@ -89,4 +90,4 @@ const WhyWeWinSection: React.FC = () => {
   );
 };
 
-export default WhyWeWinSection;
+export default UnderTheHoodSection;

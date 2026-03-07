@@ -44,7 +44,7 @@ const LandingHero: React.FC = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-900 mb-6 tracking-tight leading-[1.08]"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-900 mb-6 tracking-tight leading-[1.08]"
           >
             <span className="block">From Signal to Resolution</span>
             <span className="block mt-2 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
@@ -56,7 +56,7 @@ const LandingHero: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed"
+            className="text-base sm:text-lg text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
             Security teams get 11,000+ alerts per day and investigate &lt;5%. Existing tools detect — they don&apos;t respond. Nova Sentinel demonstrates what happens when you apply Amazon Nova&apos;s full multimodal, multi-model capability to close that gap: from alert to remediation plan to documentation, autonomously.
           </motion.p>

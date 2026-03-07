@@ -27,7 +27,7 @@ const FeaturesSection: React.FC = () => {
             <div className="text-[11px] font-semibold text-indigo-600 uppercase tracking-[0.2em] mb-3">
               End-to-End Pipeline
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
               From Alert to Remediation to Documentation
             </h2>
             <p className="text-base text-slate-600 max-w-xl mx-auto">

@@ -147,7 +147,7 @@ const SEVERITY_STYLES: Record<string, { color: string; bg: string }> = {
   LOW:      { color: '#059669', bg: '#A7F3D0' },
 };
 
-/** Humanize long/cryptic resource strings into readable labels (like demo mode) */
+/** Humanize long/cryptic resource strings into readable labels (real CloudTrail + demo) */
 function humanizeLabel(s: string, maxLen = 24): string {
   if (!s) return 'Unknown Resource';
   const cleaned = s.replace(/^\(+|\)+$/g, '').trim() || s;
@@ -155,6 +155,12 @@ function humanizeLabel(s: string, maxLen = 24): string {
   if (lower === 'unknown' || lower === 'unknown resource') return 'Resource';
   if (/service-linked\s*channel/i.test(cleaned)) return 'Service-linked channel';
   if (/resource-explorer|\.amazonaws\.com/i.test(cleaned)) return cleaned.length <= maxLen ? cleaned : 'Resource Explorer';
+  // Real CloudTrail: "EC2 Instance", "S3 Bucket: x", "IAM Role: y" — keep type prefix
+  if (/^ec2\s*instance/i.test(cleaned)) return cleaned.length <= maxLen ? cleaned : 'EC2 Instance';
+  if (/^s3\s*bucket:\s*/i.test(cleaned)) return shortenFallback(cleaned.replace(/^s3\s*bucket:\s*/i, ''), maxLen) || 'S3 Bucket';
+  if (/^iam\s*role:\s*/i.test(cleaned)) return shortenFallback(cleaned.replace(/^iam\s*role:\s*/i, ''), maxLen) || 'IAM Role';
+  if (/^security\s*group:\s*/i.test(cleaned)) return shortenFallback(cleaned.replace(/^security\s*group:\s*/i, ''), maxLen) || 'Security Group';
+  if (/^lambda:\s*/i.test(cleaned)) return shortenFallback(cleaned.replace(/^lambda:\s*/i, ''), maxLen) || 'Lambda';
   // Bedrock Environment + Session UUID pattern → friendly name
   if (/Environment\s+[a-f0-9-]{36}/i.test(cleaned) || /Session\s+[\d-]+[a-z0-9]+/i.test(cleaned)) {
     if (lower.includes('policy') || lower.includes('iam')) return shortenFallback(cleaned, maxLen);
@@ -218,14 +224,16 @@ function resourceSubLabel(resource: string, action: string): string {
   }
   const r = resource.toLowerCase();
   const act = action.toLowerCase();
-  // PutUserPolicy/AttachUserPolicy target the user receiving the policy, not the policy itself
-  if (/putuserpolicy|attachuserpolicy|createuser|putloginprofile/i.test(action)) return 'IAM User';
-  if (r.includes('role') || /assumerole|createrole|attachrolepolicy/i.test(act)) return 'IAM Role';
+  // Action-based inference when resource is generic (real CloudTrail)
+  if (/putuserpolicy|attachuserpolicy|createuser|putloginprofile/i.test(act)) return 'IAM User';
+  if (r.includes('role') || /assumerole|createrole|attachrolepolicy|putrolepolicy/i.test(act)) return 'IAM Role';
   if (r.includes('policy') || /createpolicyversion|putpolicy|createpolicy/i.test(act)) return 'IAM Policy';
   if (r.includes('user')) return 'IAM User';
-  if (r.includes('bucket') || act.includes('object')) return 'S3 Bucket';
-  if (r.includes('instance')) return 'EC2 Instance';
-  if (/createtable|describetable|putitem/i.test(act)) return 'DynamoDB Table';
+  if (r.includes('bucket') || /putobject|getobject|createbucket/i.test(act)) return 'S3 Bucket';
+  if (r.includes('instance') || /runinstances|terminateinstances/i.test(act)) return 'EC2 Instance';
+  if (/createtable|describetable|putitem|getitem/i.test(act)) return 'DynamoDB Table';
+  if (/createfunction|invoke/i.test(act)) return 'Lambda Function';
+  if (/authorizesecuritygroup|revokesecuritygroup|createsecuritygroup/i.test(act)) return 'Security Group';
   return 'Resource';
 }
 
@@ -270,13 +278,27 @@ function buildGraphFromTimeline(
   const edgeMap = new Map<string, { action: string; count: number; severity: string }>();
   const awsServiceToCloudtrailEdges: Array<{ actor: string; action: string; severity: string }> = [];
 
+  /** Infer resource from action when resource is vague (real CloudTrail often has inconsistent naming) */
+  const inferResourceFromAction = (res: string, act: string): string => {
+    if (res && !/^unknown$/i.test(res) && res.length > 2) return res;
+    const a = act.toLowerCase();
+    if (/deleteservicelinkedchannel/i.test(act)) return 'Service-linked channel';
+    if (/runinstances|terminateinstances|startinstances|stopinstances/i.test(a)) return 'EC2 Instance';
+    if (/assumerole/i.test(a)) return 'IAM Role';
+    if (/createbucket|putobject|getobject|deleteobject/i.test(a)) return 'S3 Bucket';
+    if (/createfunction|invoke/i.test(a)) return 'Lambda Function';
+    if (/createtable|describetable|putitem|getitem/i.test(a)) return 'DynamoDB Table';
+    if (/authorizesecuritygroup|revokesecuritygroup|createsecuritygroup/i.test(a)) return 'Security Group';
+    if (/createuser|createaccesskey|putuserpolicy|attachuserpolicy/i.test(a)) return 'IAM User';
+    if (/createrole|attachrolepolicy|putrolepolicy/i.test(a)) return 'IAM Role';
+    if (/createpolicy|createpolicyversion/i.test(a)) return 'IAM Policy';
+    return res || 'Resource';
+  };
+
   for (const ev of events) {
     const actor = ev.actor || 'Unknown';
-    let resource = ev.resource || 'Unknown';
+    let resource = inferResourceFromAction(ev.resource || 'Unknown', ev.action || 'Unknown');
     const action = ev.action || 'Unknown';
-    if ((!resource || /^unknown$/i.test(resource)) && action) {
-      if (/DeleteServiceLinkedChannel/i.test(action)) resource = 'Service-linked channel';
-    }
     let severity = (ev.severity || 'LOW').toUpperCase();
     const capped = severityCapMap.get(action);
     if (capped && severityRank(capped) < severityRank(severity)) severity = capped;

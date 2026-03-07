@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     # AWS Configuration
     aws_region: str = "us-east-1"
     aws_profile: str = "default"
+    # Enterprise: cross-account AssumeRole (e.g. arn:aws:iam::123456789012:role/NovaSentinelRole)
+    aws_target_role_arn: str = ""  # Optional: assume this role for CloudTrail/Security Hub
+    # CloudTrail regions to query (comma-separated, e.g. "us-east-1,ap-northeast-1"); empty = use defaults
+    cloudtrail_regions: str = ""
     
     # Amazon Bedrock Model IDs — Use inference profile IDs (direct model ID no longer supports on-demand)
     nova_lite_model_id: str = "us.amazon.nova-2-lite-v1:0"  # Nova 2 Lite inference profile (us-east-1)
@@ -31,7 +35,7 @@ class Settings(BaseSettings):
     # API Configuration
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    debug: bool = True
+    debug: bool = False  # Set True via DEBUG=1 for dev; False avoids leaking internal paths in 500 responses
     
     model_config = SettingsConfigDict(
         env_file=".env",

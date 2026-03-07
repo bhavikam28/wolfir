@@ -392,8 +392,14 @@ const ComplianceMapping: React.FC<ComplianceMappingProps> = ({ timeline, inciden
   const [activeFramework, setActiveFramework] = useState<string | null>(null);
   const [methodologyExpanded, setMethodologyExpanded] = useState(false);
 
-  const ctx = useMemo(() => extractIncidentContext(timeline), [timeline]);
-  const controls = useMemo(() => generateComplianceMappings(timeline, incidentType), [timeline, incidentType]);
+  // Stable deps to avoid recompute when parent passes new timeline object ref with same content
+  const eventsLen = timeline?.events?.length ?? 0;
+  const eventFingerprint = (timeline?.events ?? []).slice(0, 5).map(e => e.action || '').join('|');
+  const ctx = useMemo(() => extractIncidentContext(timeline), [eventsLen, eventFingerprint]);
+  const controls = useMemo(
+    () => generateComplianceMappings(timeline, incidentType),
+    [eventsLen, eventFingerprint, incidentType]
+  );
 
   const filteredControls = activeFramework 
     ? controls.filter(c => c.framework === activeFramework) 

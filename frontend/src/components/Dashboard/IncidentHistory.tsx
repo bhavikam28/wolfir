@@ -80,6 +80,11 @@ export default function IncidentHistory({ accountId = 'demo-account', refreshTri
   };
 
   useEffect(() => {
+    if (refreshTrigger != null && refreshTrigger > 0) {
+      // Delay refresh to allow DynamoDB eventual consistency — just-saved incident may not appear immediately
+      const t = setTimeout(loadData, 1800);
+      return () => clearTimeout(t);
+    }
     loadData();
   }, [accountId, refreshTrigger]);
 

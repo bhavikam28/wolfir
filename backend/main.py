@@ -16,6 +16,7 @@ import boto3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 
 from api import analysis, demo, visual, remediation, voice, orchestration, storage, documentation, auth, mcp, nova_act, incident_history, ai_security, threat_intel, report
@@ -94,6 +95,28 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Max request body size (5MB) — prevents memory exhaustion from oversized POSTs
+MAX_BODY_SIZE = 5 * 1024 * 1024
+
+
+class MaxBodySizeMiddleware(BaseHTTPMiddleware):
+    """Reject requests with Content-Length exceeding limit before reading body."""
+
+    async def dispatch(self, request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                size = int(content_length)
+                if size > MAX_BODY_SIZE:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": f"Request body too large (max {MAX_BODY_SIZE // (1024*1024)}MB)"},
+                    )
+            except ValueError:
+                pass
+        return await call_next(request)
+
+
 # Configure CORS
 _cors_origins = [
     "http://localhost:5173",
@@ -112,6 +135,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(MaxBodySizeMiddleware)
 
 # Include REST API routers
 app.include_router(analysis.router)

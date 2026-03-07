@@ -34,10 +34,18 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
     const totalEvents = events.length;
     const confidence = timeline?.confidence || 0;
 
-    // Calculate health score (inverse of risk)
-    const riskWeight = (criticalCount * 40) + (highCount * 25) + (mediumCount * 10) + (lowCount * 3);
-    const maxRisk = totalEvents * 40;
-    const healthScore = maxRisk > 0 ? Math.max(5, Math.round(100 - (riskWeight / maxRisk) * 100)) : 50;
+    // Health score: severity distribution (industry-standard), not event-count ratio.
+    // Treat unclassified events as MEDIUM. Fewer events = no artificial inflation.
+    const classified = criticalCount + highCount + mediumCount + lowCount;
+    const unclassifiedAsMedium = totalEvents - classified;
+    const effMedium = mediumCount + unclassifiedAsMedium;
+    const total = totalEvents || 1;
+    const pCrit = criticalCount / total;
+    const pHigh = highCount / total;
+    const pMed = effMedium / total;
+    const pLow = lowCount / total;
+    const riskScore = pCrit * 40 + pHigh * 25 + pMed * 10 + pLow * 3;
+    const healthScore = totalEvents > 0 ? Math.max(5, Math.round(100 - (riskScore / 40) * 100)) : 50;
 
     // Risk scores from orchestration
     const riskScores = orchestrationResult?.results?.risk_scores || [];
@@ -104,7 +112,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
             <dl className="space-y-3 text-[11px]">
               <div>
                 <dt className="font-semibold text-slate-700 mb-0.5">Security Health</dt>
-                <dd className="text-slate-600 leading-relaxed">Weights: Critical 40, High 25, Medium 10, Low 3. Score = 100 − (weighted total ÷ max).</dd>
+                <dd className="text-slate-600 leading-relaxed">Severity distribution: Critical 40, High 25, Medium 10, Low 3. Health = 100 − (weighted avg ÷ 40)×100. Unclassified events count as Medium — avoids misleading scores when event count is low.</dd>
               </div>
               <div>
                 <dt className="font-semibold text-slate-700 mb-0.5">Avg Risk Score</dt>

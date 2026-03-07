@@ -69,8 +69,15 @@ IMPORTANT: If there is NO attack—events are routine (logging, health checks, n
 
 IMPORTANT: Every event in the timeline MUST have a "significance" field explaining why it matters (or "Routine operation" if benign). Do not omit significance for any event.
 
-Return ONLY valid JSON, no additional text."""
+CRITICAL: Return ONLY the JSON object. Do not include any text, explanation, or markdown before or after the JSON. No preamble, no "Here is the analysis", no code block markers."""
 
+
+RISK_SCORING_CALIBRATION_SYSTEM = """CALIBRATION RULES (apply these when scoring CloudTrail events):
+- GetCallerIdentity is routine — every AWS SDK uses it. Score LOW.
+- PutCredentials/credential refresh from known IPs in dev environments (Cloud9, SSM) is routine. Score LOW-MEDIUM.
+- CreatePolicyVersion by the account owner for their own project is normal IAM admin. Score MEDIUM max, not HIGH.
+- CreateSession/DeleteSession: Score MEDIUM max, not HIGH or CRITICAL.
+- Root or account owner performing routine admin = often LOW-MEDIUM. Unknown principal or external IP = higher scrutiny."""
 
 RISK_SCORING_PROMPT = """Classify the risk level for this security configuration:
 
@@ -147,7 +154,7 @@ Generate documentation for the following platforms:
 
 1. **JIRA Ticket** - Create a security incident ticket with:
    - Title: Clear, concise incident title
-   - Description: Executive summary, timeline, root cause, impact
+   - Description: Executive summary, timeline, root cause, impact. Be concise. JIRA descriptions should be under 500 words.
    - Labels: Security, Incident, AWS
    - Priority: Based on severity
    - Assignee: Security team

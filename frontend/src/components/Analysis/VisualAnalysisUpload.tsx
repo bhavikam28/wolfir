@@ -244,9 +244,13 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Visual Architecture Analysis</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            {!displayResult && !selectedFile ? 'Upload a Diagram to Analyze' : 'Visual Architecture Analysis'}
+          </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Upload your architecture diagram → Nova Pro identifies security risks
+            {!displayResult && !selectedFile
+              ? 'Drop an architecture diagram here — Nova Pro will identify security risks'
+              : 'Upload your architecture diagram → Nova Pro identifies security risks'}
           </p>
         </div>
         <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">

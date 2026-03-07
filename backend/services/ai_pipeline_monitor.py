@@ -104,6 +104,7 @@ def generate_atlas_report() -> Dict[str, Any]:
     # When no real invocations, use display-only overlay so AML.T0040 shows WARNING
     # without polluting _invocation_counts (avoids inflated counts after real pipeline runs)
     overlay = _get_demo_invocation_overlay()
+    is_simulated = overlay is not None
     if overlay is not None:
         inv = overlay
     techniques = [
@@ -118,4 +119,5 @@ def generate_atlas_report() -> Dict[str, Any]:
         "techniques": techniques,
         "nist_rmf": {"GOVERN": "✅", "MAP": "✅", "MEASURE": "✅", "MANAGE": "✅"},
         "invocation_summary": inv,
+        "is_simulated": is_simulated,
     }

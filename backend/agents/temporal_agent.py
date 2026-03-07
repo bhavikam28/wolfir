@@ -373,29 +373,97 @@ class TemporalAgent:
                 # Extract action
                 action = event.get('eventName', 'Unknown')
                 
-                # Extract resource
+                # Extract resource — real CloudTrail has varied structures
                 resource = 'Unknown'
-                request_params = event.get('requestParameters', {})
-                if request_params:
-                    # Try to extract resource identifier
+                request_params = event.get('requestParameters') or {}
+                resources_arr = event.get('resources') or []
+                event_source = event.get('eventSource', '')
+                # 1) CloudTrail resources array (ARN, type)
+                if resources_arr:
+                    for r in resources_arr[:3]:
+                        if isinstance(r, dict):
+                            arn = r.get('ARN') or r.get('arn', '')
+                            rtype = r.get('type', '')
+                            if arn:
+                                resource = arn if len(arn) < 120 else arn[:117] + '...'
+                                break
+                            if rtype:
+                                resource = f"{rtype}: {r.get('ARN', r.get('arn', ''))}"[:100]
+                                break
+                # 2) requestParameters — common CloudTrail keys
+                if resource == 'Unknown' and request_params:
                     if 'bucketName' in request_params:
                         resource = f"S3 Bucket: {request_params.get('bucketName')}"
                     elif 'roleName' in request_params:
                         resource = f"IAM Role: {request_params.get('roleName')}"
+                    elif 'roleArn' in request_params:
+                        resource = str(request_params.get('roleArn', ''))[:100]
                     elif 'instanceIds' in request_params:
-                        resource = f"EC2 Instances: {request_params.get('instanceIds')}"
-                    elif 'groupId' in request_params:
-                        resource = f"Security Group: {request_params.get('groupId')}"
+                        ids = request_params.get('instanceIds')
+                        resource = f"EC2 Instances: {ids}" if ids else "EC2 Instance"
+                    elif 'instanceId' in request_params:
+                        resource = f"EC2 Instance: {request_params.get('instanceId')}"
+                    elif 'groupId' in request_params or 'groupIds' in request_params:
+                        gid = request_params.get('groupId') or (request_params.get('groupIds') or [None])[0]
+                        resource = f"Security Group: {gid}" if gid else "Security Group"
+                    elif 'functionName' in request_params:
+                        resource = f"Lambda: {request_params.get('functionName')}"
+                    elif 'tableName' in request_params:
+                        resource = f"DynamoDB Table: {request_params.get('tableName')}"
+                    elif 'policyArn' in request_params:
+                        resource = str(request_params.get('policyArn', ''))[:100]
+                    elif 'userName' in request_params:
+                        resource = f"IAM User: {request_params.get('userName')}"
+                    elif 'key' in request_params:
+                        resource = f"S3 Object: {request_params.get('key', '')[:50]}"
                     else:
+                        # Avoid raw dict dump; prefer eventSource + action
                         resource = str(request_params)[:100]
+                # 3) Infer from action when still Unknown (real CloudTrail often lacks params)
+                if resource == 'Unknown' and action:
+                    act = action.lower()
+                    if 'runinstances' in act or 'terminateinstances' in act:
+                        resource = "EC2 Instance"
+                    elif 'assumerole' in act:
+                        resource = "IAM Role"
+                    elif 'createbucket' in act or 'putobject' in act:
+                        resource = "S3 Bucket"
+                    elif 'createfunction' in act or 'invoke' in act:
+                        resource = "Lambda Function"
+                    elif 'ec2' in event_source.lower():
+                        resource = "EC2 Resource"
+                    elif 's3' in event_source.lower():
+                        resource = "S3 Resource"
+                    elif 'iam' in event_source.lower() or 'sts' in event_source.lower():
+                        resource = "IAM Resource"
                 
-                # Determine severity based on event type
+                # Determine severity based on event type (expanded for crypto mining, evasion, etc.)
                 severity = SeverityLevel.MEDIUM
-                action_lower = action.lower()
-                if any(keyword in action_lower for keyword in ['create', 'delete', 'modify', 'attach', 'detach']):
-                    severity = SeverityLevel.HIGH
-                if any(keyword in action_lower for keyword in ['assumerole', 'createaccesskey', 'putuserpolicy']):
+                action_lower = action.lower().replace('_', '').replace('-', '')
+                # CRITICAL: privilege escalation, credential creation, trail evasion
+                critical_keywords = [
+                    'assumerole', 'createaccesskey', 'deleteaccesskey', 'putuserpolicy',
+                    'attachuserpolicy', 'deletetrail', 'stoplogging', 'putrolepolicy',
+                    'createuser', 'createpolicy',
+                ]
+                # HIGH: resource creation, policy changes, security group modifications
+                high_keywords = [
+                    'create', 'delete', 'modify', 'attach', 'detach',
+                    'runinstances', 'authorizesecuritygroup', 'revokesecuritygroup',
+                    'putbucketpolicy', 'putbucketpublicaccessblock', 'updateassumerolepolicy',
+                    'terminateinstances', 'createbucket', 'deleterole', 'putbucketacl',
+                ]
+                # MEDIUM: compute/data operations that could indicate abuse
+                medium_keywords = [
+                    'putobject', 'getobject', 'createsecuritygroup',
+                    'createfunction', 'runtask', 'createcluster',
+                ]
+                if any(kw in action_lower for kw in critical_keywords):
                     severity = SeverityLevel.CRITICAL
+                elif any(kw in action_lower for kw in high_keywords):
+                    severity = SeverityLevel.HIGH
+                elif any(kw in action_lower for kw in medium_keywords):
+                    severity = SeverityLevel.MEDIUM
                 
                 # Create TimelineEvent
                 timeline_event = TimelineEvent(

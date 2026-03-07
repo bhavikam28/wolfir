@@ -18,6 +18,7 @@ class AgentQueryRequest(BaseModel):
     prompt: str
 from services.cloudtrail_service import CloudTrailService
 from utils.logger import logger
+from utils.error_messages import user_friendly_message
 
 router = APIRouter(prefix="/api/orchestration", tags=["orchestration"])
 
@@ -99,7 +100,7 @@ async def analyze_incident(
         logger.error(f"Error in Strands analysis: {e}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Orchestrated analysis failed: {str(e)}"
+            detail=user_friendly_message(e, "Analysis failed. Please try again.")
         )
 
 
@@ -123,7 +124,7 @@ async def get_incident_state(incident_id: str) -> Dict[str, Any]:
         logger.error(f"Error getting incident state: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to get incident state: {str(e)}"
+            detail=user_friendly_message(e, "Failed to get incident state.")
         )
 
 
@@ -142,7 +143,7 @@ async def list_incidents() -> Dict[str, Any]:
         logger.error(f"Error listing incidents: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to list incidents: {str(e)}"
+            detail=user_friendly_message(e, "Failed to list incidents.")
         )
 
 
@@ -152,13 +153,19 @@ async def analyze_from_cloudtrail(
     max_events: int = Query(100, ge=10, le=500),
     profile: Optional[str] = Query(None),
     account_id: Optional[str] = Query(default="demo-account"),
+    org_trail: bool = Query(False, description="Query organization trail in management account"),
+    target_role_arn: Optional[str] = Query(None, description="Assume role for cross-account access"),
 ) -> Dict[str, Any]:
     """
     Single-call AWS mode: fetch CloudTrail events server-side and run full orchestration.
     Replaces the two-step flow (fetch + orchestrate) with one request.
     """
     try:
-        cloudtrail_service = CloudTrailService(profile=profile)
+        cloudtrail_service = CloudTrailService(
+            profile=profile,
+            org_trail=org_trail,
+            target_role_arn=target_role_arn,
+        )
         try:
             cloudtrail_events = await cloudtrail_service.get_security_events(
                 days_back=days_back,
@@ -204,7 +211,7 @@ async def analyze_from_cloudtrail(
     except Exception as e:
         import traceback
         logger.error(f"Analyze-from-cloudtrail failed: {e}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=user_friendly_message(e))
 
 
 @router.post("/agent-query")
@@ -235,7 +242,7 @@ async def agent_query(request: AgentQueryRequest) -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Agentic query failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Agent query failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=user_friendly_message(e, "Agent query failed. Please try again."))
 
 
 @router.get("/health")

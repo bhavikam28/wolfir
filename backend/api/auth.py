@@ -94,9 +94,10 @@ async def test_aws_connection(
         
     except Exception as e:
         logger.error(f"Unexpected error testing AWS connection: {e}")
+        from utils.error_messages import user_friendly_message
         raise HTTPException(
             status_code=500,
-            detail=f"Connection test failed: {str(e)}"
+            detail=user_friendly_message(e, "Connection test failed. Please check your AWS configuration.")
         )
 
 

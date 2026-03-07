@@ -18,6 +18,7 @@ import json
 import hashlib
 import re
 import asyncio
+import threading
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -25,6 +26,9 @@ from botocore.exceptions import ClientError
 
 from utils.config import get_settings
 from utils.logger import logger
+
+# Lock for in-memory fallback (thread-safe when DynamoDB unavailable)
+_IN_MEMORY_LOCK = threading.Lock()
 
 
 @dataclass
@@ -243,7 +247,8 @@ class IncidentMemoryService:
                 incident_id, account_id, timeline, events, mitre_techniques,
                 attack_type, severity, ioc_indicators, affected, incident_data
             )
-            _in_memory_incidents.setdefault(account_id, []).insert(0, incident_dict)
+            with _IN_MEMORY_LOCK:
+                _in_memory_incidents.setdefault(account_id, []).insert(0, incident_dict)
             return True
 
     async def get_recent_incidents(self, account_id: str = DEFAULT_ACCOUNT, limit: int = 5) -> List[Dict[str, Any]]:
@@ -264,7 +269,8 @@ class IncidentMemoryService:
                 out.append(self._item_to_incident(it))
         except ClientError as e:
             logger.warning(f"get_recent_incidents DynamoDB failed: {e}")
-        in_mem = _in_memory_incidents.get(account_id, [])
+        with _IN_MEMORY_LOCK:
+            in_mem = list(_in_memory_incidents.get(account_id, []))
         merged = {i["incident_id"]: i for i in (in_mem + out)}
         return sorted(merged.values(), key=lambda x: x.get("timestamp", ""), reverse=True)[:limit]
 

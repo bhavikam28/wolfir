@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional
 
 from services.bedrock_service import BedrockService
 from models.incident import SeverityLevel
+from utils.prompts import RISK_SCORING_CALIBRATION_SYSTEM
 from utils.logger import logger
 
 
@@ -94,20 +95,13 @@ Return ONLY valid JSON, no additional text."""
         try:
             event_json = json.dumps(event, indent=2, default=str)
             
-            prompt = f"""Classify the security risk level for this AWS CloudTrail event:
+            prompt = f"""Classify the security risk level for this AWS CloudTrail event.
 
 Event:
 {event_json}
 {f"Event Type: {event_type}" if event_type else ""}
 
-Consider:
-- The API action being performed
-- The user/role performing it (Root or account owner = often routine admin)
-- The resource being accessed
-- The source IP address
-- Any error codes
-
-CALIBRATION: GetCallerIdentity is routine (every AWS SDK uses it) — score LOW. PutCredentials/credential refresh from known IPs in dev environments (Cloud9, SSM) is routine — score LOW-MEDIUM. CreatePolicyVersion by the account owner for their own project is normal IAM admin — score MEDIUM max, not HIGH.
+Consider: API action, user/role (Root/account owner = often routine), resource, source IP, error codes.
 
 Classify as one of: LOW, MEDIUM, HIGH, CRITICAL
 
@@ -128,7 +122,8 @@ Return ONLY valid JSON, no additional text."""
             response = await self.bedrock.invoke_nova_micro(
                 prompt=prompt,
                 max_tokens=300,
-                temperature=0.1
+                temperature=0.1,
+                system_prompt=RISK_SCORING_CALIBRATION_SYSTEM
             )
             
             risk_assessment = self._parse_risk_response(response['text'])
@@ -157,16 +152,27 @@ Return ONLY valid JSON, no additional text."""
             raise
     
     def _parse_risk_response(self, response_text: str) -> Dict[str, Any]:
-        """Parse Nova Micro risk scoring response"""
+        """Parse Nova Micro risk scoring response. Robust extraction like temporal_agent."""
         try:
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}') + 1
-            
-            if start_idx >= 0 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx]
+            json_str = None
+            if "```json" in response_text:
+                s = response_text.find("```json") + 7
+                e = response_text.find("```", s)
+                if e > s:
+                    json_str = response_text[s:e].strip()
+            elif "```" in response_text:
+                s = response_text.find("```") + 3
+                e = response_text.find("```", s)
+                if e > s:
+                    json_str = response_text[s:e].strip()
+            if not json_str:
+                start_idx = response_text.find("{")
+                end_idx = response_text.rfind("}") + 1
+                if start_idx >= 0 and end_idx > start_idx:
+                    json_str = response_text[start_idx:end_idx]
+            if json_str:
                 return json.loads(json_str)
-            else:
-                return json.loads(response_text)
+            return json.loads(response_text)
                 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse risk response: {e}")

@@ -18,7 +18,11 @@ router = APIRouter(prefix="/api/ai-security", tags=["ai-security"])
 async def get_status() -> Dict[str, Any]:
     """Current ATLAS threat status (all 6 techniques)."""
     report = generate_atlas_report()
-    return {"techniques": report["techniques"], "summary": report.get("invocation_summary", {})}
+    return {
+        "techniques": report["techniques"],
+        "summary": report.get("invocation_summary", {}),
+        "is_simulated": report.get("is_simulated", False),
+    }
 
 
 @router.get("/invocations")

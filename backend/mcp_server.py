@@ -9,6 +9,7 @@ Custom MCP implementations inspired by awslabs/mcp patterns (direct boto3 API ca
 - CloudTrail MCP — event lookup, security scanning, anomaly detection
 - IAM MCP — user/role auditing, policy analysis, access review
 - CloudWatch MCP — security alarms, metric monitoring, billing anomalies
+- Security Hub MCP — pre-correlated findings (GuardDuty, Inspector)
 - Nova Canvas MCP — visual report generation
 
 pip install mcp
@@ -30,6 +31,7 @@ from agents.documentation_agent import DocumentationAgent
 from mcp_servers.cloudtrail_mcp import get_cloudtrail_mcp
 from mcp_servers.iam_mcp import get_iam_mcp
 from mcp_servers.cloudwatch_mcp import get_cloudwatch_mcp
+from mcp_servers.security_hub_mcp import get_security_hub_mcp
 from mcp_servers.nova_canvas_mcp import get_nova_canvas_mcp
 from utils.logger import logger
 from utils.mock_data import generate_crypto_mining_scenario, generate_data_exfiltration_scenario
@@ -42,7 +44,7 @@ mcp_server = FastMCP(
     "nova-sentinel-security",
     instructions=(
         "Nova Sentinel — AI-powered AWS security analysis via Model Context Protocol. "
-        "Orchestrates 5 AWS MCP servers (CloudTrail, IAM, CloudWatch, Nova Canvas, "
+        "Orchestrates 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, "
         "Well-Architected Security) through Strands Agents SDK. "
         "Exposes CloudTrail analysis, IAM auditing, risk scoring, remediation planning, "
         "visual report generation, and documentation tools."
@@ -225,6 +227,31 @@ async def cloudtrail_scan_anomalies(days_back: int = 1, max_results: int = 100) 
     """
     ct = get_cloudtrail_mcp()
     return await ct.scan_for_anomalies(days_back, max_results)
+
+
+# ================================================================
+# SECURITY HUB MCP SERVER TOOLS
+# ================================================================
+
+@mcp_server.tool()
+async def securityhub_get_findings(
+    severity: Optional[str] = None,
+    max_results: int = 50,
+    days_back: Optional[int] = None,
+) -> dict:
+    """Get Security Hub findings.
+
+    Pre-correlated, severity-scored findings from GuardDuty, Inspector, etc.
+    Ideal input for the pipeline — use when user asks about Security Hub,
+    GuardDuty, Inspector, or pre-correlated findings.
+
+    Args:
+        severity: Filter — CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
+        max_results: Maximum findings to return
+        days_back: Only findings updated in last N days
+    """
+    sh = get_security_hub_mcp()
+    return await sh.get_findings(severity=severity, max_results=max_results, days_back=days_back)
 
 
 # ================================================================
@@ -529,6 +556,7 @@ async def get_architecture() -> str:
             "cloudtrail-mcp-server — CloudTrail event lookup, security scanning, anomaly detection",
             "iam-mcp-server — IAM user/role auditing, policy analysis, MFA compliance",
             "cloudwatch-mcp-server — Security alarms, API metrics, billing anomalies",
+            "securityhub-mcp-server — Pre-correlated findings (GuardDuty, Inspector)",
             "nova-canvas-mcp-server — Visual report generation using Amazon Nova Canvas",
         ],
         "pipeline": [
@@ -539,7 +567,7 @@ async def get_architecture() -> str:
             "5. VISUALIZE — nova-canvas-mcp-server + aws-diagram-mcp-server",
             "6. DOCUMENT — Nova 2 Lite JIRA/Slack/Confluence documentation",
         ],
-        "total_mcp_tools": 22,
+        "total_mcp_tools": 23,
     }
     return json.dumps(arch, indent=2)
 
@@ -591,9 +619,10 @@ MCP_SERVER_INFO = {
     },
     "mcp_servers_integrated": [
         "cloudtrail-mcp-server (custom boto3)",
-            "iam-mcp-server (custom boto3)",
-            "cloudwatch-mcp-server (custom boto3)",
-            "nova-canvas-mcp-server (custom boto3)",
+        "iam-mcp-server (custom boto3)",
+        "cloudwatch-mcp-server (custom boto3)",
+        "securityhub-mcp-server (custom boto3)",
+        "nova-canvas-mcp-server (custom boto3)",
     ],
     "models_used": [
         "amazon.nova-2-lite-v1:0 (Temporal Analysis, Documentation)",
@@ -612,6 +641,6 @@ if __name__ == "__main__":
     print(json.dumps(MCP_SERVER_INFO, indent=2))
     print(f"\nMCP Server: {mcp_server.name}")
     print(f"Running with real mcp SDK (FastMCP)")
-    print(f"Integrated AWS MCP servers: 4")
+    print(f"Integrated AWS MCP servers: 5")
     # Run the MCP server with stdio transport
     mcp_server.run()

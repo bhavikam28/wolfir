@@ -524,6 +524,18 @@ export const cloudwatchMCPAPI = {
   },
 };
 
+export const securityhubMCPAPI = {
+  /**
+   * Get Security Hub findings (GuardDuty, Inspector, etc.)
+   */
+  getFindings: async (severity?: string, maxResults: number = 50, daysBack?: number): Promise<any> => {
+    const response = await api.get('/api/mcp/securityhub/findings', {
+      params: { severity, max_results: maxResults, days_back: daysBack },
+    });
+    return response.data;
+  },
+};
+
 export const novaCanvasMCPAPI = {
   /**
    * Generate an image using Nova Canvas MCP server

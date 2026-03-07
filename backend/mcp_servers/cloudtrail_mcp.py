@@ -18,6 +18,19 @@ from utils.config import get_settings
 from utils.logger import logger
 
 
+def _get_ct_client(session: boto3.Session, region: str, target_role_arn: Optional[str] = None):
+    """Create CloudTrail client, optionally using AssumeRole."""
+    if target_role_arn:
+        sts = session.client('sts', region_name=region)
+        assumed = sts.assume_role(RoleArn=target_role_arn, RoleSessionName="nova-sentinel-cloudtrail")
+        creds = assumed['Credentials']
+        return boto3.client('cloudtrail', region_name=region,
+            aws_access_key_id=creds['AccessKeyId'],
+            aws_secret_access_key=creds['SecretAccessKey'],
+            aws_session_token=creds['SessionToken'])
+    return session.client('cloudtrail', region_name=region)
+
+
 class CloudTrailMCPServer:
     """
     CloudTrail MCP tools for security event analysis.
@@ -33,23 +46,46 @@ class CloudTrailMCPServer:
         self.settings = get_settings()
         self._client = None
 
+    def _session(self) -> boto3.Session:
+        if self.settings.aws_profile and self.settings.aws_profile != "default":
+            return boto3.Session(profile_name=self.settings.aws_profile)
+        return boto3.Session()
+
     @property
     def client(self):
         """Lazy-initialize CloudTrail client."""
         if self._client is None:
-            if self.settings.aws_profile and self.settings.aws_profile != "default":
-                session = boto3.Session(profile_name=self.settings.aws_profile)
-            else:
-                session = boto3.Session()
+            session = self._session()
             self._client = session.client('cloudtrail', region_name=self.settings.aws_region)
             logger.info(f"CloudTrail MCP: client initialized ({self.settings.aws_region})")
         return self._client
+
+    def _get_client_for_request(self, org_trail: bool = False, target_role_arn: Optional[str] = None):
+        """Get client for org trail or cross-account. Uses default client when neither set."""
+        if not org_trail and not target_role_arn:
+            return self.client
+        session = self._session()
+        target_role = target_role_arn or self.settings.aws_target_role_arn or None
+        region = self.settings.aws_region
+        if org_trail:
+            try:
+                ct = session.client('cloudtrail', region_name=region)
+                trails = ct.describe_trails(includeShadowTrails=False)
+                for t in trails.get('trailList', []):
+                    if t.get('IsOrganizationTrail'):
+                        region = t.get('HomeRegion', 'us-east-1')
+                        break
+            except ClientError:
+                region = 'us-east-1'
+        return _get_ct_client(session, region, target_role)
 
     async def lookup_security_events(
         self,
         event_category: str = "all",
         days_back: int = 7,
-        max_results: int = 50
+        max_results: int = 50,
+        org_trail: bool = False,
+        target_role_arn: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Lookup CloudTrail events with security-focused filtering.
@@ -152,9 +188,14 @@ class CloudTrailMCPServer:
             "severity_summary": severity_counts,
             "source": "cloudtrail-mcp-server",
             "errors": errors if errors else None,
+            "org_trail": org_trail,
         }
 
-    async def get_trail_status(self) -> Dict[str, Any]:
+    async def get_trail_status(
+        self,
+        org_trail: bool = False,
+        target_role_arn: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Get the status of CloudTrail trails in the account.
 
@@ -169,7 +210,7 @@ class CloudTrailMCPServer:
             for trail in trails:
                 try:
                     status = await asyncio.to_thread(
-                        self.client.get_trail_status,
+                        client.get_trail_status,
                         Name=trail['TrailARN']
                     )
                     trail_statuses.append({
@@ -198,7 +239,13 @@ class CloudTrailMCPServer:
             logger.error(f"CloudTrail MCP: get_trail_status failed: {e}")
             return {"error": str(e), "source": "cloudtrail-mcp-server"}
 
-    async def scan_for_anomalies(self, days_back: int = 1, max_results: int = 100) -> Dict[str, Any]:
+    async def scan_for_anomalies(
+        self,
+        days_back: int = 1,
+        max_results: int = 100,
+        org_trail: bool = False,
+        target_role_arn: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Scan recent CloudTrail events for security anomalies.
 
@@ -228,10 +275,11 @@ class CloudTrailMCPServer:
         start_time = datetime.utcnow() - timedelta(days=days_back)
         anomalies = []
 
+        client = self._get_client_for_request(org_trail, target_role_arn)
         for indicator in anomaly_indicators:
             try:
                 response = await asyncio.to_thread(
-                    self.client.lookup_events,
+                    client.lookup_events,
                     LookupAttributes=[{
                         'AttributeKey': 'EventName',
                         'AttributeValue': indicator["name"]

@@ -12,7 +12,7 @@ import NovaSentinelLogo from './components/Logo';
 import LandingHero from './components/Landing/LandingHero';
 import FeaturesSection from './components/Landing/FeaturesSection';
 import WhatWhyForWhom from './components/Landing/WhatWhyForWhom';
-import WhyWeWinSection from './components/Landing/WhyWeWinSection';
+import UnderTheHoodSection from './components/Landing/UnderTheHoodSection';
 import FAQSection from './components/Landing/FAQSection';
 import DashboardLayout from './components/Dashboard/DashboardLayout';
 import ScenarioPicker from './components/Dashboard/ScenarioPicker';
@@ -607,6 +607,19 @@ function App() {
             {/* Agent Progress */}
             {orchestrationResult && <AgentProgress agents={orchestrationResult.agents} />}
 
+            {/* Agent Pivot — visible conditional reasoning (hackathon differentiator) */}
+            {orchestrationResult?.metadata?.agent_pivot && (
+              <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 flex items-start gap-3">
+                <Zap className="w-5 h-5 text-violet-600 shrink-0 mt-0.5" strokeWidth={1.8} />
+                <div>
+                  <p className="text-xs font-bold text-violet-800">Agent pivot</p>
+                  <p className="text-[11px] text-violet-700 leading-relaxed mt-0.5">
+                    {orchestrationResult.metadata.agent_pivot}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Low event count warning — dynamic for real AWS */}
             {typeof (analysisResult as any)?.events_analyzed === 'number' && (analysisResult as any).events_analyzed <= 5 && typeof (analysisResult as any)?.time_range_days === 'number' && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-start gap-3">
@@ -918,6 +931,12 @@ function App() {
           hasAnalysis={!!analysisResult}
           headerRight={
             <div className="flex items-center gap-3">
+              {mode === 'console' && awsAccountId && (
+                <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <span className="text-[10px] font-medium text-indigo-600 uppercase tracking-wider">AWS</span>
+                  <span className="ml-1.5 text-xs font-mono font-bold text-indigo-800">{awsAccountId}</span>
+                </div>
+              )}
               {mode === 'demo' && analysisResult && (
                 <DemoChecklist
                   runScenarioDone={!!orchestrationResult}
@@ -949,6 +968,25 @@ function App() {
               </span>
             </div>
           )}
+          {/* Prominent fallback banner — when useFullAI was ON but backend offline, user sees demo data */}
+          {mode === 'demo' && analysisResult?.model_used === 'Instant demo (fallback)' && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-amber-500 border-2 border-amber-600 rounded-xl px-4 py-3 flex items-center gap-3 mb-4 shadow-lg"
+            >
+              <AlertCircle className="h-6 w-6 text-amber-900 flex-shrink-0" strokeWidth={2.5} />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-950">
+                  You are viewing demo data — backend was unreachable for full AI analysis
+                </p>
+                <p className="text-xs text-amber-900/90 mt-0.5">
+                  Start the backend for real Nova AI: <code className="bg-amber-600/30 px-1.5 py-0.5 rounded font-mono text-[11px]">cd backend && uvicorn main:app --reload</code>
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {/* Error Banner */}
           {error && (
             <motion.div
@@ -1115,7 +1153,7 @@ function App() {
 
       <WhatWhyForWhom />
       <FeaturesSection />
-      <WhyWeWinSection />
+      <UnderTheHoodSection />
 
       {/* CTA — premium */}
       <section className="py-28 bg-gradient-to-b from-slate-50 to-white border-t border-slate-200 relative overflow-hidden" id="cta">

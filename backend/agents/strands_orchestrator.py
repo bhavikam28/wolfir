@@ -33,6 +33,7 @@ from agents.documentation_agent import DocumentationAgent
 from mcp_servers.cloudtrail_mcp import get_cloudtrail_mcp
 from mcp_servers.iam_mcp import get_iam_mcp
 from mcp_servers.cloudwatch_mcp import get_cloudwatch_mcp
+from mcp_servers.security_hub_mcp import get_security_hub_mcp
 from mcp_servers.nova_canvas_mcp import get_nova_canvas_mcp
 from services.incident_memory import get_incident_memory
 from utils.logger import logger
@@ -406,6 +407,34 @@ def cloudwatch_billing_check(days_back: int = 7) -> str:
 
 
 @tool
+def securityhub_get_findings(severity: Optional[str] = None, max_results: int = 50, days_back: Optional[int] = None) -> str:
+    """Get Security Hub findings using the Security Hub MCP server.
+    
+    Pre-correlated, severity-scored findings from GuardDuty, Inspector, etc.
+    Use when user asks about Security Hub, GuardDuty, Inspector, or pre-correlated findings.
+    
+    Args:
+        severity: Filter — CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
+        max_results: Maximum findings to return
+        days_back: Only findings updated in last N days
+    
+    Returns:
+        JSON with findings, severity summary, and risk indicators.
+    """
+    try:
+        sh = get_security_hub_mcp()
+        result = _run_async(sh.get_findings(severity=severity, max_results=max_results, days_back=days_back))
+        if isinstance(result, dict) and result.get("error"):
+            logger.warning(f"Security Hub returned error: {result['error']}")
+            return json.dumps({"error": result["error"], "findings": result.get("findings", []),
+                              "_api_error": True, "message": f"Security Hub API error: {result['error']}"})
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f"Security Hub get_findings tool failed: {e}")
+        return json.dumps({"error": str(e), "findings": [], "source": "securityhub-mcp-server"})
+
+
+@tool
 def nova_canvas_generate_report_cover(incident_type: str, severity: str = "CRITICAL", incident_id: str = "INC-000000") -> str:
     """Generate a visual security report cover using the Nova Canvas MCP server.
     
@@ -497,7 +526,8 @@ AWS MCP SERVER TOOLS:
 10. iam_policy_analysis — Analyze specific IAM policies (iam-mcp-server)
 11. cloudwatch_security_check — Monitor security alarms and EC2 metrics (cloudwatch-mcp-server)
 12. cloudwatch_billing_check — Detect billing anomalies (cloudwatch-mcp-server)
-13. nova_canvas_generate_report_cover — Generate visual report covers (nova-canvas-mcp-server)
+13. securityhub_get_findings — Get pre-correlated Security Hub findings (GuardDuty, Inspector)
+14. nova_canvas_generate_report_cover — Generate visual report covers (nova-canvas-mcp-server)
 
 When analyzing an incident:
 - Start with cloudtrail_lookup or analyze_security_timeline to understand the attack
@@ -506,6 +536,7 @@ When analyzing an incident:
 - Check cloudwatch_security_check for monitoring gaps
 - Generate remediation based on findings
 - Create documentation for the incident response team
+- Use securityhub_get_findings for pre-correlated GuardDuty/Inspector findings
 - Use nova_canvas_generate_report_cover for visual reports
 
 Be concise, actionable, and security-focused in your responses."""
@@ -538,7 +569,7 @@ class StrandsOrchestrator:
         self.execution_history: List[Dict[str, Any]] = []
         self._agent = None
         logger.info(f"StrandsOrchestrator initialized with {len(STRANDS_TOOLS)} Strands tools "
-                     f"(5 core + 7 AWS MCP server tools)")
+                     f"(6 core + 8 AWS MCP server tools)")
     
     @property
     def agent(self) -> Agent:
@@ -581,6 +612,7 @@ class StrandsOrchestrator:
         # Step 1: Temporal Analysis (Nova 2 Lite)
         logger.info(f"[{incident_id}] Step 1: analyze_security_timeline")
         state["tools"]["temporal"] = {"status": "RUNNING", "model": "amazon.nova-2-lite-v1:0"}
+        agent_pivot = None
         try:
             timeline_json = await asyncio.to_thread(
                 analyze_security_timeline,
@@ -590,9 +622,37 @@ class StrandsOrchestrator:
             timeline = json.loads(timeline_json)
             state["tools"]["temporal"]["status"] = "COMPLETED"
             state["results"]["timeline"] = timeline
+
+            # AGENTIC PIVOT: If timeline confidence < 0.3, run anomaly scan before proceeding
+            # Demonstrates conditional reasoning — agent adapts when initial analysis is uncertain
+            confidence = float(timeline.get("confidence", 0.5))
+            if confidence < 0.3:
+                logger.info(f"[{incident_id}] Agent pivot: timeline confidence {confidence} < 0.3 → running cloudtrail_anomaly_scan")
+                agent_pivot = "Timeline confidence low (<0.3) — ran CloudTrail anomaly scan for additional signal before proceeding"
+                state["tools"]["anomaly_scan"] = {"status": "RUNNING", "reason": "low_confidence_pivot"}
+                try:
+                    anomaly_result = await asyncio.to_thread(cloudtrail_anomaly_scan, days_back=1)
+                    state["tools"]["anomaly_scan"]["status"] = "COMPLETED"
+                    state["results"]["anomaly_scan"] = json.loads(anomaly_result) if isinstance(anomaly_result, str) else anomaly_result
+                except Exception as ae:
+                    logger.warning(f"[{incident_id}] Anomaly scan failed: {ae}")
+                    state["tools"]["anomaly_scan"] = {"status": "FAILED", "error": str(ae)}
         except Exception as e:
             logger.error(f"[{incident_id}] Timeline failed: {e}")
             state["tools"]["temporal"] = {"status": "FAILED", "error": str(e)}
+
+        # Empty events pivot: CloudTrail returned no events → try anomaly scan for alternative signal
+        if len(events) == 0 and not agent_pivot:
+            logger.info(f"[{incident_id}] Agent pivot: no events from CloudTrail → running cloudtrail_anomaly_scan")
+            agent_pivot = "CloudTrail returned no events — ran anomaly scan for alternative signal"
+            state["tools"]["anomaly_scan"] = {"status": "RUNNING", "reason": "empty_events_pivot"}
+            try:
+                anomaly_result = await asyncio.to_thread(cloudtrail_anomaly_scan, days_back=1)
+                state["tools"]["anomaly_scan"]["status"] = "COMPLETED"
+                state["results"]["anomaly_scan"] = json.loads(anomaly_result) if isinstance(anomaly_result, str) else anomaly_result
+            except Exception as ae:
+                logger.warning(f"[{incident_id}] Anomaly scan failed: {ae}")
+                state["tools"]["anomaly_scan"] = {"status": "FAILED", "error": str(ae)}
         
         # Correlation: query incident memory for past similar incidents
         try:
@@ -702,6 +762,22 @@ class StrandsOrchestrator:
         except Exception as e:
             logger.warning(f"[{incident_id}] Failed to save incident to memory: {e}")
         
+        metadata = {
+            "incident_type": incident_type,
+            "account_id": account_id,
+            "tools_used": list(state["tools"].keys()),
+            "framework": "strands-agents",
+            "mcp_servers": [
+                "cloudtrail-mcp-server",
+                "iam-mcp-server",
+                "cloudwatch-mcp-server",
+                "nova-canvas-mcp-server",
+            ],
+            "sdk_version": "real",
+        }
+        if agent_pivot:
+            metadata["agent_pivot"] = agent_pivot
+
         return {
             "incident_id": incident_id,
             "status": "completed",
@@ -709,19 +785,7 @@ class StrandsOrchestrator:
             "agents": state["tools"],
             "results": state["results"],
             "model_used": "strands-agents-orchestration",
-            "metadata": {
-                "incident_type": incident_type,
-                "account_id": account_id,
-                "tools_used": list(state["tools"].keys()),
-                "framework": "strands-agents",
-                "mcp_servers": [
-                    "cloudtrail-mcp-server",
-                    "iam-mcp-server",
-                    "cloudwatch-mcp-server",
-                    "nova-canvas-mcp-server",
-                ],
-                "sdk_version": "real",
-            }
+            "metadata": metadata,
         }
     
     async def agent_query(self, prompt: str) -> str:

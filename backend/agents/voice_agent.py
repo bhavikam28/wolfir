@@ -434,29 +434,51 @@ Return a JSON response:
     "action": "none|analyze|remediate|explain|summarize|compliance|cost",
     "action_target": "what the action should be applied to (if applicable)",
     "severity_assessment": "critical|high|medium|low|info",
-    "follow_up_suggestions": ["suggestion 1", "suggestion 2"]
-}}"""
+    "follow_up_suggestions": ["What compliance frameworks are affected?", "What is the cost impact?", "Have we seen this attack pattern before?"]
+}}
+
+IMPORTANT: Always include 2-3 contextual follow_up_suggestions — short, clickable questions the user might ask next (e.g., "What compliance frameworks are affected?", "Explain the remediation steps", "What is the cost impact?"). Tailor suggestions to the current incident context.
+
+Return ONLY valid JSON, no additional text before or after."""
     
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
-        """Parse JSON from a model response."""
+        """Parse JSON from a model response. Robust extraction like temporal_agent."""
         try:
+            json_text = None
+            # First, try code blocks
             if "```json" in response_text:
                 json_start = response_text.find("```json") + 7
                 json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            elif "{" in response_text:
-                json_start = response_text.find("{")
-                json_end = response_text.rfind("}") + 1
-                json_text = response_text[json_start:json_end]
-            else:
+                if json_end > json_start:
+                    json_text = response_text[json_start:json_end].strip()
+            elif "```" in response_text:
+                json_start = response_text.find("```") + 3
+                json_end = response_text.find("```", json_start)
+                if json_end > json_start:
+                    json_text = response_text[json_start:json_end].strip()
+            # Fallback: find first { and last }
+            if not json_text and "{" in response_text:
+                start_idx = response_text.find("{")
+                end_idx = response_text.rfind("}") + 1
+                if end_idx > start_idx:
+                    json_text = response_text[start_idx:end_idx]
+            if not json_text:
                 json_text = "{}"
             
-            return json.loads(json_text)
+            result = json.loads(json_text)
+            # Ensure follow_up_suggestions exists and is a list
+            if "follow_up_suggestions" not in result or not isinstance(result["follow_up_suggestions"], list):
+                result["follow_up_suggestions"] = result.get("follow_up_suggestions") or []
+            return result
         except (json.JSONDecodeError, ValueError):
             return {
                 "response_text": response_text,
                 "action": "none",
                 "action_target": None,
                 "severity_assessment": "info",
-                "follow_up_suggestions": []
+                "follow_up_suggestions": [
+                    "What compliance frameworks are affected?",
+                    "Explain the remediation steps",
+                    "What is the cost impact?",
+                ],
             }

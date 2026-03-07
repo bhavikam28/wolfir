@@ -403,6 +403,15 @@ const CostImpact: React.FC<CostImpactProps> = ({
                 Autonomous response reduces manual remediation by <span className="font-bold">100%</span> and 
                 cuts downtime by <span className="font-bold">85%</span>, saving an estimated <span className="font-bold">${novaSentinelSavings.toLocaleString()}</span> per incident.
               </p>
+              <a
+                href="https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[10px] text-teal-600 hover:text-teal-800 mb-2"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Manual cost based on BLS InfoSec analyst wages + Glassdoor IR hourly rates
+              </a>
               <div className="text-[10px] text-teal-600 space-y-0.5">
                 <div className="flex justify-between"><span>Manual remediation eliminated</span><span className="font-bold">${savingsBreakdown.remediation.toLocaleString()}</span></div>
                 <div className="flex justify-between"><span>Downtime reduced 85%</span><span className="font-bold">${savingsBreakdown.downtime.toLocaleString()}</span></div>

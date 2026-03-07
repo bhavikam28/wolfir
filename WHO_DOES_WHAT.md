@@ -66,8 +66,19 @@ Results appear across the tabs
 | iam_policy_analysis | Analyze a specific IAM policy |
 | cloudwatch_security_check | Security alarms, EC2 metrics |
 | cloudwatch_billing_check | Billing anomalies |
+| securityhub_get_findings | Pre-correlated findings (GuardDuty, Inspector) |
 | nova_canvas_generate_report_cover | Generate report cover image |
 | query_incident_history | Get past incidents from DynamoDB |
+
+---
+
+## ENTERPRISE FEATURES (AWS Organization & Cross-Account)
+
+| Feature | How to Use |
+|---------|------------|
+| **Org trail** | Add `?org_trail=true` to `/api/analysis/real-cloudtrail` or `/api/orchestration/analyze-from-cloudtrail` — queries organization trail in management account |
+| **Cross-account (AssumeRole)** | Add `?target_role_arn=arn:aws:iam::123456789012:role/NovaSentinelRole` — assumes role before CloudTrail/Security Hub calls |
+| **Security Hub** | Agent can call `securityhub_get_findings` — pre-correlated GuardDuty/Inspector findings as pipeline input |
 
 ---
 
