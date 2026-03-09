@@ -5,9 +5,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, CheckCircle2, AlertTriangle, ChevronDown,
-  ChevronUp, Play, Clock, Terminal, Copy, Brain, FileText
+  ChevronUp, Play, Clock, Terminal, Copy, Brain, FileText, Zap, ExternalLink
 } from 'lucide-react';
-import { remediationAPI } from '../../services/api';
+import { remediationAPI, novaActAPI } from '../../services/api';
 
 function ProofCloudTrail({ event }: { event: Record<string, unknown> }) {
   const [expanded, setExpanded] = useState(false);
@@ -49,6 +49,9 @@ interface RemediationPlanData {
 interface RemediationPlanProps {
   plan: RemediationPlanData | any;
   incidentId?: string;
+  incidentType?: string;
+  rootCause?: string;
+  affectedResources?: string[];
   demoMode?: boolean;
   onApprove?: (plan: RemediationPlanData) => void;
   onExecute?: (stepIndex: number) => void;
@@ -57,11 +60,17 @@ interface RemediationPlanProps {
 
 type StepStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
-const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, demoMode = false, onApprove, onExecute, executing = false }) => {
+const RemediationPlan: React.FC<RemediationPlanProps> = ({
+  plan, incidentId, incidentType = 'Security Incident', rootCause = 'Unknown', affectedResources = [], demoMode = false,
+  onApprove, onExecute, executing = false
+}) => {
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
   const [approved, setApproved] = useState(false);
   const [stepStatuses, setStepStatuses] = useState<Record<number, StepStatus>>({});
   const [stepProofs, setStepProofs] = useState<Record<number, any>>({});
+  const [novaActPlan, setNovaActPlan] = useState<any>(null);
+  const [novaActLoading, setNovaActLoading] = useState(false);
+  const [novaActExpanded, setNovaActExpanded] = useState(false);
 
   const toggleStep = (step: number) => {
     const newExpanded = new Set(expandedSteps);
@@ -223,6 +232,92 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({ plan, incidentId, dem
               <motion.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
             </div>
           </div>
+        </div>
+
+        {/* Nova Act — Browser Automation Plan */}
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-500" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nova Act — AWS Console Automation</span>
+            </div>
+            <button
+              onClick={async () => {
+                setNovaActLoading(true);
+                setNovaActPlan(null);
+                try {
+                  const remSteps = steps.map((s: any) => ({
+                    action: s.action || s.command || s.description || 'Remediation step',
+                    aws_cli: s.api_call || s.command || s.cli_command || s.aws_cli_command || '',
+                    priority: s.risk || s.risk_level || 'MEDIUM',
+                  }));
+                  const result = await novaActAPI.generateRemediationAutomation(
+                    incidentType,
+                    rootCause,
+                    affectedResources,
+                    remSteps
+                  );
+                  setNovaActPlan(result);
+                  setNovaActExpanded(true);
+                } catch (err) {
+                  setNovaActPlan({ error: 'Backend offline. Nova Act plans require the API.' });
+                  setNovaActExpanded(true);
+                } finally {
+                  setNovaActLoading(false);
+                }
+              }}
+              disabled={novaActLoading}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-70 transition-colors"
+            >
+              {novaActLoading ? (
+                <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating...</>
+              ) : (
+                <><Zap className="w-3.5 h-3.5" /> Generate Nova Act Plan</>
+              )}
+            </button>
+          </div>
+          {novaActPlan && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/50 overflow-hidden">
+              <button
+                onClick={() => setNovaActExpanded(!novaActExpanded)}
+                className="w-full px-4 py-2 flex items-center justify-between text-left text-xs font-bold text-amber-800 hover:bg-amber-100/50"
+              >
+                <span>Nova Act automation plan — {novaActPlan.automation_plan?.total_steps ?? 0} steps</span>
+                {novaActExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {novaActExpanded && (
+                <div className="px-4 pb-4 space-y-3">
+                  {novaActPlan.error ? (
+                    <p className="text-xs text-amber-700">{novaActPlan.error}</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-amber-800">
+                        Browser automation steps for AWS Console. Execute via Nova Act SDK or use AWS CLI alternatives below.
+                      </p>
+                      {(novaActPlan.automation_plan?.steps || []).slice(0, 5).map((s: any, i: number) => (
+                        <div key={i} className="text-xs bg-white rounded border border-amber-200 p-2">
+                          <span className="font-bold text-amber-800">Step {s.step_number}:</span> {s.action}
+                          {s.aws_cli_alternative && (
+                            <div className="mt-1 font-mono text-[10px] text-slate-600 bg-slate-200/50 px-2 py-1 rounded">
+                              {s.aws_cli_alternative}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <a
+                        href="https://docs.aws.amazon.com/bedrock/latest/userguide/nova-act.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Nova Act docs
+                      </a>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

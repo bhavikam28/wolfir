@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
 
 from services.incident_memory import get_incident_memory
+from services.embedding_service import embed_text, cosine_similarity
 from utils.logger import logger
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
@@ -138,6 +139,42 @@ async def force_recorrelate(
         raise
     except Exception as e:
         logger.error(f"Force correlate failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{incident_id}/similar")
+async def get_similar_incidents(
+    incident_id: str,
+    account_id: str = Query(default=DEFAULT_ACCOUNT),
+    limit: int = Query(default=5, ge=1, le=10),
+) -> Dict[str, Any]:
+    """Find semantically similar incidents using Nova Multimodal Embeddings."""
+    try:
+        memory = get_incident_memory()
+        inc = await memory.get_incident_by_id(incident_id, account_id=account_id)
+        if not inc:
+            raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
+        query_text = f"{inc.get('summary', '')} {inc.get('attack_type', '')} {' '.join(inc.get('mitre_techniques', []))}".strip()
+        query_emb = await embed_text(query_text)
+        if not query_emb:
+            return {"incident_id": incident_id, "similar": [], "message": "Embedding unavailable (Bedrock)."}
+        incidents = await memory.list_all_incidents(account_id=account_id, limit=30)
+        scored = []
+        for other in incidents:
+            if other.get("incident_id") == incident_id:
+                continue
+            other_text = f"{other.get('summary', '')} {other.get('attack_type', '')} {' '.join(other.get('mitre_techniques', []))}".strip()
+            other_emb = await embed_text(other_text)
+            if other_emb:
+                sim = cosine_similarity(query_emb, other_emb)
+                scored.append((sim, other))
+        scored.sort(key=lambda x: -x[0])
+        similar = [{"similarity": round(s * 100, 1), "incident": i} for s, i in scored[:limit]]
+        return {"incident_id": incident_id, "similar": similar, "model": "amazon.nova-2-multimodal-embeddings-v1:0"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Similar incidents failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

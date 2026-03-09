@@ -22,8 +22,8 @@ const WhatWhyForWhom: React.FC = () => {
     {
       icon: Users,
       label: 'For Whom',
-      title: 'Security Teams Drowning in Alerts',
-      desc: 'For SOC teams with 11,000+ alerts/day and no time to respond — and for anyone exploring what agentic AI can do in high-stakes operational workflows.',
+      title: 'SOC Analysts, Cloud Security Engineers, Incident Responders',
+      desc: 'Built for security teams drowning in alerts — including those using AWS IAM Identity Center (SSO). SOC analysts, cloud security engineers, and incident responders. Also for anyone exploring agentic AI in high-stakes operational workflows.',
     },
   ];
 

@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Eye, GitBranch, Scale, DollarSign, Mic,
-  Image, Cloud, ArrowRight, Loader2, ChevronDown, Play
+  Image, Cloud, ArrowRight, Loader2, ChevronDown, Play, Sparkles
 } from 'lucide-react';
 import type { DemoScenario } from '../../types/incident';
 
@@ -109,10 +109,21 @@ const FEATURES: Feature[] = [
     available: 'always',
   },
   {
-    id: 'real-aws',
+    id: 'similar-incidents',
     number: 8,
+    name: 'Similar Incidents (Nova Embeddings)',
+    description: 'Semantic search over incident history. Find incidents similar to the current one using Nova Multimodal Embeddings.',
+    model: 'Nova Embeddings',
+    modelColor: 'text-violet-600 bg-violet-50 border-violet-200',
+    icon: Sparkles,
+    gradient: 'from-violet-500 to-purple-600',
+    available: 'after-analysis',
+  },
+  {
+    id: 'real-aws',
+    number: 9,
     name: 'Real AWS Account Analysis',
-    description: 'Connect via aws login or CLI profile for real CloudTrail analysis — OAuth, no keys stored.',
+    description: 'Connect via aws login or CLI profile for real CloudTrail analysis — OAuth, no keys stored. SSO via profiles.',
     model: 'All Models',
     modelColor: 'text-orange-600 bg-orange-50 border-orange-200',
     icon: Cloud,
@@ -146,7 +157,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
       {/* Section Header */}
       <div className="text-center mb-2">
         <h2 className="text-2xl font-black text-slate-900 mb-1">Platform Features</h2>
-        <p className="text-sm text-slate-500">8 distinct capabilities powered by Amazon Nova AI models</p>
+        <p className="text-sm text-slate-500">9 distinct capabilities powered by Amazon Nova AI models</p>
       </div>
 
       {/* Feature Grid */}

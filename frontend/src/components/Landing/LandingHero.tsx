@@ -58,7 +58,7 @@ const LandingHero: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-base sm:text-lg text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            Security teams get 11,000+ alerts per day and investigate &lt;5%. Nova Sentinel closes the gap — from alert to remediation, autonomously.
+            Built for SOC analysts, cloud security engineers, and incident responders — including teams using AWS IAM Identity Center (SSO). 11,000+ alerts/day, &lt;5% investigated. Nova Sentinel closes the gap.
           </motion.p>
 
           <motion.div
@@ -143,7 +143,8 @@ const LandingHero: React.FC = () => {
               { name: 'Nova Pro', color: 'bg-blue-50 border-blue-200 text-blue-700' },
               { name: 'Nova 2 Lite', color: 'bg-violet-50 border-violet-200 text-violet-700' },
               { name: 'Nova Micro', color: 'bg-amber-50 border-amber-200 text-amber-700' },
-              { name: 'Nova 2 Sonic', color: 'bg-slate-100 border-slate-200 text-slate-600' },
+              { name: 'Nova 2 Sonic', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
+              { name: 'Nova Canvas', color: 'bg-pink-50 border-pink-200 text-pink-700' },
             ].map((tech) => (
               <span key={tech.name} className={`px-3 py-1 rounded-full text-[10px] font-bold border ${tech.color}`}>
                 {tech.name}

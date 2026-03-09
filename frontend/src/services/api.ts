@@ -261,6 +261,12 @@ export const incidentHistoryAPI = {
     const response = await api.post('/api/incidents/search', { query, account_id: accountId });
     return response.data;
   },
+  similar: async (incidentId: string, accountId: string = 'demo-account', limit = 5): Promise<{ similar: Array<{ similarity: number; incident: any }>; model?: string }> => {
+    const response = await api.get(`/api/incidents/${encodeURIComponent(incidentId)}/similar`, {
+      params: { account_id: accountId, limit },
+    });
+    return response.data;
+  },
 };
 
 export const threatIntelAPI = {

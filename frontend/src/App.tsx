@@ -427,11 +427,20 @@ function App() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-xs text-slate-500">
-                      Authenticate via AWS IAM Identity Center (SSO). A browser window will open for secure login — no credentials are entered here.
-                    </p>
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3">
+                      <p className="text-xs font-semibold text-emerald-800 mb-2">SSO works today via AWS profiles</p>
+                      <p className="text-xs text-emerald-700 leading-relaxed mb-3">
+                        Security teams in AWS Organizations: configure your SSO profile once, then select it in the <strong>CLI Profile</strong> tab above. No separate SSO flow needed.
+                      </p>
+                      <ol className="text-xs text-emerald-800 space-y-1.5 list-decimal list-inside font-medium">
+                        <li>Run <code className="bg-emerald-100 px-1 rounded text-[10px]">aws configure sso</code> — enter your org&apos;s SSO start URL when prompted</li>
+                        <li>Run <code className="bg-emerald-100 px-1 rounded text-[10px]">aws sso login</code> (or <code className="bg-emerald-100 px-1 rounded text-[10px]">aws login</code>)</li>
+                        <li>Switch to the <strong>CLI Profile</strong> tab above</li>
+                        <li>Select your SSO profile from the dropdown — you&apos;re connected</li>
+                      </ol>
+                    </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1.5">SSO Start URL</label>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Your org&apos;s SSO Start URL</label>
                       <input
                         type="text"
                         value={ssoStartUrl}
@@ -439,6 +448,7 @@ function App() {
                         placeholder="https://my-org.awsapps.com/start"
                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                       />
+                      <p className="text-[10px] text-slate-500 mt-1">Used to generate the setup command below</p>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-600 mb-1.5">SSO Region</label>
@@ -456,14 +466,16 @@ function App() {
                       </select>
                     </div>
                     <div className="bg-slate-900 rounded-lg p-3">
-                      <p className="text-[10px] text-slate-400 mb-1 font-mono">CLI setup</p>
-                      <code className="text-xs text-green-400 font-mono block">aws login --profile nova-sentinel</code>
-                      <p className="text-[10px] text-slate-500 mt-2">First-time SSO: <code className="text-slate-400">aws configure sso --profile nova-sentinel</code></p>
+                      <p className="text-[10px] text-slate-400 mb-1 font-mono">Run this to configure your SSO profile</p>
+                      <code className="text-xs text-green-400 font-mono block break-all">
+                        aws configure sso --profile nova-sentinel{ssoStartUrl ? ` --sso-start-url ${ssoStartUrl} --sso-region ${ssoRegion}` : ''}
+                      </code>
+                      <p className="text-[10px] text-slate-500 mt-2">Then: <code className="text-slate-400">aws sso login --profile nova-sentinel</code></p>
                     </div>
                     <div className="flex items-start gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
                       <Shield className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
                       <p className="text-[10px] text-indigo-600 leading-relaxed">
-                        <strong>Enterprise-grade:</strong> SSO uses a secure browser-based OAuth flow. No secrets are ever entered in or handled by Nova Sentinel. Authentication happens directly with AWS.
+                        <strong>Multi-account:</strong> Create one profile per account. Switch profiles in the CLI Profile tab to analyze different accounts.
                       </p>
                     </div>
                   </div>
@@ -494,7 +506,7 @@ function App() {
                           setConnectionLoading(false);
                         }
                       }}
-                      disabled={connectionLoading}
+                      disabled={connectionLoading || authMethod === 'sso'}
                       className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-70"
                     >
                     {connectionLoading ? (
@@ -504,12 +516,7 @@ function App() {
                       </>
                     ) : authMethod === 'sso' ? (
                       <>
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                          <polyline points="15 3 21 3 21 9" />
-                          <line x1="10" y1="14" x2="21" y2="3" />
-                        </svg>
-                        Authorize with SSO
+                        <span className="text-xs">Switch to CLI Profile tab → select your SSO profile → Test Connection</span>
                       </>
                     ) : (
                       <>
@@ -760,6 +767,19 @@ function App() {
           <RemediationPlan
             plan={remediationPlan}
             incidentId={orchestrationResult?.incident_id || analysisResult?.incident_id}
+            incidentType={orchestrationResult?.metadata?.incident_type || analysisResult?.timeline?.attack_pattern || 'Security Incident'}
+            rootCause={analysisResult?.timeline?.root_cause || orchestrationResult?.results?.timeline?.root_cause || 'Unknown'}
+            affectedResources={(() => {
+              const tl = analysisResult?.timeline || orchestrationResult?.results?.timeline;
+              const blast = tl?.blast_radius;
+              const events = tl?.events || [];
+              const resources = new Set<string>();
+              events.forEach((e: any) => {
+                if (e?.resource?.ARN) resources.add(e.resource.ARN);
+                if (e?.requestParameters?.roleName) resources.add(`arn:aws:iam::*:role/${e.requestParameters.roleName}`);
+              });
+              return blast ? [blast] : Array.from(resources).slice(0, 5);
+            })()}
             demoMode={mode === 'demo'}
             onApprove={async () => {
               try {

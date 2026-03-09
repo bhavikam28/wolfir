@@ -294,6 +294,10 @@ class IncidentMemoryService:
         self, incident_id: str, account_id: str = DEFAULT_ACCOUNT
     ) -> Optional[Dict[str, Any]]:
         """Get a single incident by ID."""
+        with _IN_MEMORY_LOCK:
+            for inc in _in_memory_incidents.get(account_id, []):
+                if inc.get("incident_id") == incident_id:
+                    return inc
         await self._ensure_table_exists()
         try:
             resp = await asyncio.to_thread(

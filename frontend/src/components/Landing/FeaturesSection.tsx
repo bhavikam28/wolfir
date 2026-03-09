@@ -305,7 +305,7 @@ const FeaturesSection: React.FC = () => {
               <span className="text-sm font-semibold text-indigo-700">Context-Aware Orchestration</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-              5 Nova Models, Each Doing What It&apos;s Best At
+              5 Nova Models + Nova Act + Embeddings
             </h2>
             <p className="text-base text-slate-600 max-w-xl mx-auto">
               Agents share state across the pipeline. Click any stage to explore.
@@ -359,6 +359,9 @@ const FeaturesSection: React.FC = () => {
               { name: 'CloudWatch MCP', source: 'awslabs/mcp pattern', tools: ['Security Alarms', 'API Metrics', 'EC2 Security', 'Billing Anomalies'],
                 color: 'from-emerald-500 to-teal-600', bgColor: 'bg-emerald-50 border-emerald-200 text-emerald-600',
                 textColor: 'text-emerald-600', description: 'Monitoring crypto-mining, data exfiltration, and billing anomalies via CloudWatch metrics' },
+              { name: 'Security Hub MCP', source: 'awslabs/mcp pattern', tools: ['Findings', 'GuardDuty', 'Inspector', 'Pre-correlation'],
+                color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-50 border-amber-200 text-amber-600',
+                textColor: 'text-amber-600', description: 'Security Hub findings — GuardDuty, Inspector, and pre-correlated security events' },
               { name: 'Nova Canvas MCP', source: 'awslabs/mcp official', tools: ['Image Generation', 'Report Covers', 'Attack Path Visuals'],
                 color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50 border-violet-200 text-violet-600',
                 textColor: 'text-violet-600', description: 'Visual report generation using Amazon Nova Canvas — incident covers and diagrams' },
@@ -396,7 +399,7 @@ const FeaturesSection: React.FC = () => {
             className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
-              { label: 'MCP Tools', value: '22', sub: 'Registered' },
+              { label: 'MCP Tools', value: '23', sub: 'Registered' },
               { label: 'Strands Tools', value: '14', sub: '@tool decorated' },
               { label: 'Nova Models', value: '5', sub: 'Integrated' },
               { label: 'AWS Services', value: '7+', sub: 'Connected' },

@@ -12,7 +12,11 @@ const FAQSection: React.FC = () => {
   const faqs = [
     {
       q: 'What is Nova Sentinel?',
-      a: 'Nova Sentinel is an agentic incident response pipeline powered by Amazon Nova. It orchestrates 5 specialized AI models to go from security alert to remediation plan to documentation — autonomously, with human-in-the-loop approval for risky actions.',
+      a: 'Nova Sentinel is an agentic incident response pipeline powered by Amazon Nova. It orchestrates 5 Nova models plus Nova Act to go from security alert to remediation plan to documentation — autonomously, with human-in-the-loop approval for risky actions.',
+    },
+    {
+      q: 'Who is Nova Sentinel for?',
+      a: 'Built for SOC analysts, cloud security engineers, and incident responders — including teams using AWS IAM Identity Center (SSO). If you\'re drowning in alerts and need autonomous response, Nova Sentinel is for you.',
     },
     {
       q: 'What is Demo mode vs. real AWS analysis?',

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Database, AlertTriangle, CheckCircle2, Search, Link2,
-  Shield, TrendingUp
+  Shield, TrendingUp, Sparkles
 } from 'lucide-react';
 import { incidentHistoryAPI } from '../../services/api';
 
@@ -59,6 +59,9 @@ export default function IncidentHistory({ accountId = 'demo-account', refreshTri
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [similarFor, setSimilarFor] = useState<string | null>(null);
+  const [similarList, setSimilarList] = useState<Array<{ similarity: number; incident: any }>>([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
 
   const loadData = async () => {
     if (backendOffline) {
@@ -224,6 +227,7 @@ export default function IncidentHistory({ accountId = 'demo-account', refreshTri
               <th className="px-4 py-3 font-bold text-slate-700">Risk</th>
               <th className="px-4 py-3 font-bold text-slate-700">Status</th>
               <th className="px-4 py-3 font-bold text-slate-700">Correlation</th>
+              <th className="px-4 py-3 font-bold text-slate-700">Similar</th>
             </tr>
           </thead>
           <tbody>
@@ -297,6 +301,28 @@ export default function IncidentHistory({ accountId = 'demo-account', refreshTri
                       <span className="text-slate-300">—</span>
                     )}
                   </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={async () => {
+                        if (backendOffline) return;
+                        setSimilarFor(inc.incident_id);
+                        setSimilarLoading(true);
+                        setSimilarList([]);
+                        try {
+                          const res = await incidentHistoryAPI.similar(inc.incident_id, accountId, 5);
+                          setSimilarList(res.similar || []);
+                        } catch {
+                          setSimilarList([]);
+                        } finally {
+                          setSimilarLoading(false);
+                        }
+                      }}
+                      title="Find similar incidents (Nova Embeddings)"
+                      className="p-1 rounded hover:bg-violet-100 text-violet-500 hover:text-violet-700 transition-colors"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </button>
+                  </td>
                 </motion.tr>
               ))}
           </tbody>
@@ -318,6 +344,40 @@ export default function IncidentHistory({ accountId = 'demo-account', refreshTri
           </div>
         )}
       </div>
+
+      {/* Similar Incidents (Nova Embeddings) */}
+      {similarFor && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-violet-200 bg-violet-50/50 p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-violet-700 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" /> Similar to {similarFor} (Nova Multimodal Embeddings)
+            </span>
+            <button onClick={() => { setSimilarFor(null); setSimilarList([]); }} className="text-slate-500 hover:text-slate-700 text-xs">Close</button>
+          </div>
+          {similarLoading ? (
+            <p className="text-xs text-slate-500">Embedding and comparing incidents...</p>
+          ) : similarList.length === 0 ? (
+            <p className="text-xs text-slate-500">No similar incidents found, or embedding unavailable.</p>
+          ) : (
+            <div className="space-y-2">
+              {similarList.map((s, i) => (
+                <div key={i} className="flex items-center justify-between bg-white rounded-lg border border-violet-100 px-3 py-2">
+                  <span className="text-xs font-mono text-slate-700">{s.incident?.incident_id}</span>
+                  <span className="text-xs text-slate-600 truncate max-w-[200px]">{s.incident?.attack_type}</span>
+                  <span className="px-2 py-0.5 rounded bg-violet-100 text-violet-700 text-[10px] font-bold">{s.similarity}% match</span>
+                  {onSelectIncident && (
+                    <button onClick={() => { onSelectIncident(s.incident?.incident_id); setSimilarFor(null); }} className="text-xs font-semibold text-violet-600 hover:text-violet-800">View</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Pattern Analysis */}
       {stats && (stats.top_attack_types?.length > 0 || stats.top_mitre_techniques?.length > 0) && (
