@@ -1,16 +1,24 @@
 /**
  * Real AWS Connection - Premium analysis trigger component
+ * Two options when connected: Analyze CloudTrail (incident) or Run Security Health Check (proactive)
  */
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Cloud, Loader2, Calendar, Database, Zap } from 'lucide-react';
+import { Cloud, Loader2, Calendar, Database, Zap, Shield, Sparkles } from 'lucide-react';
 
 interface RealAWSConnectProps {
   onAnalyze: (daysBack: number, maxEvents: number) => Promise<void>;
+  onHealthCheck?: () => Promise<void>;
   loading?: boolean;
+  healthCheckLoading?: boolean;
 }
 
-const RealAWSConnect: React.FC<RealAWSConnectProps> = ({ onAnalyze, loading = false }) => {
+const RealAWSConnect: React.FC<RealAWSConnectProps> = ({
+  onAnalyze,
+  onHealthCheck,
+  loading = false,
+  healthCheckLoading = false,
+}) => {
   const [daysBack, setDaysBack] = useState(30);
   const [maxEvents, setMaxEvents] = useState(200);
   const [showAdvanced, setShowAdvanced] = useState(true);
@@ -87,18 +95,36 @@ const RealAWSConnect: React.FC<RealAWSConnectProps> = ({ onAnalyze, loading = fa
         {showAdvanced ? '− Hide' : '+ Show'} Advanced Options
       </button>
 
-      {/* CTA */}
-      <button
-        onClick={() => onAnalyze(daysBack, maxEvents)}
-        disabled={loading}
-        className="btn-nova w-full px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-      >
-        {loading ? (
-          <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing Real AWS Account...</>
-        ) : (
-          <><Zap className="w-5 h-5" /> Start CloudTrail Analysis</>
+      {/* Two options: Health Check (proactive) + CloudTrail (incident) */}
+      <div className="space-y-3">
+        {onHealthCheck && (
+          <button
+            onClick={onHealthCheck}
+            disabled={healthCheckLoading || loading}
+            className="btn-nova w-full px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm border-2 border-emerald-500/30 shadow-lg shadow-emerald-500/20"
+          >
+            {healthCheckLoading ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Running Security Health Check...</>
+            ) : (
+              <><Shield className="w-5 h-5" /><Sparkles className="w-4 h-4" /> Run Security Health Check</>
+            )}
+          </button>
         )}
-      </button>
+        <p className="text-[10px] text-slate-500 text-center font-medium">
+          {onHealthCheck ? 'No incidents? Check your security posture first.' : ''}
+        </p>
+        <button
+          onClick={() => onAnalyze(daysBack, maxEvents)}
+          disabled={loading || healthCheckLoading}
+          className="btn-nova w-full px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+        >
+          {loading ? (
+            <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing Real AWS Account...</>
+          ) : (
+            <><Zap className="w-5 h-5" /> Analyze CloudTrail Events</>
+          )}
+        </button>
+      </div>
     </div>
   );
 };

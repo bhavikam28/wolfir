@@ -46,6 +46,10 @@ const FAQSection: React.FC = () => {
       a: 'Yes. We use your local AWS CLI profile or AWS SSO. No keys are stored on disk or transmitted. You can audit our open-source code on GitHub.',
     },
     {
+      q: 'Does Nova Sentinel use Amazon Bedrock Guardrails?',
+      a: 'Nova Sentinel uses MITRE ATLAS for AI pipeline security — prompt injection detection, API abuse monitoring, output validation. Amazon Bedrock Guardrails add a complementary layer: content filters, prompt-attack blocking, PII masking at the API level. We recommend enabling Guardrails for defense in depth. See the AI Pipeline Security tab for details.',
+    },
+    {
       q: 'What does "agentic" mean?',
       a: 'Multiple AI models work together with shared state. Nova Sentinel uses 5 Nova models: Temporal (timeline), Risk Scorer (severity), Remediation (action plan), Documentation (JIRA/Slack/Confluence), plus an Autonomous Agent that picks its own tools. Each does what it\'s best at — no manual triage.',
     },

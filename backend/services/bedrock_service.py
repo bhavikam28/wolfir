@@ -37,6 +37,16 @@ except ImportError:
         pass
 
 
+def _guardrail_config(settings) -> Optional[Dict[str, str]]:
+    """Build guardrailConfig for Converse API when configured."""
+    if not settings.guardrail_identifier or not settings.guardrail_identifier.strip():
+        return None
+    return {
+        "guardrailIdentifier": settings.guardrail_identifier.strip(),
+        "guardrailVersion": settings.guardrail_version or "1",
+    }
+
+
 class BedrockService:
     """Wrapper for Amazon Bedrock Runtime API"""
     _semaphore = None  # Lazy init per event loop
@@ -84,62 +94,50 @@ class BedrockService:
     ) -> Dict[str, Any]:
         """
         Invoke Nova 2 Lite model for reasoning tasks.
-        
-        Uses amazon.nova-2-lite-v1:0 — the latest Nova 2 Lite model.
+        Uses Converse API for Guardrails support when configured.
         """
         try:
-            if system_prompt:
-                full_prompt = f"{system_prompt}\n\n{prompt}"
-            else:
-                full_prompt = prompt
-            
-            messages = [{
-                "role": "user",
-                "content": [{"text": full_prompt}]
-            }]
-            
-            request_body = {
+            messages = [{"role": "user", "content": [{"text": prompt}]}]
+            converse_params: Dict[str, Any] = {
+                "modelId": self.settings.nova_lite_model_id,
                 "messages": messages,
-                "inferenceConfig": {
-                    "max_new_tokens": max_tokens,
-                    "temperature": temperature
-                }
+                "inferenceConfig": {"maxTokens": max_tokens, "temperature": temperature},
             }
-            
-            logger.info(f"Invoking Nova 2 Lite ({self.settings.nova_lite_model_id})")
+            if system_prompt:
+                converse_params["system"] = [{"text": system_prompt}]
+            guardrail_cfg = _guardrail_config(self.settings)
+            if guardrail_cfg:
+                converse_params["guardrailConfig"] = guardrail_cfg
+                logger.info(f"Invoking Nova 2 Lite with Guardrail {guardrail_cfg.get('guardrailIdentifier', '')}")
+            else:
+                logger.info(f"Invoking Nova 2 Lite ({self.settings.nova_lite_model_id})")
 
-            last_error = None
             for attempt in range(BEDROCK_RETRY_MAX_ATTEMPTS):
                 try:
                     async with self._throttle():
                         response = await asyncio.wait_for(
-                            asyncio.to_thread(
-                                self.client.invoke_model,
-                                modelId=self.settings.nova_lite_model_id,
-                                contentType="application/json",
-                                accept="application/json",
-                                body=json.dumps(request_body),
-                            ),
+                            asyncio.to_thread(self.client.converse, **converse_params),
                             timeout=60.0,
                         )
                     break
                 except ClientError as e:
                     if _is_throttling(e) and attempt < BEDROCK_RETRY_MAX_ATTEMPTS - 1:
-                        logger.warning(f"Nova 2 Lite throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s (attempt {attempt + 1}/{BEDROCK_RETRY_MAX_ATTEMPTS})")
+                        logger.warning(f"Nova 2 Lite throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s")
                         await asyncio.sleep(BEDROCK_RETRY_DELAY_SEC)
                     else:
                         raise
 
-            response_body = json.loads(response['body'].read())
-            
+            output = response.get("output", {})
+            msg_content = output.get("message", {}).get("content", [])
+            text = msg_content[0].get("text", "") if msg_content else ""
             try:
                 record_invocation(self.settings.nova_lite_model_id)
             except Exception:
                 pass
             return {
-                "text": response_body['output']['message']['content'][0]['text'],
-                "stop_reason": response_body.get('stopReason', 'end_turn'),
-                "usage": response_body.get('usage', {})
+                "text": text,
+                "stop_reason": response.get("stopReason", "end_turn"),
+                "usage": response.get("usage", {}),
             }
             
         except ClientError as e:
@@ -178,20 +176,19 @@ class BedrockService:
 
             logger.info(f"Invoking Nova Pro ({self.settings.nova_pro_model_id}, multimodal: {image_data is not None})")
 
-            # Converse API handles bytes natively — invoke_model + json.dumps would fail
+            converse_params: Dict[str, Any] = {
+                "modelId": self.settings.nova_pro_model_id,
+                "messages": [{"role": "user", "content": content}],
+                "inferenceConfig": {"maxTokens": max_tokens, "temperature": temperature},
+            }
+            guardrail_cfg = _guardrail_config(self.settings)
+            if guardrail_cfg:
+                converse_params["guardrailConfig"] = guardrail_cfg
             for attempt in range(BEDROCK_RETRY_MAX_ATTEMPTS):
                 try:
                     async with self._throttle():
                         response = await asyncio.wait_for(
-                            asyncio.to_thread(
-                                self.client.converse,
-                                modelId=self.settings.nova_pro_model_id,
-                                messages=[{"role": "user", "content": content}],
-                                inferenceConfig={
-                                    "maxTokens": max_tokens,
-                                    "temperature": temperature,
-                                },
-                            ),
+                            asyncio.to_thread(self.client.converse, **converse_params),
                             timeout=60.0,
                         )
                     break
@@ -235,54 +232,48 @@ class BedrockService:
     ) -> Dict[str, Any]:
         """
         Invoke Nova Micro model for fast classification.
-        
-        Uses amazon.nova-micro-v1:0 — ultra-fast, deterministic.
+        Uses Converse API for Guardrails support when configured.
         """
         try:
-            user_text = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-            request_body = {
-                "messages": [{
-                    "role": "user",
-                    "content": [{"text": user_text}]
-                }],
-                "inferenceConfig": {
-                    "max_new_tokens": max_tokens,
-                    "temperature": temperature
-                }
+            messages = [{"role": "user", "content": [{"text": prompt}]}]
+            converse_params: Dict[str, Any] = {
+                "modelId": self.settings.nova_micro_model_id,
+                "messages": messages,
+                "inferenceConfig": {"maxTokens": max_tokens, "temperature": temperature},
             }
-            
+            if system_prompt:
+                converse_params["system"] = [{"text": system_prompt}]
+            guardrail_cfg = _guardrail_config(self.settings)
+            if guardrail_cfg:
+                converse_params["guardrailConfig"] = guardrail_cfg
             logger.info(f"Invoking Nova Micro ({self.settings.nova_micro_model_id})")
 
             for attempt in range(BEDROCK_RETRY_MAX_ATTEMPTS):
                 try:
                     async with self._throttle():
                         response = await asyncio.wait_for(
-                            asyncio.to_thread(
-                                self.client.invoke_model,
-                                modelId=self.settings.nova_micro_model_id,
-                                contentType="application/json",
-                                accept="application/json",
-                                body=json.dumps(request_body),
-                            ),
+                            asyncio.to_thread(self.client.converse, **converse_params),
                             timeout=60.0,
                         )
                     break
                 except ClientError as e:
                     if _is_throttling(e) and attempt < BEDROCK_RETRY_MAX_ATTEMPTS - 1:
-                        logger.warning(f"Nova Micro throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s (attempt {attempt + 1}/{BEDROCK_RETRY_MAX_ATTEMPTS})")
+                        logger.warning(f"Nova Micro throttled, retrying in {BEDROCK_RETRY_DELAY_SEC}s")
                         await asyncio.sleep(BEDROCK_RETRY_DELAY_SEC)
                     else:
                         raise
 
-            response_body = json.loads(response['body'].read())
+            output = response.get("output", {})
+            msg_content = output.get("message", {}).get("content", [])
+            text = msg_content[0].get("text", "") if msg_content else ""
             try:
                 record_invocation(self.settings.nova_micro_model_id)
             except Exception:
                 pass
             return {
-                "text": response_body['output']['message']['content'][0]['text'],
-                "stop_reason": response_body.get('stopReason', 'end_turn'),
-                "usage": response_body.get('usage', {})
+                "text": text,
+                "stop_reason": response.get("stopReason", "end_turn"),
+                "usage": response.get("usage", {}),
             }
             
         except ClientError as e:
@@ -342,18 +333,16 @@ class BedrockService:
             }]
             
             # Build converse request
-            converse_params = {
+            converse_params: Dict[str, Any] = {
                 "modelId": self.settings.nova_sonic_model_id,
                 "messages": messages,
-                "inferenceConfig": {
-                    "maxTokens": max_tokens,
-                    "temperature": temperature,
-                }
+                "inferenceConfig": {"maxTokens": max_tokens, "temperature": temperature},
             }
-            
             if system_prompt:
                 converse_params["system"] = [{"text": system_prompt}]
-            
+            guardrail_cfg = _guardrail_config(self.settings)
+            if guardrail_cfg:
+                converse_params["guardrailConfig"] = guardrail_cfg
             # Use converse_stream for streaming audio response (requires boto3 1.42.62+)
             if not hasattr(self.client, 'converse_stream'):
                 raise RuntimeError(

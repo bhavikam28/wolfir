@@ -74,10 +74,10 @@ const UnderTheHoodSection: React.FC = () => {
           >
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
             <div className="text-[11px] font-semibold text-slate-500 tracking-wider mb-4">03 — AI SELF-DEFENSE</div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">MITRE ATLAS Monitoring</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">MITRE ATLAS + AI Guardrails</h3>
             <p className="text-sm text-slate-600 leading-relaxed mb-4">
               &quot;Who protects the AI?&quot; Nova Sentinel monitors its own pipeline for prompt injection,
-              API abuse, and data exfiltration using MITRE ATLAS.
+              API abuse, and data exfiltration using MITRE ATLAS. Works with Amazon Bedrock Guardrails for defense in depth — content filters, prompt-attack detection, PII protection.
             </p>
             <div className="font-mono text-xs text-amber-600 p-3 bg-amber-50 border border-amber-200 rounded-lg leading-relaxed">
               → 6 ATLAS techniques monitored real-time<br />

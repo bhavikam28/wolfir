@@ -8,11 +8,23 @@ import type { Timeline } from '../../types/incident';
 import type { OrchestrationResponse } from '../../types/incident';
 import { motion } from 'framer-motion';
 import {
-  Shield, AlertTriangle, Key, Globe, Network,
+  Shield, AlertTriangle, Key, Network,
   Wifi, Server, User, Database, Eye, Lock, Cloud, Zap,
   ZoomIn, ZoomOut, Maximize2, Minimize2, Search, Download, Target,
   Play, Pause, RotateCcw
 } from 'lucide-react';
+import {
+  AmazonCloudFront,
+  AmazonApiGateway,
+  AmazonVirtualPrivateCloud,
+  AwsCloudTrail,
+  AmazonEc2,
+  AwsIdentityAndAccessManagement,
+  AmazonRds,
+  AwsShield,
+  AwsSecretsManager,
+  AmazonSimpleStorageService,
+} from '@nxavis/aws-icons';
 import { threatIntelAPI } from '../../services/api';
 
 const IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/;
@@ -84,7 +96,23 @@ function extractService(arnOrSource: string): string {
   return '';
 }
 
-/** Map service name to icon category — ~10 categories, "other" is safe fallback. Works for any AWS service. */
+/** AWS service → official AWS Architecture Icon (from @nxavis/aws-icons) */
+const AWS_SERVICE_ICONS: Record<string, React.ComponentType<Record<string, unknown>>> = {
+  ec2: AmazonEc2,
+  s3: AmazonSimpleStorageService,
+  iam: AwsIdentityAndAccessManagement,
+  rds: AmazonRds,
+  cloudtrail: AwsCloudTrail,
+  secretsmanager: AwsSecretsManager,
+  vpc: AmazonVirtualPrivateCloud,
+};
+const AWS_ICON_SET = new Set([
+  ...Object.values(AWS_SERVICE_ICONS),
+  AmazonCloudFront,
+  AmazonApiGateway,
+]);
+
+/** Map service name to icon category — fallback when no AWS icon. */
 const SERVICE_TO_ICON: Record<string, any> = {
   compute: Server,
   storage: Database,
@@ -128,6 +156,8 @@ function getIconForActor(actor: string, severity?: string): any {
 function getIconForResource(resource: string, action: string): any {
   const service = extractService(resource) || extractService(action);
   if (service) {
+    const awsIcon = AWS_SERVICE_ICONS[service];
+    if (awsIcon) return awsIcon;
     const cat = getIconCategory(service);
     return SERVICE_TO_ICON[cat] ?? Network;
   }
@@ -403,7 +433,7 @@ function buildGraphFromTimeline(
       id: 'narrative_internet',
       x: 60,
       y: flowY,
-      icon: Globe,
+      icon: AmazonCloudFront,
       label: 'Internet',
       subLabel: 'External Origin',
       detail: 'Traffic enters from external sources before reaching your AWS environment.',
@@ -417,7 +447,7 @@ function buildGraphFromTimeline(
       id: 'narrative_gateway',
       x: 180,
       y: flowY,
-      icon: Network,
+      icon: AmazonApiGateway,
       label: 'Entry Point',
       subLabel: 'API / Network',
       detail: 'Traffic passes through your public endpoints (API Gateway, ALB, or direct access). Example external IP: 198.51.100.100',
@@ -432,7 +462,7 @@ function buildGraphFromTimeline(
       id: 'narrative_vpc',
       x: 300,
       y: flowY,
-      icon: Wifi,
+      icon: AmazonVirtualPrivateCloud,
       label: 'VPC',
       subLabel: 'Network Layer',
       detail: 'Virtual Private Cloud — your AWS network boundary. Resources below are inside or accessed via VPC.',
@@ -446,7 +476,7 @@ function buildGraphFromTimeline(
       id: 'narrative_cloudtrail',
       x: graphWidth - 80,
       y: flowY,
-      icon: Eye,
+      icon: AwsCloudTrail,
       label: 'CloudTrail',
       subLabel: 'Monitoring',
       detail: 'Your AWS activity is logged here. Nova Sentinel analyzed these events to build this attack path.',
@@ -663,16 +693,16 @@ function severityRank(sev: string): number {
 // ─── Static fallback for demo mode ─────────────────────────────────────────────
 
 const DEMO_NODES: NodeDef[] = [
-  { id: 'internet', x: 80, y: 200, icon: Globe, label: 'Internet', subLabel: 'External Origin', detail: 'Suspicious IP: 203.0.113.42 (TOR exit node)', color: '#334155', bg: '#E2E8F0', severity: 'medium', mitreId: 'T1190', timestamp: '2026-01-15T14:20:00Z' },
-  { id: 'gateway', x: 240, y: 200, icon: Network, label: 'API Gateway', subLabel: 'Entry Point', detail: 'REST API — 847 requests in 2 minutes', color: '#334155', bg: '#E2E8F0', severity: 'medium', mitreId: 'T1190', timestamp: '2026-01-15T14:20:15Z' },
-  { id: 'vpc', x: 400, y: 200, icon: Wifi, label: 'VPC', subLabel: 'Network Layer', detail: 'vpc-0a1b2c3d — us-east-1', color: '#1D4ED8', bg: '#BFDBFE', severity: 'medium', mitreId: 'T1021', timestamp: '2026-01-15T14:20:30Z' },
-  { id: 'ec2', x: 560, y: 200, icon: Server, label: 'EC2 Instance', subLabel: 'Compromised', detail: 'i-abc123 — Attacker installed crypto-miner | Severity: Critical', color: '#B91C1C', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1078', resourceId: 'i-abc123', riskScore: 98, timestamp: '2026-01-15T14:21:00Z' },
-  { id: 'iam', x: 720, y: 200, icon: User, label: 'IAM Role', subLabel: 'Escalated', detail: 'arn:aws:iam::role/admin-temp — privilege escalation', color: '#B91C1C', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1078', riskScore: 92, timestamp: '2026-01-15T14:21:45Z' },
-  { id: 'database', x: 880, y: 200, icon: Database, label: 'RDS Database', subLabel: 'Data Target', detail: 'db-prod-main — 2.4GB data accessed', color: '#EA580C', bg: '#FED7AA', severity: 'high', mitreId: 'T1041', resourceId: 'db-prod-main', riskScore: 78, timestamp: '2026-01-15T14:22:30Z' },
-  { id: 'sg', x: 280, y: 80, icon: Shield, label: 'Security Group', subLabel: 'Misconfigured', detail: 'sg-0xyz — 0.0.0.0/0 on port 22 (OPEN)', color: '#B91C1C', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1190', resourceId: 'sg-0xyz', riskScore: 95, timestamp: '2026-01-15T14:20:45Z' },
+  { id: 'internet', x: 80, y: 200, icon: AmazonCloudFront, label: 'Internet', subLabel: 'External Origin', detail: 'Suspicious IP: 203.0.113.42 (TOR exit node)', color: '#334155', bg: '#E2E8F0', severity: 'medium', mitreId: 'T1190', timestamp: '2026-01-15T14:20:00Z' },
+  { id: 'gateway', x: 240, y: 200, icon: AmazonApiGateway, label: 'API Gateway', subLabel: 'Entry Point', detail: 'REST API — 847 requests in 2 minutes', color: '#334155', bg: '#E2E8F0', severity: 'medium', mitreId: 'T1190', timestamp: '2026-01-15T14:20:15Z' },
+  { id: 'vpc', x: 400, y: 200, icon: AmazonVirtualPrivateCloud, label: 'VPC', subLabel: 'Network Layer', detail: 'vpc-0a1b2c3d — us-east-1', color: '#1D4ED8', bg: '#BFDBFE', severity: 'medium', mitreId: 'T1021', timestamp: '2026-01-15T14:20:30Z' },
+  { id: 'ec2', x: 560, y: 200, icon: AmazonEc2, label: 'EC2 Instance', subLabel: 'Compromised', detail: 'i-abc123 — Attacker installed crypto-miner | Severity: Critical', color: '#B91C1C', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1078', resourceId: 'i-abc123', riskScore: 98, timestamp: '2026-01-15T14:21:00Z' },
+  { id: 'iam', x: 720, y: 200, icon: AwsIdentityAndAccessManagement, label: 'IAM Role', subLabel: 'Escalated', detail: 'arn:aws:iam::role/admin-temp — privilege escalation', color: '#B91C1C', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1078', riskScore: 92, timestamp: '2026-01-15T14:21:45Z' },
+  { id: 'database', x: 880, y: 200, icon: AmazonRds, label: 'RDS Database', subLabel: 'Data Target', detail: 'db-prod-main — 2.4GB data accessed', color: '#EA580C', bg: '#FED7AA', severity: 'high', mitreId: 'T1041', resourceId: 'db-prod-main', riskScore: 78, timestamp: '2026-01-15T14:22:30Z' },
+  { id: 'sg', x: 280, y: 80, icon: AwsShield, label: 'Security Group', subLabel: 'Misconfigured', detail: 'sg-0xyz — 0.0.0.0/0 on port 22 (OPEN)', color: '#B91C1C', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1190', resourceId: 'sg-0xyz', riskScore: 95, timestamp: '2026-01-15T14:20:45Z' },
   { id: 'ssh', x: 500, y: 80, icon: AlertTriangle, label: 'SSH Exposed', subLabel: 'Port 22 Open', detail: '14 failed login attempts before breach', color: '#991B1B', bg: '#FECACA', severity: 'critical', ring: true, mitreId: 'T1021', riskScore: 94, timestamp: '2026-01-15T14:21:15Z' },
-  { id: 'secrets', x: 720, y: 80, icon: Key, label: 'Secrets Mgr', subLabel: 'Accessed', detail: 'GetSecretValue — 3 secrets retrieved', color: '#EA580C', bg: '#FED7AA', severity: 'high', mitreId: 'T1552', riskScore: 85, timestamp: '2026-01-15T14:22:00Z' },
-  { id: 'cloudtrail', x: 880, y: 80, icon: Eye, label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by Nova Sentinel', color: '#059669', bg: '#A7F3D0', severity: 'low', mitreId: 'T1562', timestamp: '2026-01-15T14:23:00Z' },
+  { id: 'secrets', x: 720, y: 80, icon: AwsSecretsManager, label: 'Secrets Mgr', subLabel: 'Accessed', detail: 'GetSecretValue — 3 secrets retrieved', color: '#EA580C', bg: '#FED7AA', severity: 'high', mitreId: 'T1552', riskScore: 85, timestamp: '2026-01-15T14:22:00Z' },
+  { id: 'cloudtrail', x: 880, y: 80, icon: AwsCloudTrail, label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by Nova Sentinel', color: '#059669', bg: '#A7F3D0', severity: 'low', mitreId: 'T1562', timestamp: '2026-01-15T14:23:00Z' },
 ];
 
 const DEMO_EDGES: EdgeDef[] = [
@@ -1388,8 +1418,11 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
                     style={{ transition: 'r 0.2s, stroke-width 0.2s', opacity: searchLower && !isSearchMatch ? 0.35 : 1 }}
                   />
                   <foreignObject x={node.x - 11} y={node.y - 11} width="22" height="22">
-                    <div className="flex items-center justify-center h-full w-full">
-                      <Icon className="w-5 h-5" strokeWidth={1.8} style={{ color: node.color }} />
+                    <div className="flex items-center justify-center h-full w-full" style={{ color: node.color }}>
+                      {AWS_ICON_SET.has(Icon as any)
+                        ? <Icon size={20} color={node.color} />
+                        : <Icon className="w-5 h-5" strokeWidth={1.8} />
+                      }
                     </div>
                   </foreignObject>
                   <text x={node.x} y={node.y + 40} textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="700" fontFamily="Inter, system-ui, sans-serif" style={{ letterSpacing: '0.02em' }}>

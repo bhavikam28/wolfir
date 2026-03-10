@@ -41,10 +41,10 @@ export const EventFeed: React.FC<EventFeedProps> = ({ events, visibleCount }) =>
   let prevTs: string | null = null;
 
   return (
-    <div className="h-full flex flex-col rounded-xl border border-slate-700/60 bg-slate-900/40 backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
-      <div className="px-4 py-3 border-b border-slate-700/60 bg-slate-900/60">
+    <div className="h-full flex flex-col rounded-xl border border-slate-600/50 bg-slate-900/50 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/30 ring-1 ring-white/5">
+      <div className="px-4 py-3 border-b border-slate-700/60 bg-gradient-to-r from-slate-800/80 to-slate-900/80">
         <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Event Feed</p>
-        <p className="text-[9px] text-slate-500 mt-0.5">CloudTrail activity stream</p>
+        <p className="text-[9px] text-slate-500 mt-0.5">CloudTrail activity stream — live</p>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         <AnimatePresence mode="popLayout">

@@ -178,9 +178,30 @@ export const orchestrationAPI = {
   /**
    * Agentic query — Agent autonomously plans and executes tools.
    * Agent autonomously plans and executes tools based on the prompt.
+   * Supports conversation history for multi-turn context.
    */
-  agentQuery: async (prompt: string): Promise<{ response: string; framework: string; mode: string }> => {
-    const response = await api.post('/api/orchestration/agent-query', { prompt });
+  agentQuery: async (
+    prompt: string,
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): Promise<{ response: string; framework: string; mode: string }> => {
+    const response = await api.post('/api/orchestration/agent-query', {
+      prompt,
+      conversation_history: conversationHistory ?? [],
+    });
+    return response.data;
+  },
+
+  /**
+   * Proactive security health check — runs 5 agent queries (IAM, CloudTrail, Billing, Security Hub).
+   * No incident required.
+   */
+  runSecurityHealthCheck: async (
+    profile?: string,
+    accountId?: string
+  ): Promise<{ results: Array<{ query: string; response: string; category: string; error?: boolean }>; account_id: string }> => {
+    const params = new URLSearchParams({ account_id: accountId || 'demo-account' });
+    if (profile) params.append('profile', profile);
+    const response = await api.post(`/api/orchestration/security-health-check?${params.toString()}`);
     return response.data;
   },
 };

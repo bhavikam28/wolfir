@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     nova_sonic_model_id: str = "amazon.nova-2-sonic-v1:0"   # Nova 2 Sonic (speech; uses WebSocket streaming)
     nova_canvas_model_id: str = "amazon.nova-canvas-v1:0"  # Nova Canvas (image generation)
     
+    # Amazon Bedrock Guardrails — optional; when set, all Converse invocations use this guardrail
+    guardrail_identifier: str = ""   # Guardrail ID or ARN from Bedrock console
+    guardrail_version: str = "1"     # Version (e.g. "1") or "DRAFT"
+    
     # Nova Act — uses its own SDK, not Bedrock API
     # Requires NOVA_ACT_API_KEY environment variable
     nova_act_api_key: str = ""

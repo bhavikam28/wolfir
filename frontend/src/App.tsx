@@ -5,13 +5,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Play, AlertCircle, CheckCircle2, Menu, X, 
+  Play, AlertCircle, CheckCircle2, Menu, X, ChevronRight,
   Loader2, Eye, Brain, Zap, Shield, FileText, Mic, MessageSquare, Volume2
 } from 'lucide-react';
 import NovaSentinelLogo from './components/Logo';
 import LandingHero from './components/Landing/LandingHero';
 import FeaturesSection from './components/Landing/FeaturesSection';
-import WhatWhyForWhom from './components/Landing/WhatWhyForWhom';
 import UnderTheHoodSection from './components/Landing/UnderTheHoodSection';
 import NovaModelsSection from './components/Landing/NovaModelsSection';
 import FAQSection from './components/Landing/FAQSection';
@@ -41,6 +40,12 @@ import AIPipelineSecurity from './components/Dashboard/AIPipelineSecurity';
 import DemoChecklist from './components/Dashboard/DemoChecklist';
 import AgenticQuery from './components/Analysis/AgenticQuery';
 import { LiveSimulation } from './components/Simulation/LiveSimulation';
+import {
+  SecurityHealthCheck,
+  DEMO_HEALTH_CHECK,
+  parseHealthCheckResult,
+  type SecurityHealthCheckResult,
+} from './components/Analysis/SecurityHealthCheck';
 
 type AppMode = 'landing' | 'demo' | 'console';
 
@@ -72,6 +77,8 @@ function App() {
   const [visitedFeatures, setVisitedFeatures] = useState<Set<string>>(new Set());
   const [lastDemoScenarioId, setLastDemoScenarioId] = useState<string | null>(null);
   const [simulationScenarioId, setSimulationScenarioId] = useState<string | null>(null);
+  const [healthCheckResult, setHealthCheckResult] = useState<SecurityHealthCheckResult | null>(null);
+  const [healthCheckLoading, setHealthCheckLoading] = useState(false);
 
   useEffect(() => {
     if (activeFeature) setVisitedFeatures((prev) => new Set(prev).add(activeFeature));
@@ -125,8 +132,31 @@ function App() {
     setVisualAnalysisResult(null);
     setRemediationPlan(null);
     setDocumentationResult(null);
+    setHealthCheckResult(null);
     setError(null);
     setActiveFeature('overview');
+  };
+
+  const handleHealthCheck = async () => {
+    try {
+      setHealthCheckLoading(true);
+      setError(null);
+      setHealthCheckResult(null);
+      const backendOk = await healthCheck();
+      if (backendOk) {
+        const data = await orchestrationAPI.runSecurityHealthCheck(awsProfile, awsAccountId || undefined);
+        const parsed = parseHealthCheckResult(data.results, data.account_id);
+        setHealthCheckResult(parsed);
+      } else {
+        setHealthCheckResult(DEMO_HEALTH_CHECK);
+      }
+    } catch (err: any) {
+      console.error('Health check error:', err);
+      setHealthCheckResult(DEMO_HEALTH_CHECK);
+      setError('Backend unreachable. Showing demo health report.');
+    } finally {
+      setHealthCheckLoading(false);
+    }
   };
 
   const goBack = () => {
@@ -253,7 +283,55 @@ function App() {
 
   // ========== RENDER FEATURE CONTENT ==========
   const renderFeatureContent = () => {
-    // Loading state
+    // Health check loading
+    if (healthCheckLoading) {
+      return (
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Running Security Health Check</h3>
+                  <p className="text-xs text-slate-500">5 Autonomous Agent queries: IAM, CloudTrail, Billing, Security Hub</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {['IAM users audit', 'IAM roles audit', 'CloudTrail anomalies', 'CloudWatch billing', 'Security Hub'].map((label, i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.15 }}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-emerald-50 border border-emerald-100"
+                  >
+                    <Shield className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-medium text-slate-700">{label}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      );
+    }
+
+    // Health check result (proactive audit — no incident)
+    if (healthCheckResult) {
+      return (
+        <SecurityHealthCheck
+          result={healthCheckResult}
+          onNewCheck={() => { setHealthCheckResult(null); }}
+          demoMode={backendOffline}
+        />
+      );
+    }
+
+    // Loading state (incident analysis)
     if (loading) {
       const agents = [
         { name: 'Detect', model: 'Nova Pro', Icon: Eye, delay: 0 },
@@ -544,10 +622,12 @@ function App() {
               </div>
             </div>
 
-            {/* Analysis Trigger */}
+            {/* Analysis Trigger — Health Check + CloudTrail */}
             <RealAWSConnect
               onAnalyze={handleRealAWSAnalysis}
+              onHealthCheck={handleHealthCheck}
               loading={loading}
+              healthCheckLoading={healthCheckLoading}
             />
           </div>
         );
@@ -624,6 +704,22 @@ function App() {
 
             {/* Agent Progress */}
             {orchestrationResult && <AgentProgress agents={orchestrationResult.agents} />}
+
+            {/* Agentic CTA — guide judges to Autonomous Agent tab */}
+            {orchestrationResult && (
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-indigo-800">
+                  The pipeline ran 4 agents in sequence. Want to see the agent think for itself?
+                </p>
+                <button
+                  onClick={() => setActiveFeature('agentic-query')}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border border-indigo-200 rounded-lg transition-colors"
+                >
+                  Try the Autonomous Agent tab
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Agent Pivot — visible conditional reasoning (hackathon differentiator) */}
             {orchestrationResult?.metadata?.agent_pivot && (
@@ -1228,7 +1324,6 @@ function App() {
         ))}
       </div>
 
-      <WhatWhyForWhom />
       <FeaturesSection />
       <NovaModelsSection />
       <UnderTheHoodSection />

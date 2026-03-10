@@ -5,16 +5,18 @@
  */
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Send, Loader2, MessageSquare, ChevronRight, Sparkles, Clock, Wrench, Brain, Shield, Activity, Database } from 'lucide-react';
+import { Zap, Send, Loader2, MessageSquare, ChevronRight, Clock, Wrench, Brain, Shield, Activity, Database, Trash2 } from 'lucide-react';
 import { orchestrationAPI } from '../../services/api';
 
-const SUGGESTED_PROMPTS = [
-  'Audit all IAM users for security issues',
-  'Scan CloudTrail for anomalies in the last 24 hours',
-  'Get Security Hub findings (GuardDuty, Inspector)',
-  'Check CloudWatch for billing anomalies',
-  'Investigate IAM roles for privilege escalation',
-  'Investigate cross-account role assumptions',
+const MAX_HISTORY_EXCHANGES = 5; // Keep last 5 user+assistant pairs for multi-turn context
+
+const SUGGESTED_PROMPTS: { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bg: string }[] = [
+  { label: 'Audit all IAM users for security issues', icon: Wrench, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200 hover:bg-blue-100' },
+  { label: 'Scan CloudTrail for anomalies in the last 24 hours', icon: Activity, color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200 hover:bg-orange-100' },
+  { label: 'Get Security Hub findings (GuardDuty, Inspector)', icon: Shield, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200 hover:bg-amber-100' },
+  { label: 'Check CloudWatch for billing anomalies', icon: Activity, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100' },
+  { label: 'Investigate IAM roles for privilege escalation', icon: Shield, color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200 hover:bg-violet-100' },
+  { label: 'Investigate cross-account role assumptions', icon: Database, color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100' },
 ];
 
 /**
@@ -216,6 +218,8 @@ interface AgenticQueryProps {
   backendOffline?: boolean;
 }
 
+type ConversationMessage = { role: 'user' | 'assistant'; content: string };
+
 export default function AgenticQuery({ backendOffline = false }: AgenticQueryProps) {
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState<string | null>(null);
@@ -224,6 +228,7 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
   const [isDemoFallback, setIsDemoFallback] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const startRef = useRef<number>(0);
 
   const runQuery = async (text: string) => {
@@ -247,14 +252,23 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
           setElapsedMs(Date.now() - startRef.current);
           setResponse(fallback);
           setIsDemoFallback(true);
+          setConversationHistory((prev) => {
+            const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: fallback }];
+            return next.slice(-MAX_HISTORY_EXCHANGES * 2);
+          });
         } else {
           setElapsedMs(Date.now() - startRef.current);
           setError('Backend offline — try a suggested prompt for demo results.');
         }
       } else {
-        const result = await orchestrationAPI.agentQuery(trimmed);
+        const result = await orchestrationAPI.agentQuery(trimmed, conversationHistory);
+        const resp = result.response || 'No response.';
         setElapsedMs(Date.now() - startRef.current);
-        setResponse(result.response || 'No response.');
+        setResponse(resp);
+        setConversationHistory((prev) => {
+          const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: resp }];
+          return next.slice(-MAX_HISTORY_EXCHANGES * 2);
+        });
       }
     } catch (err: any) {
       const fallback = getDemoFallback(trimmed);
@@ -263,6 +277,10 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
         setElapsedMs(Date.now() - startRef.current);
         setResponse(fallback);
         setIsDemoFallback(true);
+        setConversationHistory((prev) => {
+          const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: fallback }];
+          return next.slice(-MAX_HISTORY_EXCHANGES * 2);
+        });
       } else {
         setElapsedMs(Date.now() - startRef.current);
         setError(err.response?.data?.detail || err.message || 'Agent query failed. Backend may be offline.');
@@ -273,41 +291,75 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
   };
 
   const toolsUsed = response ? detectToolsUsed(response) : [];
+  const historyCount = Math.floor(conversationHistory.length / 2);
+
+  /** Highlight severity keywords in response text */
+  const formatResponse = (text: string) => {
+    const parts = text.split(/(\b(CRITICAL|HIGH|MEDIUM|LOW)\b)/gi);
+    return parts.map((seg, i) => {
+      const upper = seg.toUpperCase();
+      if (upper === 'CRITICAL') return <span key={i} className="font-bold text-red-600 bg-red-50 px-0.5 rounded">{seg}</span>;
+      if (upper === 'HIGH') return <span key={i} className="font-bold text-orange-600 bg-orange-50 px-0.5 rounded">{seg}</span>;
+      if (upper === 'MEDIUM') return <span key={i} className="font-semibold text-amber-600 bg-amber-50 px-0.5 rounded">{seg}</span>;
+      if (upper === 'LOW') return <span key={i} className="font-semibold text-emerald-600 bg-emerald-50 px-0.5 rounded">{seg}</span>;
+      return <span key={i}>{seg}</span>;
+    });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header — matches RemediationPlan / Timeline style */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/80 to-violet-50/50 p-6"
+        className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden"
       >
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
-            <Zap className="w-6 h-6 text-white" />
+        <div className="px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/40 to-violet-50/50">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-bold text-slate-900">Autonomous Agent</h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-indigo-100 text-indigo-700 border-indigo-200">
+                    Strands Agents SDK
+                  </span>
+                  {historyCount > 0 && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-violet-100 text-violet-700 border-violet-200">
+                      {historyCount} exchange{historyCount !== 1 ? 's' : ''} in context
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-600 mt-1">
+                  The Agent autonomously decides which tools to call based on your prompt — real agentic reasoning.
+                </p>
+              </div>
+            </div>
+            {historyCount > 0 && (
+              <button
+                onClick={() => { setConversationHistory([]); setResponse(null); setError(null); }}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear conversation
+              </button>
+            )}
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Autonomous Agent</h2>
-            <p className="text-sm text-slate-600">
-              The Strands Agent autonomously decides which tools to call based on your prompt
+          <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50/80 border border-amber-200">
+            <Shield className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <strong>Investigation only</strong> — the Agent audits and analyzes; it does not make changes. Remediation happens in the Remediation Engine tab with human-in-the-loop approval.
             </p>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          Unlike the fixed pipeline, the Agent plans its own execution — click a prompt or type your own.
-        </p>
-        <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-slate-100/80 border border-slate-200/80">
-          <Shield className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
-          <p className="text-[11px] text-slate-600 leading-relaxed">
-            <strong>Investigation only</strong> — the Agent audits and analyzes; it does not make changes. Remediation happens in the Remediation Engine tab with human-in-the-loop approval.
-          </p>
-        </div>
       </motion.div>
 
-      {/* Input */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+      {/* Input + Suggested prompts — single card */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+        <div className="p-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Your prompt
           </label>
           <div className="flex gap-2">
@@ -323,48 +375,53 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
             <button
               onClick={() => runQuery(prompt)}
               disabled={loading || !prompt.trim()}
-              className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold text-sm flex items-center gap-2 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold text-sm flex items-center gap-2 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <Send className="w-5 h-5" />
               )}
-              {loading ? 'Agent working...' : 'Run'}
+              {loading ? 'Working...' : 'Run'}
             </button>
           </div>
         </div>
 
-        {/* Suggested prompts */}
-        <div className="p-4 border-b border-slate-100">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Click to run</p>
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTED_PROMPTS.map((s) => (
-              <button
-                key={s}
-                onClick={() => runQuery(s)}
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all disabled:opacity-50"
-              >
-                <Sparkles className="w-3 h-3 text-indigo-400" />
-                {s}
-              </button>
-            ))}
+        {/* Suggested prompts — colored cards */}
+        <div className="p-5 border-b border-slate-100">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">Click to run</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {SUGGESTED_PROMPTS.map((s) => {
+              const Icon = s.icon;
+              return (
+                <button
+                  key={s.label}
+                  onClick={() => runQuery(s.label)}
+                  disabled={loading}
+                  className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all disabled:opacity-50 ${s.bg}`}
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-medium text-slate-700 leading-snug">{s.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Loading state — show the agent is thinking */}
+        {/* Loading state */}
         <AnimatePresence>
           {loading && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="px-5 py-4 border-b border-slate-100"
+              className="px-5 py-4 border-b border-slate-100 bg-indigo-50/30"
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Brain className="w-5 h-5 text-indigo-500" />
+                  <Brain className="w-6 h-6 text-indigo-600" />
                   <motion.div
                     className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-indigo-500"
                     animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
@@ -373,7 +430,7 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Agent planning and executing tools...</p>
-                  <p className="text-[11px] text-slate-500">The Strands Agent is deciding which tools to call for: &quot;{submittedPrompt?.slice(0, 60)}{(submittedPrompt?.length || 0) > 60 ? '...' : ''}&quot;</p>
+                  <p className="text-xs text-slate-500">Deciding which tools to call for: &quot;{submittedPrompt?.slice(0, 60)}{(submittedPrompt?.length || 0) > 60 ? '...' : ''}&quot;</p>
                 </div>
               </div>
             </motion.div>
@@ -389,7 +446,7 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
               className="p-5 space-y-4"
             >
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 text-sm text-red-700 font-medium">
                   {error}
                 </div>
               )}
@@ -412,23 +469,23 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
                       </>
                     )}
                     {elapsedMs !== null && (
-                      <span className="inline-flex items-center gap-1 ml-auto text-[10px] text-slate-500">
-                        <Clock className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 ml-auto text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
+                        <Clock className="w-3.5 h-3.5" />
                         {elapsedMs < 1000 ? `${elapsedMs}ms` : `${(elapsedMs / 1000).toFixed(1)}s`}
                       </span>
                     )}
                   </div>
 
-                  {/* Agent response */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden">
-                    <div className="px-4 py-2.5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  {/* Agent response — with severity highlighting */}
+                  <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white overflow-hidden">
+                    <div className="px-4 py-2.5 bg-gradient-to-r from-indigo-100 to-violet-50 border-b border-indigo-200 flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-indigo-600" />
-                      <span className="text-xs font-bold text-slate-700">Agent response</span>
-                      <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded ml-1">Autonomous</span>
-                      <span className="text-[10px] text-slate-400 ml-auto">{isDemoFallback ? 'Demo mode (backend offline)' : 'Strands Agents SDK'}</span>
+                      <span className="text-xs font-bold text-slate-800">Agent response</span>
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">Autonomous</span>
+                      <span className="text-[10px] text-slate-500 ml-auto">{isDemoFallback ? 'Demo mode' : 'Strands Agents SDK'}</span>
                     </div>
-                    <div className="p-4 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[480px] overflow-y-auto">
-                      {response}
+                    <div className="p-4 text-sm text-slate-700 leading-relaxed max-h-[480px] overflow-y-auto whitespace-pre-wrap">
+                      {formatResponse(response)}
                     </div>
                   </div>
                 </>
@@ -438,30 +495,30 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
         </AnimatePresence>
       </div>
 
-      {/* How it works — Aria comparison */}
+      {/* How it works — matches RemediationPlan style */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="rounded-xl border border-slate-200 bg-white p-4"
+        className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden"
       >
-        <div className="flex items-start gap-3 mb-3">
-          <ChevronRight className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs font-bold text-slate-700">How it works</p>
-            <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-              The Strands Agent receives your prompt plus all 14 registered tools (CloudTrail, IAM, CloudWatch, Security Hub, risk scoring, remediation, incident history, and more). It autonomously decides which tools to call and in what order — this is real agentic planning, not a fixed pipeline.
-            </p>
+        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2">
+            <ChevronRight className="w-5 h-5 text-indigo-500 shrink-0" />
+            <p className="text-sm font-bold text-slate-800">How it works</p>
           </div>
+          <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+            The Strands Agent receives your prompt plus all 14 registered tools (CloudTrail, IAM, CloudWatch, Security Hub, risk scoring, remediation, incident history, and more). It autonomously decides which tools to call and in what order — this is real agentic planning, not a fixed pipeline.
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+          <div className="p-4 border-b sm:border-b-0 sm:border-r border-slate-100 bg-gradient-to-r from-indigo-50/60 to-transparent">
             <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-1">Autonomous Agent</p>
-            <p className="text-[11px] text-slate-600 leading-relaxed">Agent chooses tools based on your prompt. Different prompts → different tool sequences.</p>
+            <p className="text-xs text-slate-600 leading-relaxed">Agent chooses tools based on your prompt. Different prompts → different tool sequences.</p>
           </div>
-          <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Fixed Pipeline</p>
-            <p className="text-[11px] text-slate-600 leading-relaxed">Always runs: Timeline → Risk → Remediation → Docs. Same tools every time.</p>
+          <div className="p-4 bg-slate-50/30">
+            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Fixed Pipeline</p>
+            <p className="text-xs text-slate-600 leading-relaxed">Always runs: Timeline → Risk → Remediation → Docs. Same tools every time.</p>
           </div>
         </div>
       </motion.div>

@@ -8,6 +8,7 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
 | `cloudtrail:ListTrails` | Verify CloudTrail access | Test Connection |
 | `bedrock:InvokeModel` | Run Nova models for AI analysis | CloudTrail analysis, orchestrator |
 | `bedrock:ListFoundationModels` | List available models | Test Connection |
+| `bedrock:ListGuardrails` | List guardrails for AI Pipeline tab | Optional — Guardrails discovery |
 | `dynamodb:PutItem`, `GetItem`, `Query`, `DescribeTable`, `CreateTable` | Cross-Incident Memory | After each analysis |
 
 ## Option 1: AWS Console (Attach policy to user)
@@ -34,7 +35,8 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
             "Effect": "Allow",
             "Action": [
                 "bedrock:InvokeModel",
-                "bedrock:ListFoundationModels"
+                "bedrock:ListFoundationModels",
+                "bedrock:ListGuardrails"
             ],
             "Resource": [
                 "arn:aws:bedrock:us-east-1::foundation-model/*",

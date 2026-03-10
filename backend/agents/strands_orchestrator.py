@@ -794,16 +794,39 @@ class StrandsOrchestrator:
             "metadata": metadata,
         }
     
-    async def agent_query(self, prompt: str) -> str:
+    async def agent_query(
+        self,
+        prompt: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
         """
         Use the Strands Agent for interactive queries.
         
         The Agent autonomously decides which tools to call based on the prompt.
-        This is real agentic behavior — the Agent plans and executes on its own.
+        Supports multi-turn conversation: pass prior exchanges so the agent
+        can answer follow-ups like "Fix the first issue" or "What MITRE techniques?"
         """
+        effective_prompt = prompt
+        history = conversation_history or []
+        if history:
+            context_parts = []
+            for msg in history[-10:]:  # Last 10 messages (5 exchanges)
+                role = msg.get("role", "user")
+                content = (msg.get("content") or "").strip()
+                if not content:
+                    continue
+                label = "User" if role == "user" else "Assistant"
+                context_parts.append(f"{label}: {content}")
+            if context_parts:
+                effective_prompt = (
+                    "Previous conversation:\n"
+                    + "\n\n".join(context_parts)
+                    + "\n\nCurrent user query: "
+                    + prompt
+                )
         try:
             # Run the Strands Agent in a thread (it's synchronous)
-            result = await asyncio.to_thread(self.agent, prompt)
+            result = await asyncio.to_thread(self.agent, effective_prompt)
             return str(result)
         except Exception as e:
             logger.error(f"Strands agent query failed: {e}")

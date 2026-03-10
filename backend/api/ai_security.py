@@ -1,9 +1,11 @@
 """
-AI Pipeline Security API — MITRE ATLAS and NIST AI RMF
+AI Pipeline Security API — MITRE ATLAS, NIST AI RMF, Bedrock Guardrails
 """
 from fastapi import APIRouter, HTTPException, Body
 from typing import Dict, Any, Optional
 
+from services.guardrails_service import list_guardrails
+from utils.config import get_settings
 from services.ai_pipeline_monitor import (
     generate_atlas_report,
     monitor_invocation_patterns,
@@ -36,6 +38,25 @@ async def get_governance() -> Dict[str, Any]:
     """NIST AI RMF compliance status."""
     report = generate_atlas_report()
     return {"nist_rmf": report.get("nist_rmf", {})}
+
+
+@router.get("/guardrails")
+async def get_guardrails() -> Dict[str, Any]:
+    """List guardrails in the account. Enables users to discover and configure Guardrails for Nova Sentinel."""
+    return list_guardrails()
+
+
+@router.get("/guardrail-config")
+async def get_guardrail_config() -> Dict[str, Any]:
+    """Current guardrail configuration (from env). Tells frontend if Guardrails are active."""
+    s = get_settings()
+    active = bool(s.guardrail_identifier and s.guardrail_identifier.strip())
+    return {
+        "active": active,
+        "guardrail_identifier": s.guardrail_identifier if active else None,
+        "guardrail_version": s.guardrail_version if active else "1",
+        "hint": "Set GUARDRAIL_IDENTIFIER and GUARDRAIL_VERSION in .env to enable. Restart backend after change.",
+    }
 
 
 @router.post("/scan")

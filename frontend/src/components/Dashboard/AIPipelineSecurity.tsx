@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, ExternalLink, FileText, XCircle, Target, Map, BarChart2, Settings, Sparkles, Eye, DollarSign } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, ExternalLink, FileText, XCircle, Target, Map, BarChart2, Settings, Sparkles, Eye, DollarSign, Lock, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import api from '../../services/api';
 
@@ -26,7 +26,7 @@ const ATLAS_DETAILS: Record<string, {
 }> = {
   'AML.T0051': {
     whatIsThis: 'Adversaries craft inputs with hidden instructions to override AI model behavior, potentially causing unauthorized actions or data leakage.',
-    detection: 'Pattern matching against 12 known injection signatures (e.g., "ignore previous instructions", base64 payloads, unicode obfuscation) + Nova Micro classification.',
+    detection: 'Pattern matching against 12 known injection signatures (e.g., "ignore previous instructions", base64 payloads, unicode obfuscation) + Nova Micro classification. Recommend: enable Amazon Bedrock Guardrails for prompt-attack filtering at the API layer.',
     cleanReason: 'No injection patterns detected in CloudTrail data fed to analysis agents. All inputs passed sanitization.',
     warningReason: 'Potential injection pattern detected in input data. Flagged for review but analysis continued.',
     referenceUrl: 'https://atlas.mitre.org/techniques/AML.T0051',
@@ -171,12 +171,23 @@ const COST_TABLE_DATA = [
   { agent: 'DocAgent', model: 'Nova 2 Lite', calls: 23, tokens: 5000, latency: '2.4s', cost: 0.0028 },
 ];
 
+interface GuardrailItem {
+  id: string;
+  arn: string;
+  name: string;
+  status: string;
+  version: string;
+  description: string;
+}
+
 export default function AIPipelineSecurity() {
   const [status, setStatus] = useState<{ techniques?: Technique[]; summary?: { by_model?: Record<string, number>; total_invocations?: number }; is_simulated?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [lastScannedAt, setLastScannedAt] = useState<Date | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [guardrailConfig, setGuardrailConfig] = useState<{ active: boolean; guardrail_identifier?: string; hint?: string } | null>(null);
+  const [guardrailsList, setGuardrailsList] = useState<{ guardrails: GuardrailItem[]; error?: string } | null>(null);
 
   const loadStatus = () => {
     const useDemoFallback = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
@@ -193,6 +204,21 @@ export default function AIPipelineSecurity() {
 
   useEffect(() => {
     loadStatus();
+  }, []);
+
+  useEffect(() => {
+    const useDemo = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    if (useDemo) {
+      setGuardrailConfig({ active: false, hint: 'Connect backend to see guardrail status' });
+      setGuardrailsList({ guardrails: [], error: 'Backend required' });
+      return;
+    }
+    api.get('/api/ai-security/guardrail-config')
+      .then((r) => setGuardrailConfig(r.data))
+      .catch(() => setGuardrailConfig({ active: false }));
+    api.get('/api/ai-security/guardrails')
+      .then((r) => setGuardrailsList(r.data))
+      .catch(() => setGuardrailsList({ guardrails: [], error: 'Failed to list guardrails' }));
   }, []);
 
   const handleScanNow = async () => {
@@ -245,6 +271,123 @@ export default function AIPipelineSecurity() {
           Nova Sentinel monitors its own AI pipeline — because who protects the AI?
         </p>
       </div>
+
+      {/* AI Guardrails — Amazon Bedrock Guardrails spotlight */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border-2 border-teal-200 bg-gradient-to-br from-teal-50 via-white to-emerald-50 overflow-hidden shadow-card"
+      >
+        <div className="px-6 py-4 border-b border-teal-100 bg-teal-50/80 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Lock className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-bold text-slate-900">AI Guardrails</h3>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                Amazon Bedrock Guardrails
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                Industry focus
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 mt-1">
+              Content filtering, prompt-attack detection, PII protection — how Bedrock Guardrails and Nova Sentinel work together for defense in depth.
+            </p>
+          </div>
+        </div>
+        <div className="p-6 grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <Filter className="w-4 h-4 text-teal-600" />
+              What are Bedrock Guardrails?
+            </h4>
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              Amazon Bedrock Guardrails apply configurable safeguards to every model invocation: content filters (hate, violence, misconduct, <strong>prompt attack</strong>), denied topics, PII masking, and contextual grounding to reduce hallucinations. Available as a native Bedrock feature — no custom code required.
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2">
+              <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" /> Content filters: 6 categories, configurable strength</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" /> Prompt attack detection — blocks jailbreaks & injection</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" /> PII & sensitive data filters</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" /> Works across any foundation model on Bedrock</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-indigo-600" />
+              Nova Sentinel + Guardrails = Defense in Depth
+            </h4>
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              Nova Sentinel adds <strong>MITRE ATLAS</strong> threat detection on top of your AI pipeline — prompt injection patterns, API abuse, adversarial inputs, data exfiltration. When you enable Bedrock Guardrails at the API layer, you get:
+            </p>
+            <div className="space-y-2 p-3 rounded-lg bg-white/80 border border-teal-100">
+              <p className="text-xs font-medium text-slate-700">Layer 1 — Bedrock Guardrails</p>
+              <p className="text-[11px] text-slate-600">Block harmful content, prompt attacks, PII at invocation time</p>
+              <p className="text-xs font-medium text-slate-700 mt-2">Layer 2 — Nova Sentinel MITRE ATLAS</p>
+              <p className="text-[11px] text-slate-600">Detect abuse patterns, anomalous invocations, output validation</p>
+            </div>
+            <a
+              href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-teal-600 hover:text-teal-800 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Amazon Bedrock Guardrails docs →
+            </a>
+          </div>
+        </div>
+        {/* Guardrail status — practical: show if active, list available, copy-to-env */}
+        <div className="px-6 py-4 border-t border-teal-100 bg-white/60">
+          <h4 className="text-sm font-bold text-slate-800 mb-3">Guardrail Status</h4>
+          {guardrailConfig?.active ? (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-800">Active</p>
+                <p className="text-xs text-emerald-700">All Nova invocations use Guardrail: {guardrailConfig.guardrail_identifier}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Not configured</p>
+                  <p className="text-xs text-amber-700">Add GUARDRAIL_IDENTIFIER to backend .env, then restart. All Nova Lite, Micro, Pro, Sonic calls will use it.</p>
+                </div>
+              </div>
+              {guardrailsList && (guardrailsList.guardrails?.length > 0 ? (
+                <div>
+                  <p className="text-xs font-semibold text-slate-600 mb-2">Your guardrails — copy ID to .env:</p>
+                  <div className="space-y-2">
+                    {guardrailsList.guardrails.slice(0, 5).map((g) => (
+                      <div key={g.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <div>
+                          <p className="text-xs font-medium text-slate-800">{g.name}</p>
+                          <p className="text-[10px] font-mono text-slate-500">{g.id} · {g.status}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const env = `GUARDRAIL_IDENTIFIER=${g.id}\nGUARDRAIL_VERSION=${g.version || '1'}`;
+                            navigator.clipboard.writeText(env);
+                          }}
+                          className="px-2 py-1 text-[10px] font-bold rounded bg-teal-100 text-teal-700 hover:bg-teal-200 border border-teal-200"
+                        >
+                          Copy to .env
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : guardrailsList.error ? (
+                <p className="text-xs text-slate-500">{guardrailsList.error}</p>
+              ) : null)}
+            </div>
+          )}
+        </div>
+      </motion.div>
       {/* Differentiator Hero — "Who protects the AI?" */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}

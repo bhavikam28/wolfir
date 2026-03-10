@@ -16,6 +16,7 @@ from agents.strands_orchestrator import StrandsOrchestrator, STRANDS_TOOLS
 class AgentQueryRequest(BaseModel):
     """Request for agentic query — Agent plans its own tool sequence."""
     prompt: str
+    conversation_history: Optional[List[Dict[str, str]]] = None  # [{role, content}, ...]
 from services.cloudtrail_service import CloudTrailService
 from utils.logger import logger
 from utils.error_messages import user_friendly_message
@@ -231,9 +232,11 @@ async def agent_query(request: AgentQueryRequest) -> Dict[str, Any]:
     if not prompt:
         raise HTTPException(status_code=400, detail="prompt must be a non-empty string")
     
+    history = request.conversation_history or []
+    
     try:
-        logger.info(f"Agentic query: {prompt[:80]}...")
-        response = await orchestrator.agent_query(prompt)
+        logger.info(f"Agentic query: {prompt[:80]}... (history: {len(history)} turns)")
+        response = await orchestrator.agent_query(prompt, conversation_history=history)
         return {
             "response": response,
             "framework": "strands-agents",
@@ -243,6 +246,80 @@ async def agent_query(request: AgentQueryRequest) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Agentic query failed: {e}")
         raise HTTPException(status_code=500, detail=user_friendly_message(e, "Agent query failed. Please try again."))
+
+
+HEALTH_CHECK_QUERIES = [
+    ("Audit all IAM users for security issues. List findings with severity (CRITICAL, HIGH, MEDIUM, LOW).", "IAM"),
+    ("Investigate IAM roles for privilege escalation risks. List any overly permissive roles.", "IAM"),
+    ("Scan CloudTrail for anomalies in the last 7 days. Summarize suspicious activity.", "CloudTrail"),
+    ("Check CloudWatch for billing anomalies or unusual cost spikes.", "Billing"),
+    ("Get Security Hub findings if enabled. Otherwise summarize key security gaps.", "SecurityHub"),
+]
+
+
+@router.post("/security-health-check")
+async def security_health_check(
+    profile: Optional[str] = Query(None),
+    account_id: Optional[str] = Query(default="demo-account"),
+) -> Dict[str, Any]:
+    """
+    Proactive security audit — runs 5 Autonomous Agent queries in sequence.
+    No incident required. Uses IAM audit, CloudTrail, CloudWatch, Security Hub tools.
+    """
+    try:
+        results = []
+        for prompt, category in HEALTH_CHECK_QUERIES:
+            try:
+                logger.info(f"Health check query [{category}]: {prompt[:60]}...")
+                response = await orchestrator.agent_query(prompt)
+                results.append({
+                    "query": prompt,
+                    "response": response,
+                    "category": category,
+                })
+            except Exception as e:
+                logger.warning(f"Health check query [{category}] failed: {e}")
+                results.append({
+                    "query": prompt,
+                    "response": f"Error: {user_friendly_message(e)}",
+                    "category": category,
+                    "error": True,
+                })
+        # Save to incident memory for cross-incident correlation (e.g. "your last health check found 2 CRITICAL IAM issues")
+        try:
+            from services.incident_memory import get_incident_memory
+            memory = get_incident_memory()
+            health_incident_id = f"HEALTH-{uuid.uuid4().hex[:8].upper()}"
+            summary_parts = []
+            for r in results:
+                if not r.get("error") and r.get("response"):
+                    summary_parts.append(f"[{r['category']}] {r['response'][:200]}...")
+            incident_data = {
+                "incident_id": health_incident_id,
+                "results": {
+                    "timeline": {
+                        "events": [],
+                        "root_cause": "Security Health Check: proactive audit without incident.",
+                        "attack_pattern": "Proactive IAM, CloudTrail, Billing, Security Hub audit",
+                        "analysis_summary": "\n".join(summary_parts)[:1000],
+                    },
+                },
+                "metadata": {"incident_type": "Security Health Check", "health_check": True},
+            }
+            await memory.save_incident(incident_data, account_id=account_id or "demo-account")
+        except Exception as mem_err:
+            logger.warning(f"Could not save health check to incident memory: {mem_err}")
+
+        return {
+            "results": results,
+            "account_id": account_id,
+        }
+    except Exception as e:
+        logger.error(f"Security health check failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=user_friendly_message(e, "Health check failed. Please try again.")
+        )
 
 
 @router.get("/health")
