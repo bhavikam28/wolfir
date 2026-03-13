@@ -1,0 +1,54 @@
+version: '3.9'
+
+# wolfir — Zero-friction local setup
+# Usage: docker compose up
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8000
+#
+# AWS credentials: set as env vars below or mount ~/.aws as a volume.
+# Demo mode works without AWS — full AI pipeline needs real AWS creds + Bedrock access.
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # AWS credentials — set these or use the volume mount below
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      # wolfir config
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - DEBUG=${DEBUG:-false}
+      # Optional: Bedrock Guardrails
+      - GUARDRAIL_IDENTIFIER=${GUARDRAIL_IDENTIFIER:-}
+      - GUARDRAIL_VERSION=${GUARDRAIL_VERSION:-1}
+      # Optional: API key auth (leave blank for local dev)
+      - WOLFIR_API_KEY=${WOLFIR_API_KEY:-}
+      # CORS: allow frontend
+      - FRONTEND_URL=http://localhost:5173
+    volumes:
+      # Mount AWS credentials from host (alternative to env vars above)
+      - ${USERPROFILE:-~}/.aws:/root/.aws:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped

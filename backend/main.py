@@ -8,7 +8,7 @@ Architecture:
 - SDK: Nova Act (browser automation SDK, separate from Bedrock)
 - Protocol: Model Context Protocol (MCP) via FastMCP
 - Orchestration: Strands Agents SDK with @tool decorators
-- AWS MCP Servers: CloudTrail, IAM, CloudWatch, Nova Canvas
+- AWS MCP Servers: CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security (6 servers, 27 MCP tools, 21 Strands @tool functions)
 """
 import os
 import json
@@ -127,6 +127,30 @@ class MaxBodySizeMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+# Optional X-API-Key auth — set WOLFIR_API_KEY env var to enable.
+# When set, all /api/* requests require the header X-API-Key: <key>.
+# Useful when backend is exposed externally (not just localhost).
+# Leave unset for local hackathon demo (no auth header required).
+_WOLFIR_API_KEY = os.environ.get("WOLFIR_API_KEY", "").strip()
+_PASSTHROUGH_PATHS = {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+
+
+class APIKeyMiddleware(BaseHTTPMiddleware):
+    """Optional X-API-Key check. Only active when WOLFIR_API_KEY env var is set."""
+
+    async def dispatch(self, request, call_next):
+        if _WOLFIR_API_KEY and request.url.path.startswith("/api"):
+            if request.url.path in _PASSTHROUGH_PATHS:
+                return await call_next(request)
+            provided = request.headers.get("X-API-Key", "")
+            if provided != _WOLFIR_API_KEY:
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Invalid or missing X-API-Key header. Set WOLFIR_API_KEY env var to configure."},
+                )
+        return await call_next(request)
+
+
 # Configure CORS
 _cors_origins = [
     "http://localhost:5173",
@@ -149,6 +173,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(MaxBodySizeMiddleware)
+app.add_middleware(APIKeyMiddleware)
 
 # Include REST API routers
 app.include_router(analysis.router)

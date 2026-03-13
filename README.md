@@ -67,7 +67,7 @@ CloudTrail Alert
 │ Detect  │Investigate│ Classify │Remediate│Document│
 ├─────────┴──────────┴──────────┴────────┴────────┤
 │  6 MCP Servers (CloudTrail, IAM, CW, Security Hub, Canvas, AI Security) │
-│  23+ MCP Tools · 18 Strands @tool Functions · Nova Act     │
+│  27 MCP Tools · 21 Strands @tool Functions · Nova Act       │
 └──────────────────────────────────────────────────┘
       ↓              ↓             ↓
   DynamoDB     CloudTrail      JIRA/Slack/
@@ -114,7 +114,7 @@ flowchart TB
 
     subgraph Strands["🔗 Strands Agents SDK"]
         Agent[Strands Agent]
-        Tools[18 @tool Functions]
+        Tools[21 @tool Functions]
     end
 
     subgraph Nova["🤖 Amazon Nova Models"]

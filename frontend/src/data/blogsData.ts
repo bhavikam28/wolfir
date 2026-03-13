@@ -14,9 +14,13 @@ export const BLOGS: BlogPost[] = [
     id: '01',
     title: 'From 11,000 Alerts to Zero Noise: How wolfir Uses 5 Nova Models',
     excerpt: 'Security teams get 11,000+ alerts per day. We built wolfir to change that — an agentic pipeline that produces a full incident response package in minutes.',
-    content: `If you've ever been on call at 2am with a Security Hub alert blinking and no idea where to start, you know the problem. Security teams receive an average of **11,000 alerts per day** according to the Ponemon Institute. They investigate less than 5%. The rest? They drown in noise, get triaged by whoever's awake, or slip through the cracks entirely.
+    content: `A wolf hunts in a pack — coordinated, precise, relentless. So does wolfir. Five Nova models, each with a role, moving in formation from the first alert to the final remediation step. From a raw CloudTrail event to a complete incident response package in **under 60 seconds**.
 
-We built wolfir to change that. Not with another dashboard. Not with another rule engine. With an **agentic pipeline** that takes raw CloudTrail events, runs them through five Amazon Nova models and services, and produces a complete incident response package in minutes: chronological timeline, attack path visualization, risk scores, remediation plan with real AWS CLI commands, and documentation ready for JIRA, Slack, or Confluence.
+That's the pitch. Here's why it matters.
+
+Security teams receive an average of **11,000 alerts per day** according to the Ponemon Institute. They investigate less than 5%. The rest drown in noise, get triaged by whoever's awake, or slip through entirely. And with the average cost of a data breach at $4.45M (IBM, 2025), the ones that slip through aren't cheap.
+
+We built wolfir to change that. Not with another dashboard. Not with another rule engine. With an **agentic pipeline** that hunts in a pack: five Amazon Nova models and services coordinating to produce a complete incident response package — chronological timeline, attack path visualization, risk scores, remediation plan with real AWS CLI commands, and documentation ready for JIRA, Slack, or Confluence. **$0.013 per incident.** Not a typo.
 
 This is the story of how we got there — and why it took five models instead of one.
 

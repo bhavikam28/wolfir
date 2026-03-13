@@ -276,6 +276,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         </header>
 
+        {/* Persistent mode banner — judges always know what they're looking at */}
+        {mode === 'demo' ? (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center justify-center gap-2 text-xs font-semibold text-amber-800">
+            <span>🎭</span>
+            <span>Demo Mode — Simulated AWS Data · No real AWS account connected</span>
+            <a href="#console" className="ml-2 underline underline-offset-2 hover:text-amber-900">Connect real AWS →</a>
+          </div>
+        ) : (
+          <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-1.5 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-800">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live — Connected to your AWS Account · All actions are real and CloudTrail-audited</span>
+          </div>
+        )}
+
         {/* Content — white main area */}
         <main className="flex-1 overflow-y-auto bg-slate-50">
           <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
