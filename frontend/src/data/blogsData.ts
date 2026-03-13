@@ -76,13 +76,13 @@ Each agent in the wolfir pipeline needs specific context from the previous step 
 
 **What we built:** A context pruning layer in the Strands orchestrator. After each agent call, we extract only the fields the next agent needs and pass a compact, structured object. The temporal agent produces a JSON timeline. The risk scorer consumes that and outputs scores as a compact array. The remediation agent gets timeline + scores, nothing else.
 
-**The gotcha we didn't anticipate:** Strands Agents SDK is designed for single-agent runs, not multi-agent pipelines with explicit handoffs. We adapted by running each specialized model as a standalone Bedrock Converse call inside `@tool`-decorated functions, all managed by a single Strands agent acting as an orchestrator. The `@tool` functions are the seams where context handoffs happen. Each tool receives serialized JSON, calls Bedrock directly, and returns structured output. It's not the architecture Strands advertises, but it's what gave us deterministic, auditable pipelines.
+**The gotcha we didn't anticipate:** Strands Agents SDK is designed for single-agent runs, not multi-agent pipelines with explicit handoffs. We adapted by running each specialized model as a standalone Bedrock Converse call inside \`@tool\`-decorated functions, all managed by a single Strands agent acting as an orchestrator. The \`@tool\` functions are the seams where context handoffs happen. Each tool receives serialized JSON, calls Bedrock directly, and returns structured output. It's not the architecture Strands advertises, but it's what gave us deterministic, auditable pipelines.
 
 ## Challenge 2: Tool Selection Without Hallucination
 
 The Agentic Query agent is different from the pipeline agents. Instead of a fixed sequence, it uses a Strands agent that genuinely picks its own tools from 23 MCP-registered functions across 6 AWS services: CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, and the AI Security MCP.
 
-The failure mode: open-ended tool selection leads to wrong tool calls. Ask "Are there any IAM issues?" and a naive agent might call `ec2_security_metrics` first — technically a tool, technically returning data, but not what the user asked for.
+The failure mode: open-ended tool selection leads to wrong tool calls. Ask "Are there any IAM issues?" and a naive agent might call \`ec2_security_metrics\` first — technically a tool, technically returning data, but not what the user asked for.
 
 **What we built:** Tool descriptions that encode intent, not just capability. "Use this tool when the user asks about IAM users, roles, policies, or access keys" is more useful to the agent than "Returns IAM user list." We also added a lightweight intent classifier (Nova Micro, one-shot) that maps user queries to likely tool categories before the agent runs, biasing tool selection without removing agent autonomy.
 
@@ -92,7 +92,7 @@ The failure mode: open-ended tool selection leads to wrong tool calls. Ask "Are 
 
 Five Nova calls per incident, plus embeddings for cross-incident correlation. Full pipeline runs in 30–45 seconds. That's fast for a security analyst. It's an eternity for a hackathon demo.
 
-**The real solution:** Pre-compute demo results client-side. Our `quickDemoResult.ts` file contains the output of five fully-run Nova pipeline executions for each of the five demo scenarios. Judges on Vercel see results in 2 seconds because those results are already there — computed, structured, and stored. When the backend is running, the pipeline runs for real and produces different results based on the LLM's current reasoning.
+**The real solution:** Pre-compute demo results client-side. Our \`quickDemoResult.ts\` file contains the output of five fully-run Nova pipeline executions for each of the five demo scenarios. Judges on Vercel see results in 2 seconds because those results are already there — computed, structured, and stored. When the backend is running, the pipeline runs for real and produces different results based on the LLM's current reasoning.
 
 We use Nova Micro (fast, cheap, deterministic at temp=0.1) for classification and Nova 2 Lite for the heavy reasoning steps. Embeddings run once per incident and are cached in DynamoDB. Total per-incident Bedrock cost: $0.005–0.015. That's not a made-up number — it's based on actual token counts per model and on-demand pricing.
 
@@ -100,7 +100,7 @@ We use Nova Micro (fast, cheap, deterministic at temp=0.1) for classification an
 
 Security products need to be trusted. We made a hard decision early: wolfir never stores AWS credentials. Not in a database, not in a session, not in a cookie. Credentials live on the user's machine (CLI profile or environment variables) and are used by the backend process only during the active request.
 
-This created a real engineering challenge for the Quick Connect flow (30-second credential validation). We validate via STS `get_caller_identity`, extract the account ID, and discard the keys. For the full CloudTrail analysis flow, we use the configured CLI profile. Temporary credentials passed via Quick Connect are not forwarded to analysis endpoints — a deliberate constraint.
+This created a real engineering challenge for the Quick Connect flow (30-second credential validation). We validate via STS \`get_caller_identity\`, extract the account ID, and discard the keys. For the full CloudTrail analysis flow, we use the configured CLI profile. Temporary credentials passed via Quick Connect are not forwarded to analysis endpoints — a deliberate constraint.
 
 **The outcome:** From a judge's perspective, the security posture is unusually clean for a hackathon project. Credentials never leave the user's machine. Every remediation action is logged to CloudTrail. The AI monitors its own Bedrock pipeline. And we rate-limit the API at 60 requests/minute per IP so nobody can abuse the endpoints during the judging window.
 

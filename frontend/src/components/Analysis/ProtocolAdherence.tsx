@@ -203,7 +203,7 @@ const ProtocolAdherence: React.FC<ProtocolAdherenceProps> = ({
                         {phase.checklist.map((item, i) => (
                           <span key={i}>
                             {phase.checklistMet?.[i] ? '✓' : '✗'} {item}
-                            {i < phase.checklist.length - 1 ? '  ' : ''}
+                            {i < (phase.checklist?.length ?? 0) - 1 ? '  ' : ''}
                           </span>
                         ))}
                       </p>

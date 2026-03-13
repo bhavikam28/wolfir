@@ -160,7 +160,7 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
   const [guardrailsList, setGuardrailsList] = useState<{ guardrails: GuardrailItem[]; error?: string } | null>(null);
   const [bedrockInventory, setBedrockInventory] = useState<{ models?: Array<{ modelId: string; modelName?: string; provider?: string }>; count?: number; error?: string } | null>(null);
   const [guardrailRecs, setGuardrailRecs] = useState<{ recommendations?: Array<{ id: string; title: string; priority: string; status: string; detail?: string }>; error?: string } | null>(null);
-  const [shadowAi, setShadowAi] = useState<{ findings?: Array<{ principal: string; suspicious?: boolean; event_time?: string }>; suspicious_count?: number; total_invocations?: number; error?: string } | null>(null);
+  const [shadowAi, setShadowAi] = useState<{ findings?: Array<{ principal: string; suspicious?: boolean; event_time?: string }>; suspicious_count?: number; total_invocations?: number; error?: string; is_simulated?: boolean } | null>(null);
   const [activeFramework, setActiveFramework] = useState<'overview' | 'mitre' | 'bedrock' | 'cost' | 'bom'>('overview');
 
   const loadStatus = () => {
