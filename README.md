@@ -274,7 +274,7 @@ wolfir uses **7 Amazon Nova capabilities** — each chosen for what it does best
 
 - **Backend**: Python, FastAPI, Strands Agents SDK, boto3
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion
-- **MCP**: FastMCP with 5 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas). 14 Strands @tool functions.
+- **MCP**: FastMCP with 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security). 23 MCP tools. 21 Strands @tool functions.
 - **Deployment**: Vercel (frontend), Local/EC2 (backend)
 
 ## 🚀 Quick Start / Setup

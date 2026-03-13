@@ -187,11 +187,11 @@ async def root():
         "service": "wolfir",
         "version": "3.0.0",
         "status": "running",
-        "description": "AI-Powered Security Incident Response — 4 Nova Bedrock models + Nova Act SDK",
+        "description": "AI-Powered Cloud + AI Security — 5 Nova Bedrock models + Nova Act SDK + Nova Embeddings",
         "frameworks": {
             "strands": "strands-agents SDK (real)",
-            "mcp": "MCP Server via FastMCP (real)",
-            "nova_act": "nova-act SDK (real)",
+            "mcp": "MCP Server via FastMCP (real) — 6 AWS MCP servers, 23 tools",
+            "nova_act": "nova-act SDK (browser automation)",
         },
         "models": {
             "nova_2_lite": settings.nova_lite_model_id,
@@ -200,12 +200,15 @@ async def root():
             "nova_2_sonic": settings.nova_sonic_model_id,
             "nova_canvas": settings.nova_canvas_model_id,
             "nova_act": "nova-act SDK (browser automation)",
+            "nova_embeddings": "amazon.nova-2-multimodal-embeddings-v1:0 (incident similarity)",
         },
         "mcp_servers": [
             "cloudtrail-mcp-server — CloudTrail event analysis & anomaly detection",
             "iam-mcp-server — IAM security auditing & policy analysis",
             "cloudwatch-mcp-server — Security monitoring & billing anomalies",
-            "nova-canvas-mcp-server — Visual report generation (custom boto3)",
+            "security-hub-mcp-server — GuardDuty & Inspector findings",
+            "nova-canvas-mcp-server — Visual report generation",
+            "ai-security-mcp-server — MITRE ATLAS & OWASP LLM monitoring",
         ],
     }
 

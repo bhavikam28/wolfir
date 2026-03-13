@@ -10,7 +10,9 @@ const TECHNIQUES = [
   { id: 'AML.T0051', name: 'Prompt Injection', status: 'CLEAN' },
   { id: 'AML.T0016', name: 'Capability Theft', status: 'CLEAN' },
   { id: 'AML.T0040', name: 'API Abuse', status: 'CLEAN' },
+  { id: 'AML.T0025', name: 'Adversarial Inputs', status: 'CLEAN' },
   { id: 'AML.T0024', name: 'Data Exfiltration', status: 'CLEAN' },
+  { id: 'AML.T0044', name: 'Model Poisoning', status: 'CLEAN' },
 ];
 
 const MITREAtlasTeaser: React.FC = () => {
