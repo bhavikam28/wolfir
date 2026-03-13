@@ -21,26 +21,32 @@ const NARRATIONS: Record<string, string[]> = {
     "Here's what's happening: an attacker from the internet has assumed the contractor-temp IAM role, which has administrator access. That's a critical privilege escalation — they now have full control of your AWS account.",
     "The attacker is moving deeper. They've modified the security group to expose SSH to the entire internet — port 22 is now open to 0.0.0.0 slash 0. That creates a direct path for remote access.",
     "Now the real damage: they've launched three GPU instances. GPUs are expensive and perfect for cryptocurrency mining. Your cloud bill is about to spike while they mine crypto on your dime.",
-    "Nova Sentinel has detected the threat. Our temporal agent correlated the IAM assumption, security group change, and instance launch. We're now scoring the risk and preparing autonomous remediation.",
+    "wolfir has detected the threat. Our temporal agent correlated the IAM assumption, security group change, and instance launch. We're now scoring the risk and preparing autonomous remediation.",
     "Incident contained. Nova has revoked the role session, detached the administrator policy, and terminated the mining instances. The attack is stopped. You've avoided thousands in daily crypto-mining costs.",
   ],
   'data-exfiltration': [
     "Someone with the data-analyst identity has just downloaded sensitive customer PII from your company bucket. This looks like the start of a data breach — customer records are being exfiltrated.",
     "It's getting worse. They've now pulled financial records — Q4 2024 data. Multiple large downloads from a single session suggest systematic data theft, not a one-off mistake.",
-    "Nova Sentinel has detected the exfiltration pattern. We're correlating the GetObject events and initiating containment to stop further data loss.",
+    "wolfir has detected the exfiltration pattern. We're correlating the GetObject events and initiating containment to stop further data loss.",
     "Containment complete. We've disabled the data-analyst access keys and updated the bucket policy. The breach is stopped. You'll want to audit who else has access and consider key rotation.",
   ],
   'privilege-escalation': [
     "A junior developer with limited permissions has just assumed the AdminRole. That's a massive privilege jump — they went from read-only to full administrator in one API call.",
     "This is serious. While holding the admin role, they've created a new IAM user called backdoor-admin and attached AdministratorAccess. That's a persistence mechanism — the attacker now has a permanent admin account.",
-    "Nova Sentinel has detected the privilege escalation chain. We're analyzing the AssumeRole and CreateUser sequence and preparing to remove the backdoor.",
+    "wolfir has detected the privilege escalation chain. We're analyzing the AssumeRole and CreateUser sequence and preparing to remove the backdoor.",
     "Incident contained. We've deleted the backdoor-admin user and restricted who can assume the AdminRole. The insider threat has been neutralized.",
   ],
   'unauthorized-access': [
     "An external IP — 198.51.100.100 — just attempted to assume an IAM role. The attempt failed, but it tells us someone outside your network is probing with what might be stolen credentials.",
     "They got in. Using compromised credentials for external-user, they've downloaded production API keys from your secrets bucket. Those keys can unlock your entire production environment.",
-    "Nova Sentinel has detected the unauthorized access. We're correlating the external IP with the GetObject on secrets and initiating containment.",
+    "wolfir has detected the unauthorized access. We're correlating the external IP with the GetObject on secrets and initiating containment.",
     "Containment complete. We've revoked the external-user credentials and initiated key rotation for production. You'll need to rotate those API keys everywhere they're used.",
+  ],
+  'shadow-ai': [
+    "Shadow AI detected. An unapproved Lambda role — UnapprovedLambdaRole — is invoking Bedrock Nova Pro. That's model access outside your approved AI usage policy. MITRE ATLAS flags this as capability theft.",
+    "It's escalating. The same role has made multiple InvokeModel calls. And dev-experiment, from an external IP, is using InvokeModelWithResponseStream — a potential prompt injection vector. OWASP LLM01.",
+    "wolfir has correlated the Bedrock events. We're mapping to MITRE ATLAS and OWASP LLM Top 10. Shadow AI, ungoverned model access, and potential prompt injection.",
+    "Containment complete. We've revoked Bedrock access from the shadow role and flagged dev-experiment for audit. Enable Bedrock Guardrails to block future prompt injection.",
   ],
 };
 
@@ -69,6 +75,10 @@ export const LiveSimulation: React.FC<LiveSimulationProps> = ({ scenarioId, onCo
       if (idx < 1) return 'iam';
       if (idx < 3) return 'iam2';
       return 'iam3';
+    }
+    if (scenarioId === 'shadow-ai') {
+      if (idx < 2) return 'iam';
+      return 'iam2';
     }
     return 'internet';
   };
@@ -114,10 +124,15 @@ export const LiveSimulation: React.FC<LiveSimulationProps> = ({ scenarioId, onCo
     if (visibleEvents >= 2) compromised.add('iam2');
     if (visibleEvents >= 3) compromised.add('iam3');
   }
+  if (scenarioId === 'shadow-ai') {
+    if (visibleEvents >= 1) compromised.add('iam');
+    if (visibleEvents >= 2) compromised.add('iam2');
+  }
 
   const scenarioName = scenarioId === 'crypto-mining' ? 'Cryptocurrency Mining Attack' :
     scenarioId === 'data-exfiltration' ? 'Data Exfiltration' :
-    scenarioId === 'privilege-escalation' ? 'Privilege Escalation' : 'Unauthorized Access';
+    scenarioId === 'privilege-escalation' ? 'Privilege Escalation' :
+    scenarioId === 'shadow-ai' ? 'Shadow AI / LLM Abuse' : 'Unauthorized Access';
 
   // Timeline driver
   useEffect(() => {
@@ -351,7 +366,7 @@ export const LiveSimulation: React.FC<LiveSimulationProps> = ({ scenarioId, onCo
                     Incident Contained
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Nova Sentinel autonomous response complete
+                    wolfir autonomous response complete
                   </p>
                 </div>
               </div>

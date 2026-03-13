@@ -507,7 +507,7 @@ function buildGraphFromTimeline(
       icon: AwsCloudTrail,
       label: 'CloudTrail',
       subLabel: 'Monitoring',
-      detail: 'Your AWS activity is logged here. Nova Sentinel analyzed these events to build this attack path.',
+      detail: 'Your AWS activity is logged here. wolfir analyzed these events to build this attack path.',
       color: '#059669',
       bg: '#A7F3D0',
       severity: 'low',
@@ -730,7 +730,7 @@ const DEMO_NODES: NodeDef[] = [
   { id: 'sg', x: 280, y: 80, icon: AwsShield, label: 'Security Group', subLabel: 'Misconfigured', detail: 'sg-0xyz — 0.0.0.0/0 on port 22 (OPEN)', color: '#DC2626', bg: '#FEE2E2', severity: 'critical', ring: true, mitreId: 'T1190', resourceId: 'sg-0xyz', riskScore: 95, timestamp: '2026-01-15T14:20:45Z' },
   { id: 'ssh', x: 500, y: 80, icon: AlertTriangle, label: 'SSH Exposed', subLabel: 'Port 22 Open', detail: '14 failed login attempts before breach', color: '#DC2626', bg: '#FEE2E2', severity: 'critical', ring: true, mitreId: 'T1021', riskScore: 94, timestamp: '2026-01-15T14:21:15Z' },
   { id: 'secrets', x: 720, y: 80, icon: AwsSecretsManager, label: 'Secrets Mgr', subLabel: 'Accessed', detail: 'GetSecretValue — 3 secrets retrieved', color: '#EA580C', bg: '#FFEDD5', severity: 'high', mitreId: 'T1552', riskScore: 85, timestamp: '2026-01-15T14:22:00Z' },
-  { id: 'cloudtrail', x: 880, y: 80, icon: AwsCloudTrail, label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by Nova Sentinel', color: '#64748B', bg: '#F8FAFC', severity: 'low', mitreId: 'T1562', timestamp: '2026-01-15T14:23:00Z' },
+  { id: 'cloudtrail', x: 880, y: 80, icon: AwsCloudTrail, label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by wolfir', color: '#64748B', bg: '#F8FAFC', severity: 'low', mitreId: 'T1562', timestamp: '2026-01-15T14:23:00Z' },
 ];
 
 /** AI attack path: Internet → API → Bedrock → IAM → S3 (OWASP LLM, Shadow AI) */
@@ -1181,8 +1181,9 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
             </button>
             <button onClick={exportSvg} className="px-2 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Download SVG">SVG</button>
           </div>
-          {/* Legend */}
-          <div className="hidden md:flex gap-4">
+          {/* Legend — node shapes, colors, arrows */}
+          <div className="hidden md:flex items-center gap-4 flex-wrap">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Legend</span>
             {[
               { color: 'bg-red-700', label: 'Critical' },
               { color: 'bg-orange-600', label: 'High' },
@@ -1194,6 +1195,19 @@ const AttackPathDiagram: React.FC<AttackPathDiagramProps> = (props) => {
                 <span className="text-[10px] font-semibold text-slate-500">{item.label}</span>
               </div>
             ))}
+            <span className="text-slate-300">|</span>
+            <div className="flex items-center gap-1.5" title="Circle = actor (user, role, IP)">
+              <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-400" />
+              <span className="text-[10px] font-semibold text-slate-500">Actor</span>
+            </div>
+            <div className="flex items-center gap-1.5" title="Square = resource (EC2, S3, IAM)">
+              <div className="w-2.5 h-2.5 border-2 border-slate-400" />
+              <span className="text-[10px] font-semibold text-slate-500">Resource</span>
+            </div>
+            <div className="flex items-center gap-1.5" title="Arrows show attack flow direction">
+              <span className="text-slate-400">→</span>
+              <span className="text-[10px] font-semibold text-slate-500">Attack flow</span>
+            </div>
           </div>
           {/* Zoom Controls */}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">

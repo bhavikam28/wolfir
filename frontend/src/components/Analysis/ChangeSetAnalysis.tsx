@@ -277,7 +277,7 @@ const ChangeSetAnalysis: React.FC<ChangeSetAnalysisProps> = ({ backendOffline: p
               <p className="text-sm text-slate-600">{result.recommendation}</p>
             </div>
 
-            {hasIamChanges && (
+            {result?.risky_changes?.some(r => String(r.resource_type || '').includes('IAM')) && (
               <a
                 href="https://aegis-iam.vercel.app/"
                 target="_blank"

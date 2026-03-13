@@ -2,7 +2,6 @@
  * Minimal geometric icons — premium professional (LayoutDashboard-style)
  * Avoids overdone Lucide icons (clock, lightning, shield) used by AI-built apps
  */
-import React from 'react';
 
 const iconClass = 'w-5 h-5';
 

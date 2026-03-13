@@ -105,3 +105,12 @@ export const truncate = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
 };
+
+/**
+ * Mask AWS account ID for display — shows last 4 digits only to reduce screenshot/social engineering risk.
+ * Full ID available on hover via title.
+ */
+export const maskAccountId = (accountId: string | null | undefined): string => {
+  if (!accountId || accountId.length < 4) return '••••';
+  return `••••${accountId.slice(-4)}`;
+};

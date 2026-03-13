@@ -17,7 +17,7 @@ const WhatWhyForWhom: React.FC = () => {
       icon: Zap,
       label: 'Why',
       title: 'Closes the Detection–Response Gap',
-      desc: 'Existing tools detect. They don\'t respond. Nova Sentinel closes the gap — agents share state across the pipeline, no manual triage, human-in-the-loop approval for risky actions.',
+      desc: 'Existing tools detect. They don\'t respond. wolfir closes the gap — agents share state across the pipeline, no manual triage, human-in-the-loop approval for risky actions.',
     },
     {
       icon: Users,

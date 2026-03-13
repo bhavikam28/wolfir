@@ -42,7 +42,7 @@ export function generateCompliancePdf(
   doc.text('Compliance Assessment Report', margin, 22);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Generated ${new Date(generatedAt).toLocaleString()} | Nova Sentinel`, margin, 30);
+  doc.text(`Generated ${new Date(generatedAt).toLocaleString()} | wolfir`, margin, 30);
   doc.setTextColor(0, 0, 0);
   y = 45;
 

@@ -25,6 +25,7 @@ pydantic-settings>=2.6.0
 # CORS and Security
 python-jose[cryptography]>=3.3.0
 python-dotenv>=1.0.1
+slowapi>=0.1.9  # Rate limiting on API
 
 # HTTP Client
 httpx>=0.26.0

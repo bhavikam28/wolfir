@@ -1,5 +1,5 @@
 /**
- * Under the Hood — How Nova Sentinel Works
+ * Under the Hood — How wolfir Works
  * 3 differentiators: Memory, Execution, AI Self-Defense
  * Premium white theme
  */
@@ -15,10 +15,10 @@ const UnderTheHoodSection: React.FC = () => {
             Under the Hood
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-            How Nova Sentinel Works
+            How wolfir Works
           </h2>
           <p className="text-base text-slate-600 max-w-2xl mx-auto">
-            Multi-model specialization. Persistent cross-incident memory. Autonomous remediation with human-in-loop. And AI pipeline self-monitoring with MITRE ATLAS — who protects the AI? Nova Sentinel does.
+            Multi-model specialization. Persistent cross-incident memory. Autonomous remediation with human-in-loop. And AI pipeline self-monitoring with MITRE ATLAS — who protects the AI? wolfir does.
           </p>
         </div>
 
@@ -60,7 +60,7 @@ const UnderTheHoodSection: React.FC = () => {
             </p>
             <div className="font-mono text-xs text-emerald-600 p-3 bg-emerald-50 border border-emerald-200 rounded-lg leading-relaxed">
               → Before: {`{"policies": ["ReadOnly"]}`}<br />
-              &nbsp;&nbsp;After: + &quot;Nova Sentinel-EmergencyDeny&quot;
+              &nbsp;&nbsp;After: + &quot;wolfir-EmergencyDeny&quot;
             </div>
           </motion.div>
 
@@ -76,7 +76,7 @@ const UnderTheHoodSection: React.FC = () => {
             <div className="text-[11px] font-semibold text-slate-500 tracking-wider mb-4">03 — AI SELF-DEFENSE</div>
             <h3 className="text-lg font-bold text-slate-900 mb-3">MITRE ATLAS + AI Guardrails</h3>
             <p className="text-sm text-slate-600 leading-relaxed mb-4">
-              &quot;Who protects the AI?&quot; Nova Sentinel monitors its own pipeline for prompt injection,
+              &quot;Who protects the AI?&quot; wolfir monitors its own pipeline for prompt injection,
               API abuse, and data exfiltration using MITRE ATLAS. Works with Amazon Bedrock Guardrails for defense in depth — content filters, prompt-attack detection, PII protection.
             </p>
             <div className="font-mono text-xs text-amber-600 p-3 bg-amber-50 border border-amber-200 rounded-lg leading-relaxed">

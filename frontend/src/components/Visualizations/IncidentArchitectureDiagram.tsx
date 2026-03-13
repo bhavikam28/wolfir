@@ -150,7 +150,7 @@ function extractNodes(events: TimelineEvent[]): ResourceNode[] {
   let nodes = Array.from(seen.values()).map(v => v.node);
   const hasCloudTrail = nodes.some(n => n.label.toLowerCase().includes('cloudtrail'));
   if (!hasCloudTrail) {
-    nodes = [...nodes, { id: 'cloudtrail-monitoring', label: 'CloudTrail', subLabel: 'Monitored', type: 'other' as ResourceType, severity: 'low' as SeverityLevel, detail: 'Detected by Nova Sentinel — monitoring active' }];
+    nodes = [...nodes, { id: 'cloudtrail-monitoring', label: 'CloudTrail', subLabel: 'Monitored', type: 'other' as ResourceType, severity: 'low' as SeverityLevel, detail: 'Detected by wolfir — monitoring active' }];
   }
   return nodes;
 }

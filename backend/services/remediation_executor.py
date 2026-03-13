@@ -18,9 +18,9 @@ from utils.logger import logger
 DEMO_CLOUDTRAIL = {
     "eventName": "PutRolePolicy",
     "eventTime": datetime.utcnow().isoformat() + "Z",
-    "sourceIPAddress": "nova-sentinel.internal",
-    "userAgent": "nova-sentinel/1.0",
-    "requestParameters": {"roleName": "CompromisedRole", "policyName": "NovaSentinel-EmergencyDeny"},
+    "sourceIPAddress": "wolfir.internal",
+    "userAgent": "wolfir/1.0",
+    "requestParameters": {"roleName": "CompromisedRole", "policyName": "wolfir-EmergencyDeny"},
 }
 
 
@@ -34,7 +34,7 @@ class ExecutionResult:
     rollback_command: str
     cloudtrail_event: dict
     execution_timestamp: str
-    executed_by: str  # NOVA-SENTINEL-AUTO | HUMAN-APPROVED
+    executed_by: str  # WOLFIR-AUTO | HUMAN-APPROVED
     incident_id: str
     step_id: Optional[str] = None
 
@@ -54,7 +54,7 @@ class RemediationExecutor:
         self, resource_arn: str, incident_id: str = "INC-DEMO"
     ) -> ExecutionResult:
         tags = {
-            "NOVA-SENTINEL-QUARANTINE": "true",
+            "WOLFIR-QUARANTINE": "true",
             "QUARANTINE-TIMESTAMP": datetime.utcnow().isoformat(),
             "QUARANTINE-INCIDENT": incident_id,
         }
@@ -65,10 +65,10 @@ class RemediationExecutor:
                 resource_arn=resource_arn,
                 before_state={"tags": {}},
                 after_state={"tags": tags},
-                rollback_command=f"aws resourcegroupstaggingapi untag-resources --resource-arn-list {resource_arn} --tag-keys NOVA-SENTINEL-QUARANTINE QUARANTINE-TIMESTAMP QUARANTINE-INCIDENT",
+                rollback_command=f"aws resourcegroupstaggingapi untag-resources --resource-arn-list {resource_arn} --tag-keys WOLFIR-QUARANTINE QUARANTINE-TIMESTAMP QUARANTINE-INCIDENT",
                 cloudtrail_event={**DEMO_CLOUDTRAIL, "eventName": "TagResources"},
                 execution_timestamp=datetime.utcnow().isoformat(),
-                executed_by="NOVA-SENTINEL-AUTO",
+                executed_by="WOLFIR-AUTO",
                 incident_id=incident_id,
             )
         try:
@@ -81,10 +81,10 @@ class RemediationExecutor:
                 resource_arn=resource_arn,
                 before_state={"tags": {}},
                 after_state={"tags": tags},
-                rollback_command=f"aws resourcegroupstaggingapi untag-resources --resource-arn-list {resource_arn} --tag-keys NOVA-SENTINEL-QUARANTINE QUARANTINE-TIMESTAMP QUARANTINE-INCIDENT",
+                rollback_command=f"aws resourcegroupstaggingapi untag-resources --resource-arn-list {resource_arn} --tag-keys WOLFIR-QUARANTINE QUARANTINE-TIMESTAMP QUARANTINE-INCIDENT",
                 cloudtrail_event={**DEMO_CLOUDTRAIL, "eventName": "TagResources"},
                 execution_timestamp=datetime.utcnow().isoformat(),
-                executed_by="NOVA-SENTINEL-AUTO",
+                executed_by="WOLFIR-AUTO",
                 incident_id=incident_id,
             )
         except Exception as e:
@@ -98,14 +98,14 @@ class RemediationExecutor:
                 rollback_command="",
                 cloudtrail_event={},
                 execution_timestamp=datetime.utcnow().isoformat(),
-                executed_by="NOVA-SENTINEL-AUTO",
+                executed_by="WOLFIR-AUTO",
                 incident_id=incident_id,
             )
 
     async def execute_deny_policy(
         self, role_name: str, denied_actions: List[str], incident_id: str = "INC-DEMO"
     ) -> ExecutionResult:
-        policy_name = f"NovaSentinel-EmergencyDeny-{incident_id.replace('INC-', 'INC')[:12]}"
+        policy_name = f"wolfir-EmergencyDeny-{incident_id.replace('INC-', 'INC')[:12]}"
         policy_doc = {
             "Version": "2012-10-17",
             "Statement": [
@@ -126,7 +126,7 @@ class RemediationExecutor:
                 rollback_command=f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}",
                 cloudtrail_event={**DEMO_CLOUDTRAIL, "requestParameters": {"roleName": role_name, "policyName": policy_name}},
                 execution_timestamp=datetime.utcnow().isoformat(),
-                executed_by="NOVA-SENTINEL-AUTO",
+                executed_by="WOLFIR-AUTO",
                 incident_id=incident_id,
             )
         try:
@@ -142,7 +142,7 @@ class RemediationExecutor:
                 rollback_command=f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}",
                 cloudtrail_event={**DEMO_CLOUDTRAIL, "requestParameters": {"roleName": role_name, "policyName": policy_name}},
                 execution_timestamp=datetime.utcnow().isoformat(),
-                executed_by="NOVA-SENTINEL-AUTO",
+                executed_by="WOLFIR-AUTO",
                 incident_id=incident_id,
             )
         except Exception as e:
@@ -156,7 +156,7 @@ class RemediationExecutor:
                 rollback_command="",
                 cloudtrail_event={},
                 execution_timestamp=datetime.utcnow().isoformat(),
-                executed_by="NOVA-SENTINEL-AUTO",
+                executed_by="WOLFIR-AUTO",
                 incident_id=incident_id,
             )
 

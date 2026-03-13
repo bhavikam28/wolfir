@@ -12,8 +12,8 @@ const CRYPTO_TIMELINE: Timeline = {
     { timestamp: "2026-01-15T14:23:00Z", actor: "admin@company.com", action: "CreateRole", resource: "IAM Role: contractor-temp", severity: "MEDIUM", details: "Created a temporary role with AdministratorAccess policy", significance: "Foundation for privilege escalation." },
     { timestamp: "2026-01-18T09:45:00Z", actor: "admin@company.com", action: "AttachRolePolicy", resource: "IAM Role: contractor-temp", severity: "HIGH", details: "Attached AdministratorAccess managed policy", significance: "Enabled full account takeover." },
     { timestamp: "2026-01-19T04:00:00Z", actor: "contractor-session", action: "AuthorizeSecurityGroupIngress", resource: "Security Group: sg-abc123", severity: "HIGH", details: "Modified security group to allow SSH from 0.0.0.0/0", significance: "Opened initial access vector." },
-    { timestamp: "2026-01-19T04:38:00Z", actor: "attacker-session", action: "DescribeInstances", resource: "EC2 Instances", severity: "MEDIUM", details: "Enumerated all EC2 instances", significance: "Reconnaissance activity." },
-    { timestamp: "2026-01-19T04:53:00Z", actor: "attacker-session", action: "RunInstances", resource: "EC2 Instances", severity: "HIGH", details: "Launched 3 GPU instances for crypto mining", significance: "Resource abuse and impact." },
+    { timestamp: "2026-01-19T04:38:00Z", actor: "attacker-session", action: "DescribeInstances", resource: "EC2 Instances", severity: "MEDIUM", details: "Enumerated all EC2 instances", significance: "Reconnaissance at 4:38 AM — enumeration of 12 instances. Common precursor to exploitation." },
+    { timestamp: "2026-01-19T04:53:00Z", actor: "attacker-session", action: "RunInstances", resource: "EC2 Instance: i-0abc123 (g4dn.xlarge)", severity: "HIGH", details: "Launched 3 GPU instances for crypto mining", significance: "EC2 instance i-0abc123 launched at 4:53 AM — 99th percentile for this account (first GPU launch in 30 days)." },
     { timestamp: "2026-02-04T08:23:00Z", actor: "guardduty.amazonaws.com", action: "GuardDutyFinding", resource: "EC2 Instance: i-abc123", severity: "CRITICAL", details: "Detected cryptocurrency mining activity", significance: "Confirmed malicious activity." },
   ],
   root_cause: "IAM role with excessive privileges (AdministratorAccess) was created for a contractor and later assumed by an attacker.",
@@ -26,7 +26,7 @@ const CRYPTO_TIMELINE: Timeline = {
 // --- DATA EXFILTRATION ---
 const DATA_EXFIL_TIMELINE: Timeline = {
   events: [
-    { timestamp: "2026-02-01T10:00:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/customer-pii/database-export.csv", severity: "HIGH", details: "Downloaded customer PII database export from sensitive bucket", significance: "Initial data exfiltration of sensitive records." },
+    { timestamp: "2026-02-01T10:00:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/customer-pii/database-export.csv", severity: "HIGH", details: "Downloaded customer PII database export from sensitive bucket", significance: "Data accessed at 10:00 AM from external IP 195.2.3.4 — first access from this source in 90 days. 2.4 GB downloaded." },
     { timestamp: "2026-02-01T10:05:00Z", actor: "data-analyst", action: "GetObject", resource: "S3: company-sensitive-data/financial-records/q4-2024.csv", severity: "HIGH", details: "Downloaded financial records", significance: "Additional sensitive data theft." },
     { timestamp: "2026-02-01T10:10:00Z", actor: "data-analyst", action: "ListBucket", resource: "S3 Bucket: company-sensitive-data", severity: "MEDIUM", details: "Listed bucket contents to discover more files", significance: "Reconnaissance to locate additional data to exfiltrate." },
   ],
@@ -50,6 +50,22 @@ const PRIV_ESCAL_TIMELINE: Timeline = {
   blast_radius: "AdminRole trust policy, IAM user backdoor-admin. Full account compromise possible.",
   confidence: 0.96,
   analysis_summary: "Privilege escalation from junior-dev to AdminRole, then creation of backdoor-admin with AdministratorAccess.",
+};
+
+// --- SHADOW AI / LLM ABUSE ---
+const SHADOW_AI_TIMELINE: Timeline = {
+  events: [
+    { timestamp: "2026-03-01T09:00:00Z", actor: "lambda-shadow-ai (UnapprovedLambdaRole)", action: "InvokeModel", resource: "Bedrock: amazon.nova-pro-v1:0", severity: "HIGH", details: "Ungoverned InvokeModel from non-approved Lambda role", significance: "Shadow AI — model access outside approved policy." },
+    { timestamp: "2026-03-01T09:15:00Z", actor: "lambda-shadow-ai", action: "InvokeModel", resource: "Bedrock: amazon.nova-pro-v1:0", severity: "HIGH", details: "Repeated InvokeModel calls — potential API abuse", significance: "High-volume usage from unexpected principal." },
+    { timestamp: "2026-03-01T11:00:00Z", actor: "dev-experiment", action: "InvokeModelWithResponseStream", resource: "Bedrock: amazon.nova-2-lite-v1:0", severity: "HIGH", details: "Streaming invocation from external IP 198.51.100.77", significance: "Potential prompt injection vector — OWASP LLM01." },
+    { timestamp: "2026-03-01T12:30:00Z", actor: "lambda-shadow-ai", action: "InvokeModel", resource: "Bedrock: amazon.nova-pro-v1:0", severity: "HIGH", details: "Continued shadow AI usage", significance: "Persistent ungoverned access." },
+    { timestamp: "2026-03-02T17:00:00Z", actor: "ai-security.amazonaws.com", action: "GuardDutyFinding", resource: "Bedrock: Shadow AI", severity: "CRITICAL", details: "Ungoverned Bedrock InvokeModel from non-approved principal — 47 invocations in 24h", significance: "MITRE ATLAS AML.T0016 (Capability theft), OWASP LLM01." },
+  ],
+  root_cause: "Lambda role UnapprovedLambdaRole and IAM user dev-experiment invoked Bedrock models without approval. Shadow AI — ungoverned LLM usage outside policy.",
+  attack_pattern: "Shadow AI / LLM Abuse. Ungoverned InvokeModel from non-approved principals. MITRE ATLAS AML.T0051 (Prompt injection), AML.T0016 (Capability theft). OWASP LLM Top 10.",
+  blast_radius: "Bedrock Nova Pro, Nova 2 Lite. Risk of prompt injection, data exfiltration via model output, cost abuse.",
+  confidence: 0.93,
+  analysis_summary: "Shadow AI detected: ungoverned Bedrock InvokeModel from Lambda and dev user. MITRE ATLAS and OWASP LLM Top 10 alignment.",
 };
 
 // --- UNAUTHORIZED ACCESS ---
@@ -142,6 +158,24 @@ const SCENARIO_DATA: Record<string, {
     incident_type: "Unauthorized Access",
     affected_resources: "S3 bucket company-secrets, production API keys",
   },
+  "shadow-ai": {
+    timeline: SHADOW_AI_TIMELINE,
+    risk_scores: [
+      { event: "InvokeModel (shadow)", risk_score: 82 },
+      { event: "InvokeModel (shadow)", risk_score: 85 },
+      { event: "InvokeModelWithResponseStream", risk_score: 78 },
+      { event: "InvokeModel (shadow)", risk_score: 88 },
+      { event: "GuardDutyFinding", risk_score: 96 },
+    ],
+    remediation_steps: [
+      { order: 1, action: "Revoke UnapprovedLambdaRole Bedrock access", severity: "CRITICAL", risk: "CRITICAL", target: "UnapprovedLambdaRole", reason: "Stop shadow AI usage.", risk_if_skipped: "Continued ungoverned model access.", details: "Remove bedrock:InvokeModel from role policy", api_call: "aws iam detach-role-policy --role-name UnapprovedLambdaRole", automation: "manual" },
+      { order: 2, action: "Audit dev-experiment IAM user", severity: "CRITICAL", risk: "CRITICAL", target: "dev-experiment", reason: "External IP invocation may indicate prompt injection.", risk_if_skipped: "Prompt injection risk.", details: "Review and restrict Bedrock permissions", api_call: "aws iam list-attached-user-policies --user-name dev-experiment", automation: "manual" },
+      { order: 3, action: "Enable Bedrock Guardrails", severity: "HIGH", risk: "HIGH", target: "Bedrock", reason: "Block prompt injection and PII leakage.", risk_if_skipped: "OWASP LLM01 remains.", details: "Configure content filters and prompt attack blocking", api_call: "aws bedrock create-guardrail", automation: "manual" },
+      { order: 4, action: "Add CloudTrail data events for Bedrock", severity: "MEDIUM", risk: "MEDIUM", target: "CloudTrail", reason: "Full audit trail for compliance.", risk_if_skipped: "Limited visibility.", details: "Enable Bedrock data event logging", api_call: "aws cloudtrail put-event-selectors", automation: "automated" },
+    ],
+    incident_type: "Shadow AI / LLM Abuse",
+    affected_resources: "Bedrock Nova Pro, Nova 2 Lite; UnapprovedLambdaRole, dev-experiment",
+  },
 };
 
 function makeId(): string {
@@ -184,10 +218,10 @@ ${(timeline.attack_pattern || "").substring(0, 180)}${(timeline.attack_pattern |
 ${(timeline.blast_radius || "See timeline").substring(0, 150)}${(timeline.blast_radius || "").length > 150 ? "…" : ""}
 
 *Remediation*
-${remediation_steps.length} steps identified. Full details in Nova Sentinel.
+${remediation_steps.length} steps identified. Full details in wolfir.
 
 *Link*
-<https://nova-sentinel.app/incidents/${incidentId}|View in Nova Sentinel>`;
+<https://wolfir.app/incidents/${incidentId}|View in wolfir>`;
 
   const confluenceContent = `h1. Incident Postmortem: ${incidentId}
 
@@ -195,7 +229,7 @@ h2. Executive Summary
 Security incident ${incidentId} was identified and analyzed. Root cause: ${(timeline.root_cause || "").substring(0, 120)}${(timeline.root_cause || "").length > 120 ? "…" : ""}
 
 h2. Timeline
-${(timeline.events || []).slice(0, 8).map((e: any, i: number) => `* ${e.timestamp || "N/A"} — ${e.action || "Event"} (Severity: ${e.severity || "N/A"})`).join("\n") || "No events recorded"}
+${(timeline.events || []).slice(0, 8).map((e: any) => `* ${e.timestamp || "N/A"} — ${e.action || "Event"} (Severity: ${e.severity || "N/A"})`).join("\n") || "No events recorded"}
 
 h2. Impact Analysis
 *Blast Radius:* ${timeline.blast_radius || "See timeline"}

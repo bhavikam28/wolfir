@@ -54,7 +54,7 @@ async def get_governance() -> Dict[str, Any]:
 
 @router.get("/guardrails")
 async def get_guardrails() -> Dict[str, Any]:
-    """List guardrails in the account. Enables users to discover and configure Guardrails for Nova Sentinel."""
+    """List guardrails in the account. Enables users to discover and configure Guardrails for wolfir."""
     return list_guardrails()
 
 

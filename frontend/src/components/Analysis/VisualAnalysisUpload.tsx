@@ -5,7 +5,7 @@
  * - Incident case: Nova Canvas security visualization
  * - Demo case: Sample AWS architecture diagram with annotations
  */
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Image, X, CheckCircle2, AlertCircle, Loader2, Eye, Sparkles, Palette, FileText, Lightbulb, Shield, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { threatModelAPI } from '../../services/api';
@@ -375,6 +375,23 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
 
   const displayResult = analysisResult || demoResult || incidentDerivedResult;
 
+  // Pre-load sample diagram with STRIDE on mount when no incident — judges won't have a diagram handy
+  useEffect(() => {
+    if (incidentDerivedResult || analysisResult || demoResult) return;
+    let cancelled = false;
+    const run = async () => {
+      setDemoLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      if (!cancelled) {
+        setDemoResult(DEMO_ANALYSIS);
+        setThreatModelResult(DEMO_THREAT_MODEL); // Pre-load STRIDE so judges see analysis already run
+        setDemoLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, []);
+
   // Pre-fill architecture description from analysis when available
   const defaultArchitectureDescription = useMemo(() => {
     if (!displayResult?.analysis) return '';
@@ -524,26 +541,34 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
         {/* Upload zone - only when no incident data and no results */}
         {!selectedFile && !displayResult && !demoLoading && (
           <div className="space-y-4">
+            {/* Sample AWS VPC diagram — prominent, pre-loaded so judges see STRIDE-ready architecture without uploading */}
+            <div className="rounded-2xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm">
+              <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3">Sample AWS VPC Architecture · STRIDE-ready (pre-loaded)</p>
+              <div className="rounded-xl overflow-hidden border border-indigo-200 bg-white">
+                <SampleArchitectureDiagram />
+              </div>
+              <p className="text-[11px] text-slate-600 mt-2">Judges: No diagram handy? Run &quot;Try Demo Analysis&quot; below to see STRIDE threat model on this architecture.</p>
+            </div>
             <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                dragActive ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-slate-50'
+              className={`border-2 border-dashed rounded-xl p-10 text-center transition-all min-h-[180px] flex flex-col items-center justify-center ${
+                dragActive ? 'border-indigo-400 bg-indigo-50' : 'border-slate-300 bg-slate-50'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
             >
-              <Upload className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-700 mb-0.5">Upload your architecture diagram</p>
-              <p className="text-xs text-slate-500 mb-2">Nova Pro identifies security risks</p>
-              <p className="text-xs text-slate-400 mb-4">Drop a diagram here or</p>
+              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-base font-semibold text-slate-800 mb-0.5">Upload your architecture diagram</p>
+              <p className="text-sm text-slate-600 mb-2">Nova Pro identifies security risks — or use the sample above</p>
+              <p className="text-xs text-slate-500 mb-4">Drop a diagram here or</p>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="btn-nova px-5 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold"
+                className="btn-nova px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold"
               >
                 Browse Files
               </button>
-              <p className="text-xs text-slate-400 mt-3">PNG, JPG, WebP supported</p>
+              <p className="text-xs text-slate-500 mt-3">PNG, JPG, WebP supported</p>
             </div>
 
             {/* Demo button */}
@@ -565,6 +590,15 @@ const VisualAnalysisUpload: React.FC<VisualAnalysisUploadProps> = ({
         {/* Results - from incident, upload, or demo (only when no file selected) */}
         {!selectedFile && displayResult && !demoLoading && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            {/* Show sample diagram when demo/pre-loaded so judges see what was analyzed */}
+            {displayResult === demoResult && (
+              <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white p-4">
+                <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-2">Analyzed architecture</p>
+                <div className="rounded-lg overflow-hidden border border-indigo-100">
+                  <SampleArchitectureDiagram />
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2 flex-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />

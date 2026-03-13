@@ -22,7 +22,15 @@ const ProtocolAdherence: React.FC<ProtocolAdherenceProps> = ({
 }) => {
   const [result, setResult] = useState<{
     overall_score: number;
-    phases: Array<{ id: string; label: string; description: string; completed: boolean; evidence: string }>;
+    phases: Array<{
+      id: string;
+      label: string;
+      description?: string;
+      completed: boolean;
+      evidence: string;
+      checklist?: string[];
+      checklistMet?: boolean[];
+    }>;
     phases_completed: number;
     phases_total: number;
     recommendation: string;
@@ -41,12 +49,12 @@ const ProtocolAdherence: React.FC<ProtocolAdherenceProps> = ({
         if (!ok || backendOffline) {
           // Demo fallback
           const phases = [
-            { id: 'preparation', label: 'Preparation', description: 'Policies, playbooks, tools in place', completed: true, evidence: 'Found in timeline/remediation' },
-            { id: 'detection', label: 'Detection & Analysis', description: 'Event detection, initial analysis', completed: true, evidence: 'Found in timeline/remediation' },
-            { id: 'containment', label: 'Containment', description: 'Short-term and long-term containment', completed: true, evidence: 'Found in timeline/remediation' },
-            { id: 'eradication', label: 'Eradication', description: 'Remove threat, patch vulnerabilities', completed: true, evidence: 'Found in timeline/remediation' },
-            { id: 'recovery', label: 'Recovery', description: 'Restore systems, validate', completed: false, evidence: 'Not detected' },
-            { id: 'post_incident', label: 'Post-Incident', description: 'Documentation, lessons learned', completed: !!documentation, evidence: documentation ? 'Found' : 'Not detected' },
+            { id: 'preparation', label: 'Preparation', description: 'Policies, playbooks, tools in place', completed: true, evidence: 'Found in timeline/remediation', checklist: ['CloudTrail enabled', 'Playbook exists', 'Runbook not attached', 'Contact list ready'], checklistMet: [true, true, false, true] },
+            { id: 'detection', label: 'Detection & Analysis', description: 'Event detection, initial analysis', completed: true, evidence: 'Found in timeline/remediation', checklist: ['Event detection', 'Initial triage', 'Severity assessment'], checklistMet: [true, true, true] },
+            { id: 'containment', label: 'Containment', description: 'Short-term and long-term containment', completed: true, evidence: 'Found in timeline/remediation', checklist: ['Short-term containment', 'Evidence preservation'], checklistMet: [true, true] },
+            { id: 'eradication', label: 'Eradication', description: 'Remove threat, patch vulnerabilities', completed: true, evidence: 'Found in timeline/remediation', checklist: ['Threat removed', 'Vulnerabilities patched'], checklistMet: [true, true] },
+            { id: 'recovery', label: 'Recovery', description: 'Restore systems, validate', completed: false, evidence: 'Not detected', checklist: ['Systems restored', 'Validation complete'], checklistMet: [false, false] },
+            { id: 'post_incident', label: 'Post-Incident', description: 'Documentation, lessons learned', completed: !!documentation, evidence: documentation ? 'Found' : 'Not detected', checklist: ['Documentation', 'Lessons learned'], checklistMet: [!!documentation, false] },
           ];
           setResult({
             overall_score: Math.round((phases.filter(p => p.completed).length / 6) * 100),
@@ -60,7 +68,34 @@ const ProtocolAdherence: React.FC<ProtocolAdherenceProps> = ({
         const res = await protocolAPI.adherence(timeline, remediationPlan, documentation);
         if (!cancelled) setResult(res);
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Failed to compute adherence');
+        if (!cancelled) {
+          const status = e?.response?.status;
+          const msg = e?.response?.data?.detail || e?.message;
+          if (status === 404) {
+            setError('IR Protocol API not found. Restart the backend to enable this feature. Showing demo data.');
+            // Fallback to demo
+            const phases = [
+              { id: 'preparation', label: 'Preparation', description: 'Policies, playbooks, tools in place', completed: true, evidence: 'Found in timeline/remediation', checklist: ['CloudTrail enabled', 'Playbook exists', 'Runbook not attached', 'Contact list ready'], checklistMet: [true, true, false, true] },
+              { id: 'detection', label: 'Detection & Analysis', description: 'Event detection, initial analysis', completed: true, evidence: 'Found in timeline/remediation', checklist: ['Event detection', 'Initial triage', 'Severity assessment'], checklistMet: [true, true, true] },
+              { id: 'containment', label: 'Containment', description: 'Short-term and long-term containment', completed: true, evidence: 'Found in timeline/remediation', checklist: ['Short-term containment', 'Evidence preservation'], checklistMet: [true, true] },
+              { id: 'eradication', label: 'Eradication', description: 'Remove threat, patch vulnerabilities', completed: true, evidence: 'Found in timeline/remediation', checklist: ['Threat removed', 'Vulnerabilities patched'], checklistMet: [true, true] },
+              { id: 'recovery', label: 'Recovery', description: 'Restore systems, validate', completed: false, evidence: 'Not detected', checklist: ['Systems restored', 'Validation complete'], checklistMet: [false, false] },
+              { id: 'post_incident', label: 'Post-Incident', description: 'Documentation, lessons learned', completed: !!documentation, evidence: documentation ? 'Found' : 'Not detected', checklist: ['Documentation', 'Lessons learned'], checklistMet: [!!documentation, false] },
+            ];
+            setResult({
+              overall_score: Math.round((phases.filter(p => p.completed).length / 6) * 100),
+              phases,
+              phases_completed: phases.filter(p => p.completed).length,
+              phases_total: 6,
+              recommendation: 'Consider adding recovery validation and post-incident documentation.',
+            });
+            setError(null);
+          } else if (status === 500) {
+            setError('Server error. Try again or use demo mode.');
+          } else {
+            setError(msg || 'Failed to compute adherence');
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,27 +165,54 @@ const ProtocolAdherence: React.FC<ProtocolAdherenceProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {result.phases.map((phase) => (
-              <motion.div
-                key={phase.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-4 rounded-xl border ${
-                  phase.completed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  {phase.completed ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
+            {result.phases.map((phase) => {
+              const total = phase.checklist?.length ?? 1;
+              const met = phase.checklistMet?.filter(Boolean).length ?? (phase.completed ? 1 : 0);
+              const pct = total > 0 ? Math.round((met / total) * 100) : (phase.completed ? 100 : 0);
+              return (
+                <motion.div
+                  key={phase.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-4 rounded-xl border ${
+                    phase.completed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2">
+                      {phase.completed ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
+                      <span className="text-sm font-bold text-slate-800">{phase.label}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      pct >= 100 ? 'bg-emerald-100 text-emerald-700' : pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {pct}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600">{phase.description}</p>
+                  {phase.checklist && phase.checklist.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] font-bold text-slate-700 mb-0.5">
+                        {met} of {total} checklist items met:
+                      </p>
+                      <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
+                        {phase.checklist.map((item, i) => (
+                          <span key={i}>
+                            {phase.checklistMet?.[i] ? '✓' : '✗'} {item}
+                            {i < phase.checklist.length - 1 ? '  ' : ''}
+                          </span>
+                        ))}
+                      </p>
+                    </div>
                   )}
-                  <span className="text-sm font-bold text-slate-800">{phase.label}</span>
-                </div>
-                <p className="text-[11px] text-slate-600">{phase.description}</p>
-                <p className="text-[10px] text-slate-500 mt-1">{phase.evidence}</p>
-              </motion.div>
-            ))}
+                  <p className="text-[10px] text-slate-500 mt-1">{phase.evidence}</p>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50">

@@ -4,7 +4,7 @@ CloudWatch MCP Server — Custom implementation (boto3)
 Provides MCP-compatible tools for security monitoring,
 metric analysis, and anomaly detection via CloudWatch.
 
-Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
+Inspired by awslabs/mcp patterns. Integrated into wolfir's FastMCP.
 """
 import asyncio
 from typing import Dict, Any, List, Optional

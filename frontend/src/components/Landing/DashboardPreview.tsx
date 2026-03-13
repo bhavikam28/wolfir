@@ -5,7 +5,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Clock, GitBranch, Zap, Shield, FileText } from 'lucide-react';
-import NovaSentinelLogo from '../Logo';
+import WolfirLogo, { WolfirWordmark } from '../Logo';
 
 const DashboardPreview: React.FC = () => {
   return (
@@ -23,7 +23,7 @@ const DashboardPreview: React.FC = () => {
           <div className="w-3 h-3 rounded-full bg-slate-300" />
         </div>
         <div className="flex-1 flex justify-center">
-          <span className="text-[10px] text-slate-500 font-medium">app.nova-sentinel.io</span>
+          <span className="text-[10px] text-slate-500 font-medium">app.wolfir.io</span>
         </div>
       </div>
 
@@ -31,9 +31,9 @@ const DashboardPreview: React.FC = () => {
         {/* Dark sidebar */}
         <aside className="w-48 bg-slate-900 flex flex-col flex-shrink-0">
           <div className="p-4 border-b border-slate-700/50 flex items-center gap-2">
-            <NovaSentinelLogo size={24} animated={false} />
+            <WolfirLogo size={24} animated={false} />
             <div>
-              <p className="text-xs font-bold text-white leading-tight">Nova Sentinel</p>
+              <WolfirWordmark size="sm" dark className="text-xs leading-tight" />
               <p className="text-[9px] text-slate-400 uppercase tracking-wider">Demo Mode</p>
             </div>
           </div>

@@ -37,7 +37,7 @@ const FEATURES: Record<TabId, Array<{
     {
       icon: MessageSquare,
       title: 'Agentic Query',
-      desc: 'Autonomous agent that picks its own tools from 5 AWS MCP servers. Ask natural language questions — the agent plans and executes IAM audits, CloudTrail lookups, Security Hub checks.',
+      desc: 'Autonomous agent that picks its own tools from 6 AWS MCP servers. Ask natural language questions — the agent plans and executes IAM audits, CloudTrail lookups, Security Hub checks.',
       bullets: ['Autonomous tool selection', '23 MCP tools across 5 AWS servers', 'Multi-turn conversation support', 'No predefined workflow required'],
     },
     {
@@ -74,9 +74,9 @@ const FEATURES: Record<TabId, Array<{
     },
     {
       icon: Network,
-      title: '5 AWS MCP Servers',
-      desc: 'CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas. 23 tools registered. Orchestrated via Strands Agents SDK with shared context.',
-      bullets: ['CloudTrail: events, trail status, anomalies', 'IAM: user/role audit, policy analysis', 'CloudWatch: alarms, billing, EC2 security', 'Security Hub: findings, GuardDuty', 'Nova Canvas: report covers, diagrams'],
+      title: '6 AWS MCP Servers',
+      desc: 'CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security. 23+ tools registered. Orchestrated via Strands Agents SDK with shared context.',
+      bullets: ['CloudTrail: events, trail status, anomalies', 'IAM: user/role audit, policy analysis', 'CloudWatch: alarms, billing, EC2 security', 'Security Hub: findings, GuardDuty', 'Nova Canvas: report covers', 'AI Security: MITRE ATLAS pipeline monitoring'],
     },
     {
       icon: Layers,
@@ -101,7 +101,7 @@ const FEATURES: Record<TabId, Array<{
     {
       icon: Shield,
       title: 'MITRE ATLAS',
-      desc: '6 techniques monitored: prompt injection, capability theft, API abuse, adversarial inputs, data exfiltration, model poisoning. Nova Sentinel monitors its own AI pipeline.',
+      desc: '6 techniques monitored: prompt injection, capability theft, API abuse, adversarial inputs, data exfiltration, model poisoning. wolfir monitors its own AI pipeline.',
       bullets: ['6 MITRE ATLAS techniques', 'Real-time invocation monitoring', 'Pattern matching + Nova Micro classification', 'Who protects the AI?'],
     },
     {

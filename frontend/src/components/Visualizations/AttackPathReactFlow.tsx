@@ -86,7 +86,7 @@ function AttackPathNode({ data }: { data: NodeData }) {
         {isAwsIcon ? (
           <Icon size={56} color={color} />
         ) : (
-          <Icon className="w-14 h-14" style={{ color }} />
+          <Icon className="w-14 h-14" color={color} />
         )}
         <Handle type="source" position={Position.Right} className="!w-2 !h-2 !border-2 !bg-white !top-1/2 !-translate-y-1/2" style={{ right: -14, left: 'auto' }} />
       </div>
@@ -121,7 +121,7 @@ const DEMO_NODES_STANDARD: Node[] = [
   { id: 'sg', type: 'attackPath', position: { x: 280, y: 60 }, data: { label: 'Security Group', subLabel: 'Misconfigured', detail: 'sg-0xyz — 0.0.0.0/0 on port 22 (OPEN)', icon: AwsShield, severity: 'critical' as Severity, riskScore: 95, mitreId: 'T1190', timestamp: '2026-01-15T14:20:45Z' } },
   { id: 'ssh', type: 'attackPath', position: { x: 500, y: 60 }, data: { label: 'SSH Exposed', subLabel: 'Port 22 Open', detail: '14 failed login attempts before breach', icon: AlertTriangle, severity: 'critical' as Severity, riskScore: 94, mitreId: 'T1021', timestamp: '2026-01-15T14:21:15Z' } },
   { id: 'secrets', type: 'attackPath', position: { x: 720, y: 60 }, data: { label: 'Secrets Mgr', subLabel: 'Accessed', detail: 'GetSecretValue — 3 secrets retrieved', icon: AwsSecretsManager, severity: 'high' as Severity, riskScore: 85, mitreId: 'T1552', timestamp: '2026-01-15T14:22:00Z' } },
-  { id: 'cloudtrail', type: 'attackPath', position: { x: 880, y: 60 }, data: { label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by Nova Sentinel', icon: AwsCloudTrail, severity: 'low' as Severity, mitreId: 'T1562', timestamp: '2026-01-15T14:23:00Z' } },
+  { id: 'cloudtrail', type: 'attackPath', position: { x: 880, y: 60 }, data: { label: 'CloudTrail', subLabel: 'Monitoring', detail: 'Detected by wolfir', icon: AwsCloudTrail, severity: 'low' as Severity, mitreId: 'T1562', timestamp: '2026-01-15T14:23:00Z' } },
 ];
 
 const DEMO_NODES_AI: Node[] = [
@@ -334,9 +334,21 @@ function AttackPathReactFlowInner({ variant = 'standard', onNavigateToRemediatio
             <IconAttackPath className="w-4.5 h-4.5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Attack Path Graph</h2>
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+              Attack Path Graph
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                  variant === 'ai'
+                    ? 'bg-violet-50 text-violet-700 border-violet-200'
+                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+                title={variant === 'ai' ? 'AI/LLM attack path (Bedrock, prompt injection)' : 'Standard compute attack path (EC2, crypto-mining)'}
+              >
+                {variant === 'ai' ? 'Showing AI attack path' : 'Showing standard attack path'}
+              </span>
+            </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {variant === 'ai' ? 'Internet → API → Bedrock → IAM → S3' : 'Internet → VPC → EC2 → IAM → RDS'} · click to inspect
+              {variant === 'ai' ? 'Internet → API → Bedrock → IAM → S3' : 'Internet → VPC → EC2 → IAM → RDS'} · Node color = severity · click to inspect
             </p>
           </div>
         </div>
@@ -374,13 +386,21 @@ function AttackPathReactFlowInner({ variant = 'standard', onNavigateToRemediatio
             </button>
             <button onClick={exportSvg} className="px-2 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Download SVG">SVG</button>
           </div>
-          <div className="hidden md:flex gap-4">
-            {[{ color: 'bg-red-700', label: 'Critical' }, { color: 'bg-orange-600', label: 'High' }, { color: 'bg-blue-600', label: 'Medium' }, { color: 'bg-emerald-600', label: 'Monitored' }].map((item, i) => (
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Legend:</span>
+          <div className="flex gap-4" title="Node color = severity level">
+            {[
+              { color: 'bg-red-700', label: 'Critical' },
+              { color: 'bg-orange-600', label: 'High' },
+              { color: 'bg-blue-600', label: 'Medium' },
+              { color: 'bg-emerald-600', label: 'Monitored' },
+            ].map((item, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
                 <span className="text-[10px] font-semibold text-slate-500">{item.label}</span>
               </div>
             ))}
+          </div>
           </div>
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
             <button onClick={() => zoomOut()} className="p-1.5 rounded-md hover:bg-white hover:shadow-sm" title="Zoom out"><ZoomOut className="w-3.5 h-3.5 text-slate-600" /></button>

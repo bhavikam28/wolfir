@@ -1,5 +1,5 @@
 """
-Configuration management for Nova Sentinel
+Configuration management for wolfir
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # AWS Configuration
     aws_region: str = "us-east-1"
     aws_profile: str = "default"
-    # Enterprise: cross-account AssumeRole (e.g. arn:aws:iam::123456789012:role/NovaSentinelRole)
+    # Enterprise: cross-account AssumeRole (e.g. arn:aws:iam::123456789012:role/WolfirRole)
     aws_target_role_arn: str = ""  # Optional: assume this role for CloudTrail/Security Hub
     # CloudTrail regions to query (comma-separated, e.g. "us-east-1,ap-northeast-1"); empty = use defaults
     cloudtrail_regions: str = ""
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     guardrail_version: str = "1"     # Version (e.g. "1") or "DRAFT"
 
     # Shadow AI detection — comma-separated ARNs of principals allowed to call InvokeModel
-    shadow_ai_allowed_principals: str = ""  # e.g. "arn:aws:iam::123:role/NovaSentinel,arn:aws:iam::123:role/MyApp"
+    shadow_ai_allowed_principals: str = ""  # e.g. "arn:aws:iam::123:role/WolfirRole,arn:aws:iam::123:role/MyApp"
 
     # Nova 2 Lite extended thinking — low/medium/high; medium is best for agentic workflows
     nova_reasoning_effort: str = "medium"  # low | medium | high
@@ -44,9 +44,9 @@ class Settings(BaseSettings):
     nova_act_api_key: str = ""
     
     # AWS Resources
-    dynamodb_table: str = "nova-sentinel-incidents"
-    s3_bucket_cloudtrail: str = "nova-sentinel-cloudtrail-logs"
-    s3_bucket_diagrams: str = "nova-sentinel-diagrams"
+    dynamodb_table: str = "wolfir-incidents"
+    s3_bucket_cloudtrail: str = "wolfir-cloudtrail-logs"
+    s3_bucket_diagrams: str = "wolfir-diagrams"
     
     # API Configuration
     api_host: str = "0.0.0.0"

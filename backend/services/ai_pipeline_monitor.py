@@ -1,5 +1,5 @@
 """
-AI Pipeline Security Monitor — Monitors Nova Sentinel's AI pipeline for threats.
+AI Pipeline Security Monitor — Monitors wolfir's AI pipeline for threats.
 
 Frameworks:
 - MITRE ATLAS: AML.T0051, AML.T0016, AML.T0040, AML.T0043, AML.T0024, AML.T0048

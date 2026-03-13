@@ -29,13 +29,13 @@ const FeaturesSection: React.FC = () => {
             className="text-center mb-14"
           >
             <div className="text-[11px] font-semibold text-indigo-600 uppercase tracking-[0.2em] mb-3">
-              End-to-End Pipeline
+              Cloud + AI Security Pipeline
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-              From Alert to Remediation to Documentation
+              Incident Response + AI Pipeline Monitoring
             </h2>
             <p className="text-base text-slate-600 max-w-xl mx-auto">
-              Persistent memory, MITRE ATLAS monitoring, compliance mapping — powered by Amazon Nova
+              Cloud threats resolved autonomously. AI pipeline monitored with MITRE ATLAS — we secure both. Powered by Amazon Nova.
             </p>
           </motion.div>
 
@@ -341,10 +341,10 @@ const FeaturesSection: React.FC = () => {
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-200 mb-5">
               <Network className="w-4 h-4 text-violet-600" />
-              <span className="text-sm font-semibold text-violet-700">5 AWS MCP Servers</span>
+              <span className="text-sm font-semibold text-violet-700">6 AWS MCP Servers</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-              5 AWS MCP Servers, Unified Pipeline
+              6 AWS MCP Servers, Unified Pipeline
             </h2>
             <p className="text-base text-slate-600 max-w-2xl mx-auto">
               Orchestrates official AWS MCP servers through Strands Agents SDK —

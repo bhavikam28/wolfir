@@ -1,6 +1,8 @@
 /**
- * Nova Sentinel Logo - Clean Concentric Circles
- * Represents layered security + AI intelligence with concentric rings
+ * wolfir Logo — "Pack Logic" (Gemini-inspired)
+ * Three interlocking geometric shards: Ear/Back, Snout, Eye/Bridge
+ * Negative-space pupil = "finding truth in the logs"
+ * Sharp, industrial-strength, flat colors (no gradients)
  */
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -11,7 +13,7 @@ interface LogoProps {
   animated?: boolean;
 }
 
-export const NovaSentinelLogo: React.FC<LogoProps> = ({ size = 40, className = '', animated = true }) => {
+export const WolfirLogo: React.FC<LogoProps> = ({ size = 40, className = '', animated = true }) => {
   const Wrapper = animated ? motion.svg : 'svg' as any;
 
   return (
@@ -28,50 +30,33 @@ export const NovaSentinelLogo: React.FC<LogoProps> = ({ size = 40, className = '
         transition: { duration: 0.5, ease: 'easeOut' }
       } : {})}
     >
-      <defs>
-        <linearGradient id="logoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#8B5CF6" />
-        </linearGradient>
-        <linearGradient id="logoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#818CF8" />
-          <stop offset="100%" stopColor="#A78BFA" />
-        </linearGradient>
-        <linearGradient id="logoGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#C4B5FD" />
-          <stop offset="100%" stopColor="#DDD6FE" />
-        </linearGradient>
-        <filter id="logoGlow">
-          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Outer ring */}
-      <circle cx="24" cy="24" r="22" fill="none" stroke="url(#logoGrad3)" strokeWidth="2" opacity="0.5" />
-      
-      {/* Middle ring */}
-      <circle cx="24" cy="24" r="16" fill="none" stroke="url(#logoGrad2)" strokeWidth="2.5" opacity="0.7" />
-      
-      {/* Inner ring */}
-      <circle cx="24" cy="24" r="10" fill="none" stroke="url(#logoGrad1)" strokeWidth="3" opacity="0.9" />
-      
-      {/* Core */}
-      <circle cx="24" cy="24" r="5" fill="url(#logoGrad1)" filter="url(#logoGlow)" />
-      
-      {/* Bright center dot */}
-      <circle cx="24" cy="24" r="2" fill="white" opacity="0.95" />
-
-      {/* Orbital dots */}
-      <circle cx="24" cy="2" r="1.5" fill="#818CF8" opacity="0.6" />
-      <circle cx="40" cy="24" r="1.5" fill="#A78BFA" opacity="0.5" />
-      <circle cx="24" cy="46" r="1.5" fill="#818CF8" opacity="0.6" />
-      <circle cx="8" cy="24" r="1.5" fill="#A78BFA" opacity="0.5" />
+      {/* Shard 1: Ear/Back — dynamic angled triangle */}
+      <path d="M9.6 14.4 L24 4.8 L31.2 19.2 Z" fill="#6366F1" fillOpacity="0.95" />
+      {/* Shard 2: Snout — long pointed wedge */}
+      <path d="M24 41 L39 21 L26.4 19.2 Z" fill="#8B5CF6" />
+      {/* Shard 3: Eye/Bridge — center micro-disruption */}
+      <path d="M14.4 21.6 L26.4 16.8 L21.6 31.2 Z" fill="#6366F1" fillOpacity="0.75" />
+      {/* The "Truth" pupil — negative space */}
+      <circle cx="23" cy="21.5" r="1.5" fill="white" />
     </Wrapper>
   );
 };
 
-export default NovaSentinelLogo;
+/** Wordmark: "wolf" in dark + "ir" in accent purple. Use with logo in nav/header. */
+export const WolfirWordmark: React.FC<{
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
+  dark?: boolean; // true = for dark backgrounds (sidebar)
+}> = ({ className = '', size = 'md', dark = false }) => {
+  const base = dark ? 'text-white' : 'text-slate-900';
+  const accent = dark ? 'text-indigo-300' : 'text-indigo-600';
+  const sizeClass = size === 'sm' ? 'text-base' : size === 'lg' ? 'text-xl' : 'text-lg';
+  return (
+    <span className={`font-bold tracking-tight ${sizeClass} ${className}`}>
+      <span className={base}>wolf</span>
+      <span className={accent}>ir</span>
+    </span>
+  );
+};
+
+export default WolfirLogo;

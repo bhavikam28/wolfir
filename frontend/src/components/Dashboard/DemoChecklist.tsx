@@ -16,8 +16,12 @@ interface DemoChecklistProps {
 const ITEMS: { id: string; label: string; featureId: string }[] = [
   { id: 'run', label: 'Run scenario', featureId: 'overview' },
   { id: 'timeline', label: 'Show timeline', featureId: 'timeline' },
+  { id: 'attack-path', label: 'Show attack path', featureId: 'attack-path' },
   { id: 'remediation', label: 'Show remediation', featureId: 'remediation' },
+  { id: 'protocol', label: 'IR Protocol (NIST)', featureId: 'protocol' },
   { id: 'ai-security', label: 'Show AI security', featureId: 'ai-pipeline' },
+  { id: 'aria', label: 'Try Aria voice', featureId: 'aria' },
+  { id: 'export', label: 'Export report', featureId: 'export' },
   { id: 'incident-history', label: 'Show incident history', featureId: 'incident-history' },
 ];
 

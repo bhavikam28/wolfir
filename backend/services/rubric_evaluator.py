@@ -1,6 +1,6 @@
 """
 Rubric-based evaluation for security outputs — remediation plans, timelines
-Uses Nova 2 Lite as judge with defined security rubrics.
+Uses Nova 2 Lite with defined security rubrics for evaluation.
 """
 import json
 from typing import Dict, Any, List

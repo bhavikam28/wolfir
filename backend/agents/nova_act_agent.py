@@ -326,7 +326,7 @@ class NovaActAgent:
             "priority": severity.upper(),
             "summary": f"[{severity.upper()}] {summary}",
             "description": description,
-            "labels": ["security-incident", "nova-sentinel", "automated"],
+            "labels": ["security-incident", "wolfir", "automated"],
             "assignee": "security-team",
             "incident_id": incident_id,
         }
@@ -337,7 +337,7 @@ class NovaActAgent:
             {"step": 3, "nova_act_instruction": f"Set summary to '{ticket['summary']}'"},
             {"step": 4, "nova_act_instruction": f"Set priority to '{severity.upper()}'"},
             {"step": 5, "nova_act_instruction": f"Paste the description into the Description field"},
-            {"step": 6, "nova_act_instruction": "Add labels: security-incident, nova-sentinel, automated"},
+            {"step": 6, "nova_act_instruction": "Add labels: security-incident, wolfir, automated"},
             {"step": 7, "nova_act_instruction": "Click 'Create' to submit the ticket"},
         ]
         

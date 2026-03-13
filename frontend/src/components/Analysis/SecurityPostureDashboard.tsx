@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   Activity,
-  TrendingUp, ArrowUpRight, Target, Layers, ChevronDown, ChevronUp, DollarSign, ArrowRight, Link2, Sparkles, Loader2, Copy, Check, Gauge, Brain, Wrench
+  TrendingUp, ArrowUpRight, Target, Layers, ChevronDown, ChevronUp, DollarSign, ArrowRight, Link2, Sparkles, Loader2, Copy, Check, Gauge, Brain
 } from 'lucide-react';
 import type { Timeline } from '../../types/incident';
 import type { OrchestrationResponse } from '../../types/incident';
@@ -22,6 +22,10 @@ interface SecurityPostureDashboardProps {
   incidentId?: string;
   onNavigateToCostImpact?: () => void;
   onNavigateToTimeline?: () => void;
+  onNavigateToIncidentHistory?: () => void;
+  onNavigateToProtocol?: () => void;
+  onNavigateToExport?: () => void;
+  onNavigateToRemediation?: () => void;
 }
 
 // Demo fallback when backend is offline
@@ -118,6 +122,10 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
   analysisTime: _analysisTime,
   onNavigateToCostImpact,
   onNavigateToTimeline,
+  onNavigateToIncidentHistory,
+  onNavigateToProtocol,
+  onNavigateToExport,
+  onNavigateToRemediation,
 }) => {
   const metrics = useMemo(() => {
     const events = timeline?.events || [];
@@ -466,7 +474,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
             <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
               <Link2 className="w-5 h-5 text-amber-700" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-bold text-amber-900">
                 Cross-Incident Correlation Detected
               </p>
@@ -480,7 +488,46 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               )}
               <p className="text-[10px] text-amber-600 mt-1">Ask Aria: &quot;Have we seen this attack before?&quot;</p>
             </div>
+            {onNavigateToIncidentHistory && (
+              <button
+                onClick={onNavigateToIncidentHistory}
+                className="shrink-0 px-3 py-1.5 text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-200 rounded-lg transition-colors"
+              >
+                View similar incidents →
+              </button>
+            )}
           </div>
+        </motion.div>
+      )}
+
+      {/* Quick actions — surface key features */}
+      {(onNavigateToIncidentHistory || onNavigateToProtocol || onNavigateToExport || onNavigateToRemediation) && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 flex flex-wrap items-center gap-2"
+        >
+          <span className="text-xs font-semibold text-slate-600 mr-1">Explore:</span>
+          {onNavigateToIncidentHistory && (
+            <button onClick={onNavigateToIncidentHistory} className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-colors">
+              Similar incidents
+            </button>
+          )}
+          {onNavigateToProtocol && (
+            <button onClick={onNavigateToProtocol} className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-colors">
+              IR Protocol (NIST)
+            </button>
+          )}
+          {onNavigateToRemediation && (
+            <button onClick={onNavigateToRemediation} className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-colors">
+              Remediation + Nova Act
+            </button>
+          )}
+          {onNavigateToExport && (
+            <button onClick={onNavigateToExport} className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-colors">
+              Export report
+            </button>
+          )}
         </motion.div>
       )}
 
@@ -790,7 +837,7 @@ const SecurityPostureDashboard: React.FC<SecurityPostureDashboardProps> = ({
               </div>
               <div>
                 <h4 className="text-sm font-bold text-slate-900">What's the business impact?</h4>
-                <p className="text-xs text-slate-500">View cost exposure &amp; Nova Sentinel savings</p>
+                <p className="text-xs text-slate-500">View cost exposure &amp; wolfir savings</p>
               </div>
             </div>
             <ArrowRight className="w-5 h-5 text-emerald-600 group-hover:translate-x-1 transition-transform" />

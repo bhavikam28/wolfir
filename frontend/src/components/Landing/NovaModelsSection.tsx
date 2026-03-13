@@ -43,7 +43,7 @@ const NovaModelsSection: React.FC = () => {
             What, Why, Which Model — and Why
           </h2>
           <p className="text-base text-slate-600 max-w-2xl mx-auto">
-            Nova Sentinel uses 7 Amazon Nova capabilities. Each is chosen for what it does best — not one model for everything.
+            wolfir uses 7 Amazon Nova capabilities. Each is chosen for what it does best — not one model for everything.
           </p>
         </motion.div>
 

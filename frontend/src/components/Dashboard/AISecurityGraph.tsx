@@ -31,7 +31,8 @@ import {
 import { IconGraph } from '../ui/MinimalIcons';
 import api from '../../services/api';
 
-const NODE_STYLES: Record<string, { bg: string; border: string; icon: React.ComponentType<{ size?: number; color?: string }>; color: string }> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const NODE_STYLES: Record<string, { bg: string; border: string; icon: React.ComponentType<any>; color: string }> = {
   internet: { bg: '#f8fafc', border: '#cbd5e1', icon: AmazonCloudFront, color: '#64748b' },
   api: { bg: '#eef2ff', border: '#a5b4fc', icon: AmazonApiGateway, color: '#6366f1' },
   bedrock: { bg: '#ecfdf5', border: '#6ee7b7', icon: AmazonBedrock, color: '#059669' },
@@ -49,14 +50,17 @@ const NODE_INFO: Record<string, { what: string; why: string }> = {
   s3: { what: 'S3 buckets, RDS — data stores', why: 'Final target. Exfiltrated data, poisoned training sets, or leaked credentials end up here.' },
 };
 
-function CustomNode({ data }: { data: { label: string; sublabel?: string; type: string } }) {
+function CustomNode({ data }: { data: { label: string; sublabel?: string; type: string; selected?: boolean } }) {
   const style = NODE_STYLES[data.type] || NODE_STYLES.internet;
   const Icon = style.icon;
+  const selected = !!data.selected;
   return (
     <div className="flex flex-col items-center justify-center min-w-0">
       <div
-        className="relative w-[72px] h-[72px] rounded-xl border-2 shadow-sm flex items-center justify-center"
-        style={{ borderColor: style.border, backgroundColor: style.bg }}
+        className={`relative w-[72px] h-[72px] rounded-xl border-2 shadow-sm flex items-center justify-center transition-all ${
+          selected ? 'ring-4 ring-indigo-400 ring-offset-2 shadow-lg scale-105' : ''
+        }`}
+        style={{ borderColor: selected ? '#6366f1' : style.border, backgroundColor: style.bg }}
       >
         <Handle type="target" position={Position.Left} className="!w-2 !h-2 !border-2 !bg-white !top-1/2 !-translate-y-1/2" style={{ left: -14 }} />
         {Icon && <Icon size={56} color={style.color} />}
@@ -93,10 +97,20 @@ const INITIAL_EDGES: Edge[] = [
 ];
 
 const AISecurityGraph: React.FC = () => {
-  const [nodes, , onNodesChange] = useNodesState(INITIAL_NODES);
+  const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const [modelCount, setModelCount] = useState<number | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+
+  // Sync selected state to node data so CustomNode receives it
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: { ...n.data, selected: n.id === selectedNode },
+      }))
+    );
+  }, [selectedNode, setNodes]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -177,7 +191,9 @@ const AISecurityGraph: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-slate-500">Click a node to see what it is and why it matters for AI security.</p>
+              <p className="text-sm text-slate-500">
+                <strong>Click any node</strong> to see what it is and why it matters for AI security. The selected node will highlight with a blue ring.
+              </p>
             )}
             {selectedNode === 'iam' && (
               <a href="https://aegis-iam.vercel.app/" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300">
@@ -187,7 +203,7 @@ const AISecurityGraph: React.FC = () => {
             <div className="mt-4 pt-4 border-t border-slate-200">
               <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Attack path</p>
               <p className="text-sm text-slate-700 leading-relaxed">
-                Internet → API → Bedrock/SageMaker → IAM → S3. Nova Sentinel monitors InvokeModel, guardrails, and Shadow AI.
+                Internet → API → Bedrock/SageMaker → IAM → S3. wolfir monitors InvokeModel, guardrails, and Shadow AI.
               </p>
             </div>
           </div>

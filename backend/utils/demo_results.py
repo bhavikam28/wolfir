@@ -50,6 +50,22 @@ PRIV_ESCAL_TIMELINE = {
     "analysis_summary": "Privilege escalation from junior-dev to AdminRole, then creation of backdoor-admin.",
 }
 
+# --- SHADOW AI / LLM ABUSE ---
+SHADOW_AI_TIMELINE = {
+    "events": [
+        {"timestamp": "2026-03-01T09:00:00Z", "actor": "lambda-shadow-ai (UnapprovedLambdaRole)", "action": "InvokeModel", "resource": "Bedrock: amazon.nova-pro-v1:0", "severity": "HIGH", "details": "Ungoverned InvokeModel from non-approved Lambda role", "significance": "Shadow AI — model access outside approved policy."},
+        {"timestamp": "2026-03-01T09:15:00Z", "actor": "lambda-shadow-ai", "action": "InvokeModel", "resource": "Bedrock: amazon.nova-pro-v1:0", "severity": "HIGH", "details": "Repeated InvokeModel calls — potential API abuse", "significance": "High-volume usage from unexpected principal."},
+        {"timestamp": "2026-03-01T11:00:00Z", "actor": "dev-experiment", "action": "InvokeModelWithResponseStream", "resource": "Bedrock: amazon.nova-2-lite-v1:0", "severity": "HIGH", "details": "Streaming invocation from external IP 198.51.100.77", "significance": "Potential prompt injection vector — OWASP LLM01."},
+        {"timestamp": "2026-03-01T12:30:00Z", "actor": "lambda-shadow-ai", "action": "InvokeModel", "resource": "Bedrock: amazon.nova-pro-v1:0", "severity": "HIGH", "details": "Continued shadow AI usage", "significance": "Persistent ungoverned access."},
+        {"timestamp": "2026-03-02T17:00:00Z", "actor": "ai-security.amazonaws.com", "action": "GuardDutyFinding", "resource": "Bedrock: Shadow AI", "severity": "CRITICAL", "details": "Ungoverned Bedrock InvokeModel from non-approved principal — 47 invocations in 24h", "significance": "MITRE ATLAS AML.T0016 (Capability theft), OWASP LLM01."},
+    ],
+    "root_cause": "Lambda role UnapprovedLambdaRole and IAM user dev-experiment invoked Bedrock models without approval. Shadow AI — ungoverned LLM usage outside policy.",
+    "attack_pattern": "Shadow AI / LLM Abuse. Ungoverned InvokeModel from non-approved principals. MITRE ATLAS AML.T0051 (Prompt injection), AML.T0016 (Capability theft). OWASP LLM Top 10.",
+    "blast_radius": "Bedrock Nova Pro, Nova 2 Lite. Risk of prompt injection, data exfiltration via model output, cost abuse.",
+    "confidence": 0.93,
+    "analysis_summary": "Shadow AI detected: ungoverned Bedrock InvokeModel from Lambda and dev user. MITRE ATLAS and OWASP LLM Top 10 alignment.",
+}
+
 # --- UNAUTHORIZED ACCESS ---
 UNAUTH_ACCESS_TIMELINE = {
     "events": [
@@ -144,6 +160,26 @@ SCENARIO_DATA: Dict[str, Dict[str, Any]] = {
             "impact_assessment": {"resources_affected": 4, "iam_policies_to_modify": 1},
         },
     },
+    "shadow-ai": {
+        "timeline": SHADOW_AI_TIMELINE,
+        "risk_scores": [
+            {"event": "InvokeModel (shadow)", "risk_score": 82, "severity": "HIGH"},
+            {"event": "InvokeModel (shadow)", "risk_score": 85, "severity": "HIGH"},
+            {"event": "InvokeModelWithResponseStream", "risk_score": 78, "severity": "HIGH"},
+            {"event": "InvokeModel (shadow)", "risk_score": 88, "severity": "HIGH"},
+            {"event": "GuardDutyFinding", "risk_score": 96, "severity": "CRITICAL"},
+        ],
+        "remediation": {
+            "steps": [
+                {"order": 1, "action": "Revoke UnapprovedLambdaRole Bedrock access", "target": "UnapprovedLambdaRole", "severity": "CRITICAL", "risk": "CRITICAL", "details": "Remove bedrock:InvokeModel", "reason": "Stop shadow AI.", "risk_if_skipped": "Continued ungoverned access.", "api_call": "aws iam detach-role-policy --role-name UnapprovedLambdaRole", "automation": "manual"},
+                {"order": 2, "action": "Audit dev-experiment IAM user", "target": "dev-experiment", "severity": "CRITICAL", "risk": "CRITICAL", "details": "Review Bedrock permissions", "reason": "Prompt injection risk.", "risk_if_skipped": "OWASP LLM01.", "api_call": "aws iam list-attached-user-policies --user-name dev-experiment", "automation": "manual"},
+                {"order": 3, "action": "Enable Bedrock Guardrails", "target": "Bedrock", "severity": "HIGH", "risk": "HIGH", "details": "Content filters, prompt attack blocking", "reason": "Block injection.", "risk_if_skipped": "OWASP LLM01.", "api_call": "aws bedrock create-guardrail", "automation": "manual"},
+                {"order": 4, "action": "Add CloudTrail data events for Bedrock", "target": "CloudTrail", "severity": "MEDIUM", "risk": "MEDIUM", "details": "Full audit trail", "reason": "Compliance.", "risk_if_skipped": "Limited visibility.", "api_call": "aws cloudtrail put-event-selectors", "automation": "automated"},
+            ],
+            "estimated_time_minutes": 15,
+            "impact_assessment": {"resources_affected": 4, "iam_policies_to_modify": 2},
+        },
+    },
 }
 
 # Legacy fallbacks
@@ -203,10 +239,10 @@ def _build_demo_documentation(incident_id: str, incident_type: str, scenario: Di
 {blast_radius[:150]}{'…' if len(blast_radius) > 150 else ''}
 
 *Remediation*
-{len(steps)} steps identified. Full details in Nova Sentinel.
+{len(steps)} steps identified. Full details in wolfir.
 
 *Link*
-<https://nova-sentinel.app/incidents/{incident_id}|View in Nova Sentinel>""",
+<https://wolfir.app/incidents/{incident_id}|View in wolfir>""",
             },
             "confluence": {
                 "title": f"Incident Postmortem: {incident_id}",

@@ -141,7 +141,7 @@ const AttackPathVisualization: React.FC = () => {
             <motion.g initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 1.3, duration: 0.4 }}>
               <rect x="360" y="178" width="240" height="26" rx="13" fill="#ecfdf5" stroke="#10b981" strokeWidth="1.5" />
               <text x="480" y="195" textAnchor="middle" fill="#059669" fontSize="10" fontWeight="700" fontFamily="Inter, sans-serif">
-                Nova Sentinel — Threat Detected
+                wolfir — Threat Detected
               </text>
             </motion.g>
           </svg>

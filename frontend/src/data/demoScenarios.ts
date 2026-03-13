@@ -33,4 +33,11 @@ export const DEFAULT_DEMO_SCENARIOS: DemoScenario[] = [
     severity: 'HIGH',
     event_count: 3,
   },
+  {
+    id: 'shadow-ai',
+    name: 'Shadow AI / LLM Abuse',
+    description: 'Ungoverned Bedrock InvokeModel, prompt injection, OWASP LLM Top 10',
+    severity: 'CRITICAL',
+    event_count: 5,
+  },
 ];

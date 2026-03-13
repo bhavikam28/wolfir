@@ -31,7 +31,7 @@ from utils.logger import logger
 
 class VoiceAgent:
     """
-    Aria — Nova Sentinel's AI security intelligence assistant.
+    Aria — wolfir's AI security intelligence assistant.
     
     Supports two processing paths:
     - process_voice_query(): Text input → Nova 2 Lite → text response
@@ -156,12 +156,12 @@ class VoiceAgent:
                 if memory_ctx:
                     context_str = f"{memory_ctx}\n\n{context_str}" if context_str else memory_ctx
             system_prompt = (
-                "You are Aria, Nova Sentinel's AI security intelligence assistant. "
+                "You are Aria, wolfir's AI security intelligence assistant. "
                 "You help security teams investigate and respond to AWS cloud security incidents. "
                 "Be concise, actionable, and professional. "
                 f"{context_str}"
             ) if context_str else (
-                "You are Aria, Nova Sentinel's AI security intelligence assistant. "
+                "You are Aria, wolfir's AI security intelligence assistant. "
                 "You help security teams investigate and respond to AWS cloud security incidents. "
                 "Be concise, actionable, and professional."
             )
@@ -301,7 +301,7 @@ Do NOT use markdown formatting, bullet points, or special characters."""
         try:
             logger.info(f"Processing voice command via Nova 2 Lite: {command_text}")
             
-            prompt = f"""You are Aria, a voice command processor for Nova Sentinel security platform.
+            prompt = f"""You are Aria, a voice command processor for wolfir security platform.
 Process the following voice command and determine the user's intent.
 
 Voice Command: "{command_text}"
@@ -401,7 +401,7 @@ Return JSON with:
     
     def _build_aria_prompt(self, query_text: str, context_str: str) -> str:
         """Build the Aria system prompt for text-based queries."""
-        return f"""You are Aria, Nova Sentinel's AI security intelligence assistant.
+        return f"""You are Aria, wolfir's AI security intelligence assistant.
 You are a knowledgeable, professional, and approachable female AI assistant who helps security teams investigate and respond to AWS cloud security incidents through natural conversation.
 
 Your personality:

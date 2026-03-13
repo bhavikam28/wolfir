@@ -1,5 +1,5 @@
 /**
- * API client for Nova Sentinel backend
+ * API client for wolfir backend
  */
 import axios from 'axios';
 import type { AnalysisRequest, AnalysisResponse, DemoScenario, OrchestrationResponse } from '../types/incident';
@@ -101,6 +101,11 @@ export const demoAPI = {
             const response = await api.get('/api/demo/scenarios/unauthorized-access');
             return response.data;
           },
+
+  getShadowAIScenario: async (): Promise<{ scenario: string; name: string; events: any[] }> => {
+    const response = await api.get('/api/demo/scenarios/shadow-ai');
+    return response.data;
+  },
 
   /** Instant demo — pre-computed results, no Bedrock (~2s vs ~45s) */
   getQuickDemo: async (scenarioId: string): Promise<OrchestrationResponse> => {
@@ -242,10 +247,17 @@ export const authAPI = {
     const response = await api.get(`/api/auth/test-connection${params}`);
     return response.data;
   },
+  quickConnect: async (accessKeyId: string, secretAccessKey: string): Promise<{ connected: boolean; account_id?: string }> => {
+    const response = await api.post('/api/auth/quick-connect', { access_key_id: accessKeyId, secret_access_key: secretAccessKey });
+    return response.data;
+  },
+  getAccountTeaser: async (profile?: string): Promise<{ cloudtrail_events_7d: number; iam_users: number; security_hub_findings: number }> => {
+    const params = profile ? `?profile=${encodeURIComponent(profile)}` : '';
+    const response = await api.get(`/api/auth/account-teaser${params}`);
+    return response.data;
+  },
 
-  /**
-   * List available AWS CLI profiles
-   */
+  /** List available AWS CLI profiles */
   listProfiles: async (): Promise<{ profiles: string[]; default_available: boolean }> => {
     const response = await api.get('/api/auth/available-profiles');
     return response.data;

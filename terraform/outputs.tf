@@ -15,7 +15,7 @@ output "next_steps" {
     Next steps to create your Bedrock Knowledge Base with S3 Vectors:
 
     1. Open Amazon Bedrock console → Knowledge bases → Create knowledge base
-    2. Name: nova-sentinel-playbooks (or your choice)
+    2. Name: wolfir-playbooks (or your choice)
     3. Choose "Quick create a new vector store" → Select "S3 vector bucket"
     4. For Data source: Create new S3 data source
        - S3 URI: s3://${aws_s3_bucket.kb_source.id}/
@@ -25,6 +25,6 @@ output "next_steps" {
     7. Copy the Knowledge base ID and set in .env:
        KNOWLEDGE_BASE_ID=<your-kb-id>
 
-    Nova Sentinel will use this for enhanced playbook retrieval when configured.
+    wolfir will use this for enhanced playbook retrieval when configured.
   EOT
 }

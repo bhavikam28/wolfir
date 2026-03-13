@@ -1,4 +1,4 @@
-# IAM Policy for Nova Sentinel
+# IAM Policy for wolfir
 
 The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions for full functionality.
 
@@ -22,7 +22,7 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "NovaSentinelCloudTrail",
+            "Sid": "WolfirCloudTrail",
             "Effect": "Allow",
             "Action": [
                 "cloudtrail:LookupEvents",
@@ -31,7 +31,7 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
             "Resource": "*"
         },
         {
-            "Sid": "NovaSentinelBedrock",
+            "Sid": "WolfirBedrock",
             "Effect": "Allow",
             "Action": [
                 "bedrock:InvokeModel",
@@ -45,7 +45,7 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
             ]
         },
         {
-            "Sid": "NovaSentinelDynamoDB",
+            "Sid": "WolfirDynamoDB",
             "Effect": "Allow",
             "Action": [
                 "dynamodb:PutItem",
@@ -54,15 +54,15 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
                 "dynamodb:DescribeTable",
                 "dynamodb:CreateTable"
             ],
-            "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT_ID:table/nova-sentinel-incident-memory"
+            "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT_ID:table/wolfir-incident-memory"
         }
     ]
 }
 ```
 
-4. Name it `NovaSentinelFull` (or similar) → **Create policy**
+4. Name it `WolfirFull` (or similar) → **Create policy**
 
-> **If you already have NovaSentinelCloudTrail:** Add a second inline policy with just the Bedrock statement above, or edit the existing policy to include both.
+> **If you already have WolfirCloudTrail:** Add a second inline policy with just the Bedrock statement above, or edit the existing policy to include both.
 
 ## Option 2a: Add DynamoDB only (fix "AccessDeniedException" for Cross-Incident Memory)
 
@@ -71,7 +71,7 @@ If you see `DynamoDB save failed... dynamodb:PutItem... not authorized`, add Dyn
 ```bash
 aws iam put-user-policy \
   --user-name secops-lens-pro \
-  --policy-name NovaSentinelDynamoDB \
+  --policy-name WolfirDynamoDB \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [{
@@ -83,14 +83,14 @@ aws iam put-user-policy \
         "dynamodb:DescribeTable",
         "dynamodb:CreateTable"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-1:155610685000:table/nova-sentinel-incident-memory"
+      "Resource": "arn:aws:dynamodb:us-east-1:155610685000:table/wolfir-incident-memory"
     }]
   }'
 ```
 
 Replace `155610685000` with your AWS account ID.
 
-**Verify:** In IAM → Users → secops-lens-pro → Permissions, you should see `NovaSentinelDynamoDB` (or 3 policies if adding to existing: NovaSentinelCloudTrail, SecOpsLensPro BedrockAccess, NovaSentinelDynamoDB). Wait 30–60 seconds for IAM to propagate, then retry.
+**Verify:** In IAM → Users → secops-lens-pro → Permissions, you should see `WolfirDynamoDB` (or 3 policies if adding to existing: WolfirCloudTrail, SecOpsLensPro BedrockAccess, WolfirDynamoDB). Wait 30–60 seconds for IAM to propagate, then retry.
 
 ## Option 2b: AWS CLI (inline policy — add Bedrock to existing user)
 
@@ -99,7 +99,7 @@ If you already have CloudTrail permissions, add **Bedrock** with:
 ```bash
 aws iam put-user-policy \
   --user-name secops-lens-pro \
-  --policy-name NovaSentinelBedrock \
+  --policy-name WolfirBedrock \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -124,7 +124,7 @@ Replace `155610685000` with your AWS account ID:
 ```bash
 aws iam put-user-policy \
   --user-name secops-lens-pro \
-  --policy-name NovaSentinelFull \
+  --policy-name WolfirFull \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -147,7 +147,7 @@ aws iam put-user-policy \
           "dynamodb:DescribeTable",
           "dynamodb:CreateTable"
         ],
-        "Resource": "arn:aws:dynamodb:us-east-1:155610685000:table/nova-sentinel-incident-memory"
+        "Resource": "arn:aws:dynamodb:us-east-1:155610685000:table/wolfir-incident-memory"
       }
     ]
   }'
@@ -171,11 +171,11 @@ Add this `Condition` block to each Statement to restrict CloudTrail, Bedrock, an
 
 1. **Wait ~30 seconds** for IAM changes to propagate
 2. **Refresh credentials** if using temporary/session credentials: run `aws login` again
-3. Click **Start CloudTrail Analysis** again in Nova Sentinel
+3. Click **Start CloudTrail Analysis** again in wolfir
 
 ## Other Requirements
 
 - **CloudTrail must be enabled** in your account. Enable it in: CloudTrail → Trails → Create trail (or use the default management-events trail).
 - **Bedrock model access**: In **Bedrock** → **Model access** (left sidebar), request access to Nova models (e.g. Amazon Nova Lite, Nova Pro). IAM allows the API call, but model access must be enabled per-account.
 - **Region**: Uses the region from your profile/config (e.g. `us-east-1`). Use `us-east-1` in the policy `Resource` if your app runs there.
-- **CloudTrail regions**: Nova Sentinel queries 12 regions by default (US, EU, Asia-Pacific). Set `CLOUDTRAIL_REGIONS=us-east-1,ap-northeast-1` to limit or customize.
+- **CloudTrail regions**: wolfir queries 12 regions by default (US, EU, Asia-Pacific). Set `CLOUDTRAIL_REGIONS=us-east-1,ap-northeast-1` to limit or customize.

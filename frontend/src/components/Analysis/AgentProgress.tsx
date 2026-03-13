@@ -34,11 +34,11 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
     agents.temporal?.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING';
 
   const agentConfig = [
-    { id: 'temporal', name: 'Temporal Analysis', model: 'Nova 2 Lite', icon: Timer, status: agents.temporal?.status || 'PENDING', desc: 'Builds incident timeline from CloudTrail. Identifies root cause, attack pattern, and blast radius.', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-    { id: 'visual', name: 'Architecture & STRIDE', model: 'Nova Pro', icon: ImageIcon, status: visualStatus, desc: 'Maps affected resources into a security visualization. STRIDE threat model from diagrams.', iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
-    { id: 'risk_scorer', name: 'Risk Scoring', model: 'Nova Micro', icon: Gauge, status: agents.risk_scorer?.status || 'PENDING', desc: 'Assigns severity and MITRE ATT&CK technique IDs to each event.', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-    { id: 'remediation', name: 'Remediation', model: 'Nova 2 Lite', icon: Wrench, status: agents.remediation?.status || 'PENDING', desc: 'Generates step-by-step remediation plan with AWS CLI commands.', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-    { id: 'documentation', name: 'Documentation', model: 'Nova 2 Lite', icon: BookOpen, status: agents.documentation?.status || 'PENDING', desc: 'Creates JIRA tickets, Slack alerts, and Confluence post-incident reports.', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+    { id: 'temporal', name: 'Temporal Analysis', model: 'Nova 2 Lite · temporal reasoning', packName: 'Tracker', icon: Timer, status: agents.temporal?.status || 'PENDING', desc: 'Builds incident timeline from CloudTrail. Identifies root cause, attack pattern, and blast radius.', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+    { id: 'visual', name: 'Architecture & STRIDE', model: 'Nova Pro · multimodal', packName: 'Scout', icon: ImageIcon, status: visualStatus, desc: 'Maps affected resources into a security visualization. STRIDE threat model from diagrams.', iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
+    { id: 'risk_scorer', name: 'Risk Scoring', model: 'Nova Micro · classification', packName: 'Scorer', icon: Gauge, status: agents.risk_scorer?.status || 'PENDING', desc: 'Assigns severity and MITRE ATT&CK technique IDs to each event.', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+    { id: 'remediation', name: 'Remediation', model: 'Nova 2 Lite · remediation', packName: 'Fixer', icon: Wrench, status: agents.remediation?.status || 'PENDING', desc: 'Generates step-by-step remediation plan with AWS CLI commands.', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+    { id: 'documentation', name: 'Documentation', model: 'Nova 2 Lite · documentation', packName: 'Scribe', icon: BookOpen, status: agents.documentation?.status || 'PENDING', desc: 'Creates JIRA tickets, Slack alerts, and Confluence post-incident reports.', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
   ];
 
   const getStatusIcon = (status: AgentStatus) => {
@@ -117,8 +117,15 @@ const AgentProgress: React.FC<AgentProgressProps> = ({ agents }) => {
                         </div>
                         {getStatusIcon(agent.status)}
                       </div>
-                      <h4 className="text-sm font-bold text-slate-900 mb-0.5">{agent.name}</h4>
-                      <p className="text-xs text-slate-500 font-medium mb-2">{agent.model}</p>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="text-sm font-bold text-slate-900">{agent.name}</h4>
+                        {(agent as { packName?: string }).packName && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold" title="wolf + ir — hunts in a pack">
+                            {(agent as { packName: string }).packName}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mb-2" title="Model used for this step">{(agent as { model: string }).model}</p>
                       <p className="text-xs text-slate-600 leading-relaxed">{agent.desc}</p>
                       {isRunning && (
                         <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">

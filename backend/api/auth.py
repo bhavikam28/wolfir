@@ -1,8 +1,9 @@
 """
 AWS Authentication API endpoints
 """
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Body
 from typing import Dict, Any, Optional
+from pydantic import BaseModel
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 
@@ -11,6 +12,34 @@ from utils.logger import logger
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 settings = get_settings()
+
+
+class QuickConnectRequest(BaseModel):
+    access_key_id: str
+    secret_access_key: str
+
+
+@router.post("/quick-connect")
+async def quick_connect(request: QuickConnectRequest) -> Dict[str, Any]:
+    """
+    Quick Connect — paste temporary access key + secret. Use once, store nothing.
+    For judges who can't run local CLI. Credentials never stored.
+    """
+    try:
+        session = boto3.Session(
+            aws_access_key_id=request.access_key_id.strip(),
+            aws_secret_access_key=request.secret_access_key.strip(),
+        )
+        sts = session.client("sts", region_name=settings.aws_region)
+        identity = sts.get_caller_identity()
+        return {
+            "connected": True,
+            "account_id": identity.get("Account"),
+        }
+    except (NoCredentialsError, ClientError) as e:
+        return {"connected": False, "error": str(e)}
+    except Exception as e:
+        return {"connected": False, "error": str(e)}
 
 
 @router.get("/test-connection")
@@ -99,6 +128,64 @@ async def test_aws_connection(
             status_code=500,
             detail=user_friendly_message(e, "Connection test failed. Please check your AWS configuration.")
         )
+
+
+@router.get("/account-teaser")
+async def get_account_teaser(
+    profile: Optional[str] = Query(None, description="AWS profile name")
+) -> Dict[str, Any]:
+    """
+    Quick summary of account state after connection — CloudTrail events, IAM users, Security Hub findings.
+    Call after test-connection succeeds. Lightweight; uses last 7 days.
+    """
+    try:
+        if profile:
+            session = boto3.Session(profile_name=profile)
+        else:
+            session = boto3.Session()
+        region = settings.aws_region
+
+        teaser = {
+            "cloudtrail_events_7d": 0,
+            "iam_users": 0,
+            "security_hub_findings": 0,
+        }
+
+        # CloudTrail count (last 7 days)
+        try:
+            ct = session.client("cloudtrail", region_name=region)
+            from datetime import datetime, timezone, timedelta
+            end = datetime.now(timezone.utc)
+            start = end - timedelta(days=7)
+            resp = ct.lookup_events(
+                StartTime=start,
+                EndTime=end,
+                MaxResults=1000,
+            )
+            teaser["cloudtrail_events_7d"] = len(resp.get("Events", []))
+        except Exception:
+            pass
+
+        # IAM users count
+        try:
+            iam = session.client("iam")
+            resp = iam.list_users(MaxItems=1000)
+            teaser["iam_users"] = len(resp.get("Users", []))
+        except Exception:
+            pass
+
+        # Security Hub findings (0 if not enabled)
+        try:
+            sh = session.client("securityhub", region_name=region)
+            resp = sh.get_findings(MaxResults=100)
+            teaser["security_hub_findings"] = len(resp.get("Findings", []))
+        except Exception:
+            pass
+
+        return teaser
+    except Exception as e:
+        logger.warning(f"Account teaser failed: {e}")
+        return {"cloudtrail_events_7d": 0, "iam_users": 0, "security_hub_findings": 0}
 
 
 @router.get("/available-profiles")

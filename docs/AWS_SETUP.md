@@ -1,17 +1,17 @@
-# Judge Setup Guide - Secure AWS Authentication
+# AWS Setup Guide — Secure Credential Management
 
 ## Overview
 
-Nova Sentinel uses **secure, local AWS credential management** - judges' credentials are **never stored on our servers**. All AWS API calls are made directly from the backend using the judge's local AWS CLI configuration.
+wolfir uses **secure, local AWS credential management**. Your credentials are **never stored on our servers**. All AWS API calls are made directly from the backend using your local AWS CLI configuration.
 
 ## Authentication Methods
 
-### Method 1: AWS CLI Profile (Recommended) ✅
+### Method 1: AWS CLI Profile (Recommended)
 
 **How it works:**
-- Judges configure AWS credentials locally using AWS CLI
-- Backend reads credentials from `~/.aws/credentials` on the judge's machine
-- Credentials never leave the judge's local machine
+- Configure AWS credentials locally using AWS CLI
+- Backend reads credentials from `~/.aws/credentials` on your machine
+- Credentials never leave your local machine
 - No credentials transmitted over the network
 
 **Setup Steps:**
@@ -30,7 +30,7 @@ Nova Sentinel uses **secure, local AWS credential management** - judges' credent
 
 2. **Configure AWS Profile:**
    ```bash
-   aws configure --profile secops-lens
+   aws configure --profile wolfir
    ```
    
    Enter:
@@ -40,7 +40,7 @@ Nova Sentinel uses **secure, local AWS credential management** - judges' credent
    - Default output format: `json`
 
 3. **Verify Connection:**
-   - Open Nova Sentinel frontend
+   - Open wolfir frontend
    - Go to "Real AWS Account" tab
    - Click "Test AWS Connection"
    - Should show: ✅ "Successfully connected to AWS account"
@@ -50,9 +50,9 @@ Nova Sentinel uses **secure, local AWS credential management** - judges' credent
 - `bedrock:InvokeModel` - Use Nova AI models
 - `sts:GetCallerIdentity` - Verify identity (automatic)
 
-### Method 2: Environment Variables (Alternative)
+See [IAM-POLICY-CLOUDTRAIL.md](IAM-POLICY-CLOUDTRAIL.md) for full IAM policy JSON.
 
-For judges who prefer environment variables:
+### Method 2: Environment Variables (Alternative)
 
 ```bash
 export AWS_ACCESS_KEY_ID=your_access_key
@@ -64,30 +64,25 @@ cd backend
 python main.py
 ```
 
-### Method 3: AWS SSO (Coming Soon)
+### Method 3: AWS SSO (Enterprise)
 
-For enterprise judges using AWS SSO:
-- Browser-based authentication
-- No credentials stored locally
-- Automatic token refresh
+For AWS IAM Identity Center (SSO):
+```bash
+aws configure sso --profile wolfir
+aws sso login --profile wolfir
+```
 
 ## Security Features
 
-✅ **No Credential Storage**: Credentials are never stored in our database or transmitted to our servers
+- **No Credential Storage**: Credentials are never stored in our database or transmitted to our servers
+- **Local-Only Access**: Backend reads credentials from your local machine only
+- **Direct AWS API Calls**: All AWS API calls are made directly from backend to AWS (no proxy)
+- **Revocable Access**: Remove AWS profile anytime to revoke access
+- **Least Privilege**: Only requires read permissions for CloudTrail and Bedrock
 
-✅ **Local-Only Access**: Backend reads credentials from judge's local machine only
+## Quick Start
 
-✅ **Direct AWS API Calls**: All AWS API calls are made directly from backend to AWS (no proxy)
-
-✅ **Revocable Access**: Judges can revoke access anytime by removing AWS profile
-
-✅ **Least Privilege**: Only requires read permissions for CloudTrail and Bedrock
-
-## For Hackathon Judges
-
-### Quick Start (5 minutes):
-
-1. **Clone the repository:**
+1. **Clone and install:**
    ```bash
    git clone <repo-url>
    cd secops-lens-pro
@@ -95,14 +90,12 @@ For enterprise judges using AWS SSO:
 
 2. **Configure AWS credentials:**
    ```bash
-   aws configure --profile secops-lens
+   aws configure --profile wolfir
    ```
 
 3. **Start backend:**
    ```bash
    cd backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
    pip install -r requirements.txt
    python main.py
    ```
@@ -120,12 +113,11 @@ For enterprise judges using AWS SSO:
    - Click "Test AWS Connection"
    - Once connected, click "Analyze Real CloudTrail Events"
 
-### Testing Without Real AWS Account
+### Demo Mode (No AWS Required)
 
-If judges don't want to use their AWS account, they can:
-- Use the **"Demo Scenarios"** tab
-- Explore pre-built security incident scenarios
-- See full Nova Sentinel capabilities without AWS access
+- Use the **"Demo Scenarios"** tab to explore pre-built security incident scenarios
+- Full wolfir capabilities available without AWS access
+- For real CloudTrail analysis, connect your AWS account
 
 ## Troubleshooting
 
@@ -146,7 +138,7 @@ If judges don't want to use their AWS account, they can:
 ## Architecture
 
 ```
-Judge's Machine
+Your Machine
 ├── ~/.aws/credentials (local file, never transmitted)
 ├── Backend (reads credentials locally)
 │   ├── CloudTrail Service → AWS CloudTrail API
@@ -156,12 +148,4 @@ Judge's Machine
     └── Makes API calls to local backend
 ```
 
-**Key Point**: All AWS credentials stay on the judge's machine. The backend acts as a local proxy that uses the judge's credentials to make AWS API calls.
-
-## Questions?
-
-For hackathon judges:
-- Demo scenarios work without AWS credentials
-- Real AWS analysis requires local AWS CLI setup
-- All credentials remain on your machine
-- No data is stored on our servers
+All AWS credentials stay on your machine. The backend uses your credentials locally to make AWS API calls.

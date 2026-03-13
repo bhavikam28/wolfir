@@ -68,7 +68,7 @@ const FEATURES: Feature[] = [
     id: 'cost-impact',
     number: 4,
     name: 'Cost Impact Estimation',
-    description: 'Calculates financial exposure, breach liability, downtime costs, and Nova Sentinel ROI with cited sources.',
+    description: 'Calculates financial exposure, breach liability, downtime costs, and wolfir ROI with cited sources.',
     model: 'Nova 2 Lite',
     modelColor: 'text-amber-600 bg-amber-50 border-amber-200',
     icon: DollarSign,

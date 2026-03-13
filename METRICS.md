@@ -1,10 +1,10 @@
-# Nova Sentinel - Performance Metrics
+# wolfir - Performance Metrics
 
 ## Benchmark Results
 
 ### Time to Resolution
 
-| Task | Manual Process | Nova Sentinel | Improvement |
+| Task | Manual Process | wolfir | Improvement |
 |------|---------------|---------------|-------------|
 | **Incident Analysis** | 45-120 minutes | 47 seconds | **99.5% faster** |
 | Timeline Building | 30-60 minutes | 15 seconds | **98% faster** |
@@ -21,7 +21,7 @@
 
 ### Cost Analysis
 
-- **AWS Credits Used:** $100 (hackathon credits)
+- **AWS Credits Used:** Per-account usage
 - **Estimated Monthly Cost (Light Usage):** $2-5
 - **Cost per Incident Analysis:** ~$0.10-0.25
 
@@ -37,14 +37,14 @@
 
 ### Real-World Comparison
 
-**Before Nova Sentinel:**
+**Before wolfir:**
 - Security analyst manually reviews CloudTrail logs
 - Builds timeline in Excel/notepad
 - Researches attack patterns
 - Documents findings
 - **Total: 2+ hours**
 
-**With Nova Sentinel:**
+**With wolfir:**
 - Upload CloudTrail events (or connect AWS account)
 - 5 Nova agents analyze autonomously
 - Results in 47 seconds

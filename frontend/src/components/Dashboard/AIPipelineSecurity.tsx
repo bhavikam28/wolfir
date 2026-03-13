@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, ExternalLink, FileText, XCircle, Eye, Ticket, Search, Shield, GitBranch } from 'lucide-react';
 import {
-  IconShield, IconLock, IconMap, IconBarChart, IconSettings,
+  IconShield, IconLock, IconBarChart,
   IconAIPipeline, IconCost,
 } from '../ui/MinimalIcons';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -19,6 +19,8 @@ interface Technique {
   last_checked: string;
   details: string;
 }
+
+const NIST_AI_RMF_URL = 'https://www.nist.gov/itl/ai-risk-management-framework';
 
 const ATLAS_DETAILS: Record<string, {
   whatIsThis: string;
@@ -70,8 +72,8 @@ const ATLAS_DETAILS: Record<string, {
   },
   'AML.T0048': {
     whatIsThis: 'Adversaries may attempt to poison or manipulate fine-tuned models by injecting malicious data during the training/fine-tuning process.',
-    detection: 'Not applicable — Nova Sentinel uses foundation models via Bedrock API without custom fine-tuning. No training pipeline exists to attack.',
-    cleanReason: 'N/A — No fine-tuning pipeline. Nova Sentinel uses Amazon Bedrock foundation models directly, eliminating this attack surface entirely.',
+    detection: 'Not applicable — wolfir uses foundation models via Bedrock API without custom fine-tuning. No training pipeline exists to attack.',
+    cleanReason: 'N/A — No fine-tuning pipeline. wolfir uses Amazon Bedrock foundation models directly, eliminating this attack surface entirely.',
     warningReason: 'N/A for this deployment.',
     referenceUrl: 'https://atlas.mitre.org/techniques/AML.T0048',
     nistRef: 'NIST AI 100-2 — Model Provenance',
@@ -165,12 +167,19 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
     const useDemoFallback = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
     if (useDemoFallback) {
       setStatus(DEMO_AI_SECURITY_STATUS);
+      setLastScannedAt(new Date());
       setLoading(false);
       return;
     }
     api.get('/api/ai-security/status')
-      .then((r) => setStatus(r.data))
-      .catch(() => setStatus(DEMO_AI_SECURITY_STATUS))
+      .then((r) => {
+        setStatus(r.data);
+        setLastScannedAt(new Date());
+      })
+      .catch(() => {
+        setStatus(DEMO_AI_SECURITY_STATUS);
+        setLastScannedAt(new Date());
+      })
       .finally(() => setLoading(false));
   };
 
@@ -185,7 +194,16 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
       setGuardrailsList({ guardrails: [], error: 'Backend required' });
       setBedrockInventory({ models: [], count: 0, error: 'Backend required' });
       setGuardrailRecs({ recommendations: [], error: 'Backend required' });
-      setShadowAi({ findings: [], error: 'Backend required' });
+      setShadowAi({
+        findings: [
+          { principal: 'arn:aws:iam::123456789012:role/wolfir-bedrock-role', suspicious: false, event_time: '2024-01-15T14:32:00Z' },
+          { principal: 'arn:aws:iam::123456789012:role/demo-pipeline-role', suspicious: false, event_time: '2024-01-15T14:31:00Z' },
+          { principal: 'arn:aws:sts::123456789012:assumed-role/AdminRole/session', suspicious: true, event_time: '2024-01-15T14:30:00Z' },
+        ],
+        suspicious_count: 1,
+        total_invocations: 24,
+        is_simulated: true,
+      });
       return;
     }
     api.get('/api/ai-security/guardrail-config')
@@ -229,7 +247,7 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
     if (!lastScannedAt) return null;
     const sec = Math.floor((Date.now() - lastScannedAt.getTime()) / 1000);
     if (sec < 60) return `${sec}s ago`;
-    if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+    if (sec < 3600) return `${Math.floor(sec / 60)} min ago`;
     return lastScannedAt.toLocaleTimeString();
   };
 
@@ -293,10 +311,17 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
           <p className="text-xs text-slate-500 mt-0.5">
             MITRE ATLAS · OWASP LLM Top 10 · Bedrock inventory · Shadow AI detection
           </p>
+          {status?.is_simulated && (
+            <span className="inline-block mt-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+              Simulated — based on wolfir architecture analysis. Run backend for live scan data.
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {lastScannedAt && (
-            <span className="text-[11px] text-slate-500">Last scan: {formatLastScanned()}</span>
+            <span className="text-[11px] text-slate-500" title="Refreshes when you click Scan Now">
+              Last scanned: {formatLastScanned()}
+            </span>
           )}
           <button
             onClick={handleScanNow}
@@ -504,7 +529,7 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
               <div>
                 <h3 className="text-base font-bold text-slate-900">MITRE ATLAS Threat Detection</h3>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  Monitors <span className="font-medium text-indigo-700">Nova Sentinel&apos;s own AI pipeline</span> — not your architecture. 6 techniques. <span className="text-indigo-600 font-medium">Click any card</span> for details.
+                  Monitors <span className="font-medium text-indigo-700">wolfir&apos;s own AI pipeline</span> — not your architecture. 6 techniques. <span className="text-indigo-600 font-medium">Click any card</span> for details.
                 </p>
               </div>
             </div>
@@ -688,8 +713,15 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
             </div>
             {shadowAi && (
               <div className="px-6 pb-4">
-                <h4 className="text-sm font-bold text-slate-800 mb-2">Shadow AI Detection</h4>
-                {shadowAi.error ? (
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="text-sm font-bold text-slate-800">Shadow AI Detection</h4>
+                  {(shadowAi as { is_simulated?: boolean })?.is_simulated && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                      Simulated — typical InvokeModel patterns
+                    </span>
+                  )}
+                </div>
+                {shadowAi.error && !(shadowAi as { is_simulated?: boolean })?.is_simulated ? (
                   <p className="text-xs text-slate-500">{shadowAi.error}</p>
                 ) : (
                   <div className="space-y-2">
@@ -753,7 +785,7 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-indigo-500 to-violet-500" />
                 <div className="flex items-center gap-3 mb-3 pl-1">
                   <span className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-700 text-sm font-bold flex items-center justify-center">2</span>
-                  <span className="text-base font-bold text-slate-800">Nova Sentinel MITRE ATLAS</span>
+                  <span className="text-base font-bold text-slate-800">wolfir MITRE ATLAS</span>
                 </div>
                 <p className="text-sm text-slate-700 leading-relaxed pl-1">Abuse detection, anomalous invocations, output validation. Second layer monitors pipeline behavior.</p>
                 <div className="mt-3 flex flex-wrap gap-2 pl-1">
@@ -1014,7 +1046,7 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
             <div className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
               <p className="text-[12px] text-slate-700">
                 Total cost per incident analysis: <strong>${totalCost.toFixed(3)}</strong> — compared to $45/hour for a
-                human SOC analyst, Nova Sentinel provides a 3,400x cost reduction.
+                human SOC analyst, wolfir provides a 3,400x cost reduction.
               </p>
               <p className="text-[11px] text-slate-600">
                 <strong>How cost is calculated:</strong> Bedrock input ~$0.00003/1K tokens, output ~$0.00012/1K tokens. Nova Micro is cheaper than Nova Pro. We estimate ~130 tokens per invocation. <strong>Not a trigger</strong> — typical incident &lt;$0.02. Alerts only if cost spikes (e.g. &gt;$0.50 in a short window).

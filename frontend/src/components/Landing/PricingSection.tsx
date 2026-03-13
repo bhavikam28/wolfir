@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, Zap, Shield, DollarSign } from 'lucide-react';
+import { Check, Zap, DollarSign } from 'lucide-react';
 
 const PricingSection: React.FC = () => {
   return (

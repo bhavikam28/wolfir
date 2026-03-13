@@ -566,5 +566,130 @@ def generate_unauthorized_access_scenario() -> List[Dict[str, Any]]:
     return events
 
 
+def generate_shadow_ai_scenario() -> List[Dict[str, Any]]:
+    """
+    Generate mock CloudTrail events for Shadow AI / LLM Abuse scenario.
+    MITRE ATLAS: AML.T0051 (Prompt injection), AML.T0024 (Data exfiltration via model).
+    OWASP LLM Top 10: LLM01 - Prompt injection.
+    
+    Timeline:
+    - Mar 1: InvokeModel from unknown/unexpected principal (shadow AI)
+    - Mar 1: High-volume InvokeModel calls from non-approved app
+    - Mar 1: InvokeModelWithResponseStream with suspicious model ID
+    - Mar 2: GuardDuty / AI Security finding
+    """
+    base_time = datetime(2025, 3, 1, 9, 0, 0)
+    
+    events = [
+        # Event 1: InvokeModel from unexpected principal (shadow AI)
+        {
+            "eventVersion": "1.08",
+            "eventTime": base_time.isoformat() + "Z",
+            "eventName": "InvokeModel",
+            "eventSource": "bedrock.amazonaws.com",
+            "awsRegion": "us-east-1",
+            "sourceIPAddress": "10.0.42.100",
+            "userIdentity": {
+                "type": "AssumedRole",
+                "principalId": "AROAISHADOW:lambda-shadow-ai",
+                "arn": "arn:aws:sts::123456789012:assumed-role/UnapprovedLambdaRole/lambda-shadow-ai",
+                "accountId": "123456789012",
+                "sessionContext": {
+                    "sessionIssuer": {
+                        "type": "Role",
+                        "arn": "arn:aws:iam::123456789012:role/UnapprovedLambdaRole"
+                    }
+                }
+            },
+            "requestParameters": {
+                "modelId": "amazon.nova-pro-v1:0",
+                "inferenceConfig": {"maxTokens": 2048}
+            },
+            "responseElements": {"status": "Success"},
+            "resources": [{"type": "AWS::Bedrock::Model", "arn": "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0"}]
+        },
+        # Event 2: High-volume InvokeModel (API abuse)
+        {
+            "eventVersion": "1.08",
+            "eventTime": (base_time + timedelta(minutes=15)).isoformat() + "Z",
+            "eventName": "InvokeModel",
+            "eventSource": "bedrock.amazonaws.com",
+            "awsRegion": "us-east-1",
+            "sourceIPAddress": "10.0.42.100",
+            "userIdentity": {
+                "type": "AssumedRole",
+                "principalId": "AROAISHADOW:lambda-shadow-ai",
+                "arn": "arn:aws:sts::123456789012:assumed-role/UnapprovedLambdaRole/lambda-shadow-ai",
+                "accountId": "123456789012"
+            },
+            "requestParameters": {
+                "modelId": "amazon.nova-pro-v1:0"
+            },
+            "responseElements": {"status": "Success"}
+        },
+        # Event 3: InvokeModelWithResponseStream — potential prompt injection vector
+        {
+            "eventVersion": "1.08",
+            "eventTime": (base_time + timedelta(hours=2)).isoformat() + "Z",
+            "eventName": "InvokeModelWithResponseStream",
+            "eventSource": "bedrock.amazonaws.com",
+            "awsRegion": "us-east-1",
+            "sourceIPAddress": "198.51.100.77",
+            "userAgent": "python-requests/2.28.0",
+            "userIdentity": {
+                "type": "IAMUser",
+                "principalId": "AIDAIEXAMPLE",
+                "arn": "arn:aws:iam::123456789012:user/dev-experiment",
+                "accountId": "123456789012",
+                "userName": "dev-experiment"
+            },
+            "requestParameters": {
+                "modelId": "amazon.nova-2-lite-v1:0",
+                "inferenceConfig": {"maxTokens": 4096}
+            },
+            "responseElements": {"status": "Success"}
+        },
+        # Event 4: Another InvokeModel from same shadow principal
+        {
+            "eventVersion": "1.08",
+            "eventTime": (base_time + timedelta(hours=3, minutes=30)).isoformat() + "Z",
+            "eventName": "InvokeModel",
+            "eventSource": "bedrock.amazonaws.com",
+            "awsRegion": "us-east-1",
+            "sourceIPAddress": "10.0.42.100",
+            "userIdentity": {
+                "type": "AssumedRole",
+                "principalId": "AROAISHADOW:lambda-shadow-ai",
+                "arn": "arn:aws:sts::123456789012:assumed-role/UnapprovedLambdaRole/lambda-shadow-ai",
+                "accountId": "123456789012"
+            },
+            "requestParameters": {"modelId": "amazon.nova-pro-v1:0"},
+            "responseElements": {"status": "Success"}
+        },
+        # Event 5: AI Security / GuardDuty-style finding
+        {
+            "eventVersion": "1.08",
+            "eventTime": (base_time + timedelta(days=1, hours=8)).isoformat() + "Z",
+            "eventName": "InvokeModel",
+            "eventSource": "bedrock.amazonaws.com",
+            "awsRegion": "us-east-1",
+            "sourceIPAddress": "10.0.42.100",
+            "eventCategory": "Security Finding",
+            "findingType": "AI:Bedrock/ShadowAI.UngovernedModelAccess",
+            "severity": 8.5,
+            "userIdentity": {
+                "type": "AssumedRole",
+                "principalId": "AROAISHADOW:lambda-shadow-ai",
+                "arn": "arn:aws:sts::123456789012:assumed-role/UnapprovedLambdaRole/lambda-shadow-ai",
+                "accountId": "123456789012"
+            },
+            "title": "Ungoverned Bedrock InvokeModel from non-approved principal",
+            "description": "Lambda role UnapprovedLambdaRole invoked Nova Pro 47 times in 24h. Not in approved AI usage policy. MITRE ATLAS AML.T0016 (Capability theft), OWASP LLM01."
+        }
+    ]
+    
+    return events
+
+
 # Default scenario for demo
 DEFAULT_SCENARIO = generate_crypto_mining_scenario()

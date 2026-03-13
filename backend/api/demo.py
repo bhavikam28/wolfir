@@ -46,6 +46,13 @@ async def list_scenarios() -> Dict[str, Any]:
                 "description": "External actor accessing sensitive resources",
                 "severity": "HIGH",
                 "event_count": 3
+            },
+            {
+                "id": "shadow-ai",
+                "name": "Shadow AI / LLM Abuse",
+                "description": "Ungoverned Bedrock InvokeModel, prompt injection, OWASP LLM Top 10",
+                "severity": "CRITICAL",
+                "event_count": 5
             }
         ]
     }
@@ -99,6 +106,19 @@ async def get_unauthorized_access_scenario() -> Dict[str, Any]:
     }
 
 
+@router.get("/scenarios/shadow-ai")
+async def get_shadow_ai_scenario() -> Dict[str, Any]:
+    """Get Shadow AI / LLM Abuse demo scenario events"""
+    from utils.mock_data import generate_shadow_ai_scenario
+    events = generate_shadow_ai_scenario()
+    return {
+        "scenario": "shadow-ai",
+        "name": "Shadow AI / LLM Abuse",
+        "events": events,
+        "event_count": len(events)
+    }
+
+
 # Fast demo — returns pre-computed result without calling Bedrock (~2s vs ~45s)
 @router.get("/quick/{scenario_id}")
 async def get_quick_demo(scenario_id: str) -> Dict[str, Any]:
@@ -116,6 +136,7 @@ async def get_quick_demo(scenario_id: str) -> Dict[str, Any]:
         "data-exfiltration": "Data Exfiltration",
         "privilege-escalation": "Privilege Escalation",
         "unauthorized-access": "Unauthorized Access",
+        "shadow-ai": "Shadow AI / LLM Abuse",
     }
     incident_type = names.get(scenario_id, "Security Incident")
     result = get_quick_demo_result(scenario_id, incident_type)

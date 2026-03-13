@@ -47,7 +47,7 @@ else:
 
 **Option A: AWS CLI Profile (Recommended)**
 ```bash
-aws configure --profile nova-sentinel
+aws configure --profile wolfir
 # Enter their own Access Key ID
 # Enter their own Secret Access Key
 # Region: us-east-1
@@ -68,7 +68,7 @@ export AWS_DEFAULT_REGION=us-east-1
 ```bash
 # backend/.env
 AWS_REGION=us-east-1
-AWS_PROFILE=nova-sentinel  # Their profile name
+AWS_PROFILE=wolfir  # Their profile name
 ```
 
 ---
@@ -115,7 +115,7 @@ AWS_PROFILE=nova-sentinel  # Their profile name
 
 **For Users:**
 - Use IAM users/roles with least privilege (not root account)
-- Create dedicated IAM user for Nova Sentinel
+- Create dedicated IAM user for wolfir
 - Grant only necessary permissions:
   - `bedrock:InvokeModel`
   - `dynamodb:*` (or specific table permissions)

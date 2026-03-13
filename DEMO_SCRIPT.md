@@ -1,4 +1,4 @@
-# Nova Sentinel - 2-Minute Demo Script
+# wolfir - 2-Minute Demo Script
 
 ## Pre-Demo Setup (30 seconds)
 - [ ] Backend running on localhost:8000
@@ -9,7 +9,7 @@
 ## Demo Flow (2 minutes)
 
 ### 0:00 - 0:15 | Opening Hook
-**Say:** "Security teams spend 2+ hours manually investigating incidents. Nova Sentinel resolves them in under 1 minute using 5 Amazon Nova AI models working together."
+**Say:** "Security teams spend 2+ hours manually investigating incidents. wolfir resolves them in under 1 minute using 5 Amazon Nova AI models working together."
 
 **Show:** Landing page → "Try Live Demo" button
 
@@ -18,7 +18,7 @@
 ---
 
 ### 0:15 - 0:45 | Real AWS Account Analysis (PRIMARY FLOW)
-**Say:** "Let me show you how it works with a real AWS account. Judges can connect their own AWS CLI profiles - credentials never leave their machine."
+**Say:** "Let me show you how it works with a real AWS account. Users connect their own AWS CLI profiles — credentials never leave their machine."
 
 **Show:** Real AWS Account tab
 
@@ -67,7 +67,7 @@
 ---
 
 ### 1:50 - 2:00 | Closing & Metrics
-**Say:** "So to summarize: What takes security teams 2+ hours, Nova Sentinel does in under 1 minute using 5 Nova models. That's a 99.5% time reduction."
+**Say:** "So to summarize: What takes security teams 2+ hours, wolfir does in under 1 minute using 5 Nova models. That's a 99.5% time reduction."
 
 **Show:** Back to landing page or results summary
 
@@ -78,7 +78,7 @@
 ## Fallback Demo (If AWS Connection Fails)
 
 ### 0:00 - 0:15 | Opening (Same)
-**Say:** "Security teams spend 2+ hours manually investigating incidents. Nova Sentinel resolves them in under 1 minute."
+**Say:** "Security teams spend 2+ hours manually investigating incidents. wolfir resolves them in under 1 minute."
 
 **Click:** "Try Live Demo"
 
@@ -143,7 +143,7 @@
 A: Each Nova model is optimized for different tasks. Nova Micro for fast scoring, Nova Pro for visual understanding, Nova 2 Lite for complex reasoning. We match the model to the task.
 
 **Q: How does it connect to AWS?**
-A: Judges use their own AWS CLI profiles. Credentials never leave their machine - all AWS calls are made directly from the backend using their local credentials.
+A: Users use their own AWS CLI profiles. Credentials never leave their machine — all AWS calls are made directly from the backend using their local credentials.
 
 **Q: What about Nova Act?**
 A: Currently using Nova 2 Lite for documentation content generation. Nova Act is designed for browser automation - that's a future enhancement to actually post to JIRA/Slack via browser automation.
@@ -152,4 +152,4 @@ A: Currently using Nova 2 Lite for documentation content generation. Nova Act is
 A: We're seeing 95%+ confidence scores on root cause identification. The temporal reasoning with Nova 2 Lite is very strong.
 
 **Q: What's the cost?**
-A: Using AWS credits from the hackathon. Estimated $2-5/month for light usage. Each user uses their own AWS account.
+A: Estimated $2-5/month for light usage. Each user uses their own AWS account.

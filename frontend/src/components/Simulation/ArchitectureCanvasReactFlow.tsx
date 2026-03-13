@@ -29,7 +29,8 @@ interface ArchitectureCanvasReactFlowProps {
   remediationStep: number;
 }
 
-const AWS_ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AWS_ICONS: Record<string, React.ComponentType<any>> = {
   internet: AmazonCloudFront,
   iam: AwsIdentityAndAccessManagement,
   ec2: AmazonEc2,
@@ -192,7 +193,7 @@ export const ArchitectureCanvasReactFlow: React.FC<ArchitectureCanvasReactFlowPr
       labelBgStyle: { fill: 'rgba(30,41,59,0.97)' },
       labelBgBorderRadius: 4,
       labelBgPadding: [4, 8] as [number, number],
-      animated: attackerNodeId && (e.from === attackerNodeId || e.to === attackerNodeId),
+      animated: !!(attackerNodeId && (e.from === attackerNodeId || e.to === attackerNodeId)),
       style: { stroke: attackerNodeId && (e.from === attackerNodeId || e.to === attackerNodeId) ? '#fb923c' : '#64748b', strokeWidth: 2 },
       markerEnd: { type: MarkerType.ArrowClosed, color: attackerNodeId && (e.from === attackerNodeId || e.to === attackerNodeId) ? '#fb923c' : '#64748b' },
     })),

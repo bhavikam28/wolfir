@@ -73,7 +73,7 @@ def _get_cloudtrail_client(session: boto3.Session, region: str, target_role_arn:
         sts = session.client('sts', region_name=region)
         assumed = sts.assume_role(
             RoleArn=target_role_arn,
-            RoleSessionName="nova-sentinel-cloudtrail",
+            RoleSessionName="wolfir-cloudtrail",
         )
         creds = assumed['Credentials']
         return boto3.client(

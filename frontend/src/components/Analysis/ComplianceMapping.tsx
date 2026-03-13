@@ -25,6 +25,8 @@ interface ComplianceControl {
   remediation: string;
   awsCli?: string;
   reference?: string;
+  /** Why this timeline event maps to this control — explicit mapping reasoning */
+  mappingReason?: string;
 }
 
 const FRAMEWORK_CONFIG: Record<string, { name: string; color: string; bg: string; border: string }> = {
@@ -97,6 +99,9 @@ function generateComplianceMappings(timeline: Timeline, incidentType?: string): 
     events.some(e => (e.action || '').toLowerCase().includes('run') || (e.action || '').toLowerCase().includes('instance'));
 
   if (hasIAMIssue || hasCryptoMining) {
+    const iamMappingReason = events.some(e => /AssumeRole|policy|privilege/i.test(e.action || ''))
+      ? 'Timeline contains AssumeRole, policy changes, or privilege-escalation events → IAM controls apply.'
+      : 'EC2/crypto-mining abuse indicates credential compromise → IAM least-privilege controls apply.';
     controls.push(
       {
         id: 'cis-1', framework: 'CIS', controlId: 'CIS 1.16', title: 'Ensure IAM policies are attached only to groups or roles',
@@ -108,6 +113,7 @@ function generateComplianceMappings(timeline: Timeline, incidentType?: string): 
 aws iam detach-user-policy --user-name <USERNAME> --policy-arn <POLICY_ARN>
 aws iam add-user-to-group --user-name <USERNAME> --group-name <GROUP>`,
         reference: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#use-groups-for-permissions',
+        mappingReason: iamMappingReason,
       },
       {
         id: 'nist-1', framework: 'NIST', controlId: 'AC-6', title: 'Least Privilege',
@@ -118,6 +124,7 @@ aws iam add-user-to-group --user-name <USERNAME> --group-name <GROUP>`,
         awsCli: `aws iam generate-service-last-accessed-details --arn <ROLE_ARN>
 aws accessanalyzer start-policy-generation --policy-generation-details '{"principalArn":"<ROLE_ARN>"}'`,
         reference: 'https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final',
+        mappingReason: iamMappingReason,
       },
       {
         id: 'soc2-1', framework: 'SOC2', controlId: 'CC6.1', title: 'Logical and Physical Access Controls',
@@ -128,6 +135,7 @@ aws accessanalyzer start-policy-generation --policy-generation-details '{"princi
         awsCli: `aws iam create-virtual-mfa-device --virtual-mfa-device-name <MFA_NAME>
 aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --authentication-code1 <CODE1> --authentication-code2 <CODE2>`,
         reference: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html',
+        mappingReason: iamMappingReason,
       },
       {
         id: 'pci-1', framework: 'PCI', controlId: 'Req 7.1', title: 'Limit access to system components',
@@ -137,11 +145,15 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Implement role-based access control for all CDE resources. Restrict privileges to minimum necessary and document business justification for each access grant.',
         awsCli: 'aws iam put-role-policy --role-name <ROLE> --policy-name RestrictCDE --policy-document file://least-privilege-policy.json',
         reference: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage.html',
+        mappingReason: iamMappingReason,
       },
     );
   }
 
   if (hasDataAccess) {
+    const dataMappingReason = events.some(e => /GetObject|s3|download|PutObject/i.test(e.action || ''))
+      ? 'Timeline contains S3 GetObject/PutObject or data download events → data protection controls apply.'
+      : 'Timeline indicates data access or exfiltration patterns → encryption and DLP controls apply.';
     controls.push(
       {
         id: 'cis-2', framework: 'CIS', controlId: 'CIS 2.1.1', title: 'Ensure S3 Bucket Policy is set to deny HTTP requests',
@@ -151,6 +163,7 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Enable S3 bucket policies that enforce HTTPS-only access by adding a condition denying all HTTP requests.',
         awsCli: 'aws s3api put-bucket-policy --bucket <BUCKET> --policy \'{"Version":"2012-10-17","Statement":[{"Effect":"Deny","Principal":"*","Action":"s3:*","Resource":"arn:aws:s3:::<BUCKET>/*","Condition":{"Bool":{"aws:SecureTransport":"false"}}}]}\'',
         reference: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html',
+        mappingReason: dataMappingReason,
       },
       {
         id: 'nist-2', framework: 'NIST', controlId: 'SC-28', title: 'Protection of Information at Rest',
@@ -160,6 +173,7 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Enable default encryption using AWS KMS for all S3 buckets, EBS volumes, and RDS instances.',
         awsCli: 'aws s3api put-bucket-encryption --bucket <BUCKET> --server-side-encryption-configuration \'{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"}}]}\'',
         reference: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-encryption.html',
+        mappingReason: dataMappingReason,
       },
       {
         id: 'soc2-2', framework: 'SOC2', controlId: 'CC6.7', title: 'Restrict Transmission of Data',
@@ -169,6 +183,7 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Enable VPC Flow Logs, implement S3 access logging, and configure CloudWatch alarms for unusual data transfer patterns.',
         awsCli: 'aws ec2 create-flow-logs --resource-ids <VPC_ID> --resource-type VPC --traffic-type ALL --log-destination-type cloud-watch-logs --log-group-name VPCFlowLogs\naws s3api put-bucket-logging --bucket <BUCKET> --bucket-logging-status file://logging-config.json',
         reference: 'https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html',
+        mappingReason: dataMappingReason,
       },
       {
         id: 'pci-2', framework: 'PCI', controlId: 'Req 3.4', title: 'Render PAN unreadable anywhere it is stored',
@@ -178,11 +193,15 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Implement tokenization or strong encryption for all sensitive data at rest. Use AWS CloudHSM or KMS for key management.',
         awsCli: 'aws kms create-key --description "PCI-DSS data encryption key"\naws kms create-alias --alias-name alias/pci-data-key --target-key-id <KMS_KEY_ID>',
         reference: 'https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html',
+        mappingReason: dataMappingReason,
       },
     );
   }
 
   if (hasNetworkIssue || hasCryptoMining) {
+    const networkMappingReason = hasCryptoMining
+      ? 'Timeline contains RunInstances or EC2 abuse (crypto-mining) → network boundary and hardening controls apply.'
+      : 'Timeline contains security group or network changes → boundary protection controls apply.';
     controls.push(
       {
         id: 'cis-3', framework: 'CIS', controlId: 'CIS 5.2', title: 'Ensure no security groups allow ingress from 0.0.0.0/0 to port 22',
@@ -192,6 +211,7 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Restrict SSH access to known IP ranges or eliminate SSH entirely by using AWS Systems Manager Session Manager for remote access.',
         awsCli: 'aws ec2 revoke-security-group-ingress --group-id <SG_ID> --protocol tcp --port 22 --cidr 0.0.0.0/0\naws ec2 authorize-security-group-ingress --group-id <SG_ID> --protocol tcp --port 22 --cidr <YOUR_IP>/32',
         reference: 'https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules.html',
+        mappingReason: networkMappingReason,
       },
       {
         id: 'nist-3', framework: 'NIST', controlId: 'SC-7', title: 'Boundary Protection',
@@ -201,20 +221,23 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
         remediation: 'Implement AWS WAF on all public-facing endpoints, restrict security groups to minimum required ports, and enable VPC flow logs for all VPCs.',
         awsCli: 'aws wafv2 create-web-acl --name ProtectAPI --scope REGIONAL --default-action \'{"Block":{}}\'  --rules file://waf-rules.json\naws ec2 create-flow-logs --resource-ids <VPC_ID> --resource-type VPC --traffic-type ALL --log-destination-type s3 --log-destination arn:aws:s3:::<BUCKET>/flow-logs/',
         reference: 'https://docs.aws.amazon.com/waf/latest/developerguide/web-acl.html',
+        mappingReason: networkMappingReason,
       },
     );
   }
 
   // Always add logging/monitoring and baseline controls so all framework tabs have content
+  const baselineMappingReason = 'Incident analysis relies on CloudTrail — logging controls assessed as baseline.';
   controls.push(
     {
       id: 'cis-4', framework: 'CIS', controlId: 'CIS 3.1', title: 'Ensure CloudTrail is enabled in all regions',
       status: 'compliant', severity: 'low',
       description: 'CloudTrail logging is enabled across all regions, allowing comprehensive security event analysis and audit trails.',
-      impact: 'Multi-region CloudTrail is the foundation of cloud security monitoring. This enabled Nova Sentinel to detect and analyze this incident.',
+      impact: 'Multi-region CloudTrail is the foundation of cloud security monitoring. This enabled wolfir to detect and analyze this incident.',
       remediation: 'Already compliant — maintain multi-region CloudTrail logging. Consider enabling CloudTrail Insights for anomaly detection.',
       awsCli: 'aws cloudtrail get-trail-status --name <TRAIL_NAME>',
       reference: 'https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-and-update-a-trail.html',
+      mappingReason: baselineMappingReason,
     },
     {
       id: 'cis-5', framework: 'CIS', controlId: 'CIS 1.4', title: 'Ensure root user does not have access keys',
@@ -225,6 +248,7 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
       remediation: 'Delete root access keys and use IAM users/roles instead. Enable MFA for root account.',
       awsCli: 'aws iam delete-access-key --access-key-id <ACCESS_KEY_ID> --user-name root',
       reference: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html',
+      mappingReason: events.some(e => /root|access.?key/i.test(e.resource || '')) ? 'Timeline contains root or access-key events → root credential controls apply.' : baselineMappingReason,
     },
     {
       id: 'cis-6', framework: 'CIS', controlId: 'CIS 4.2', title: 'Ensure security group rules do not allow unrestricted ingress',
@@ -235,6 +259,7 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
       remediation: 'Restrict CIDR ranges to known IPs or VPC internal ranges only.',
       awsCli: 'aws ec2 revoke-security-group-ingress --group-id <SG_ID> --protocol all --cidr 0.0.0.0/0',
       reference: 'https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules.html',
+      mappingReason: hasNetworkIssue || hasCryptoMining ? 'Timeline contains security group or EC2 abuse → ingress controls apply.' : baselineMappingReason,
     },
     {
       id: 'nist-4', framework: 'NIST', controlId: 'AU-2', title: 'Audit Events',
@@ -593,6 +618,16 @@ const ComplianceMapping: React.FC<ComplianceMappingProps> = ({ timeline, inciden
                     className="border-t border-slate-100"
                   >
                     <div className="px-4 py-4 space-y-3">
+                      {/* Why this control applies — mapping reasoning */}
+                      {control.mappingReason && (
+                        <div className="p-3 bg-indigo-50/60 border border-indigo-200/60 rounded-lg">
+                          <p className="text-xs font-bold text-indigo-800 mb-1 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> Why this control applies
+                          </p>
+                          <p className="text-xs text-indigo-700 leading-relaxed">{control.mappingReason}</p>
+                        </div>
+                      )}
+
                       {/* Finding */}
                       <div>
                         <p className="text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">

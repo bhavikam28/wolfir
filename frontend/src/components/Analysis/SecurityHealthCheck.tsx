@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import {
   Shield,
   Sparkles,
@@ -268,12 +269,23 @@ export const SecurityHealthCheck: React.FC<SecurityHealthCheckProps> = ({
                       return (
                         <div key={f.id} className="p-3 rounded-lg border border-slate-100 bg-white">
                           <div className="flex items-start justify-between gap-2">
-                            <div>
+                            <div className="flex-1 min-w-0">
                               <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${style.bg} ${style.text}`}>
                                 {f.severity}
                               </span>
                               <p className="text-sm font-semibold text-slate-800 mt-1">{f.title}</p>
-                              <p className="text-xs text-slate-600 mt-0.5">{f.description}</p>
+                              <div className="text-xs text-slate-600 mt-0.5 prose prose-sm max-w-none prose-p:my-0.5 prose-ul:my-1 prose-li:my-0 prose-headings:text-slate-700 prose-headings:font-semibold prose-headings:my-2 first:prose-headings:mt-1">
+                                <ReactMarkdown
+                                  components={{
+                                    p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+                                    h2: ({ children }) => <p className="font-semibold text-slate-700 mt-2 mb-1 first:mt-0">{children}</p>,
+                                    ul: ({ children }) => <ul className="list-disc list-inside space-y-0.5 my-1">{children}</ul>,
+                                    li: ({ children }) => <li className="text-slate-600">{children}</li>,
+                                  }}
+                                >
+                                  {f.description}
+                                </ReactMarkdown>
+                              </div>
                             </div>
                             {f.cli && (
                               <button

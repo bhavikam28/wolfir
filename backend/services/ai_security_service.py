@@ -1,6 +1,6 @@
 """
 AI Security Service — AWS AI asset discovery, Bedrock inventory, OWASP LLM assessment.
-Part of Nova Sentinel's AI Security Posture Management (AI-SPM) for AWS.
+Part of wolfir's AI Security Posture Management (AI-SPM) for AWS.
 """
 import asyncio
 import json

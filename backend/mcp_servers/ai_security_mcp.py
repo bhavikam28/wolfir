@@ -1,6 +1,6 @@
 """
 AI Security MCP Server — Bedrock inventory, OWASP LLM, guardrail recommendations.
-Part of Nova Sentinel AI-SPM for AWS.
+Part of wolfir AI-SPM for AWS.
 """
 from typing import Dict, Any
 

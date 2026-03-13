@@ -1,5 +1,5 @@
 """
-Amazon Bedrock Guardrails — List and describe guardrails for Nova Sentinel.
+Amazon Bedrock Guardrails — List and describe guardrails for wolfir.
 Uses Bedrock control plane (bedrock client, not bedrock-runtime).
 """
 from typing import Dict, Any, List

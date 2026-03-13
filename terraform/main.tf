@@ -1,4 +1,4 @@
-# Nova Sentinel — Optional Knowledge Base (S3 Vectors)
+# wolfir — Optional Knowledge Base (S3 Vectors)
 # Deploy this to create an S3 bucket with sample security playbooks.
 # Then create a Bedrock Knowledge Base in the console with S3 Vectors (Quick create)
 # and connect it to this bucket. Set KNOWLEDGE_BASE_ID in your .env.

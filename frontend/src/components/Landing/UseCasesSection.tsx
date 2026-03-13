@@ -1,5 +1,5 @@
 /**
- * Use Cases Section — Security incident scenarios Nova Sentinel handles
+ * Use Cases Section — Security incident scenarios wolfir handles
  */
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -78,7 +78,7 @@ const UseCasesSection: React.FC = () => {
             Built for Real Security Incidents
           </h2>
           <p className="text-base text-slate-600 max-w-2xl mx-auto">
-            From crypto mining to privilege escalation — Nova Sentinel's multi-agent pipeline analyzes, classifies, and remediates.
+            From crypto mining to privilege escalation — wolfir's multi-agent pipeline analyzes, classifies, and remediates.
           </p>
         </motion.div>
 

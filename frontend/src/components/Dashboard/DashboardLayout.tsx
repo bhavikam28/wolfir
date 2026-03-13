@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight as ChevronRightIcon, ArrowLeft, Menu, X, Lock
 } from 'lucide-react';
-import NovaSentinelLogo from '../Logo';
+import WolfirLogo, { WolfirWordmark } from '../Logo';
+import { maskAccountId } from '../../utils/formatting';
 import {
   IconOverview, IconTimeline, IconAttackPath, IconAgent, IconHistory,
   IconCompliance, IconCost, IconRemediation, IconVisual, IconVoice,
@@ -25,13 +26,12 @@ export interface SidebarFeature {
 }
 
 export const SIDEBAR_FEATURES: SidebarFeature[] = [
-  // AI Security group (top — flagship differentiator)
+  // Analysis group first — judges look at overview first
+  { id: 'overview', label: 'Security Overview', icon: IconOverview, locked: false, group: 'analysis' },
   { id: 'ai-pipeline', label: 'AI Security Posture', icon: IconAIPipeline, locked: false, group: 'ai_security' },
   { id: 'security-graph', label: 'Security Graph', icon: IconGraph, locked: false, group: 'ai_security' },
   { id: 'ai-compliance', label: 'AI Compliance', icon: IconCompliance, locked: false, group: 'ai_security' },
-  // Analysis group
-  { id: 'overview', label: 'Security Overview', icon: IconOverview, locked: false, group: 'analysis' },
-  { id: 'timeline', label: 'Incident Timeline', icon: IconTimeline, locked: false, group: 'analysis' },
+  { id: 'timeline', label: 'Incident Timeline', icon: IconTimeline, locked: false, group: 'analysis', requiresAnalysis: true },
   { id: 'attack-path', label: 'Attack Path', icon: IconAttackPath, locked: false, group: 'analysis' },
   { id: 'changeset', label: 'ChangeSet Risk', icon: IconChangeSet, locked: false, badge: 'NEW', badgeColor: 'bg-indigo-100 text-indigo-600', group: 'analysis' },
   { id: 'agentic-query', label: 'Autonomous Agent', icon: IconAgent, locked: false, badge: 'NEW', badgeColor: 'bg-indigo-100 text-indigo-600', group: 'analysis' },
@@ -77,10 +77,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const groups = [
-    { key: 'ai_security', label: 'AI Security' },
-    { key: 'analysis', label: 'Analysis' },
+    { key: 'analysis', label: 'Quick Start' },
+    { key: 'ai_security', label: 'AI Security Posture' },
     { key: 'intelligence', label: 'Intelligence' },
-    { key: 'tools', label: 'Tools' },
+    { key: 'tools', label: 'Utilities' },
   ];
 
   const renderSidebar = (isMobile = false) => (
@@ -89,16 +89,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-4 py-5 border-b border-slate-700/50`}>
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <NovaSentinelLogo size={24} animated={false} />
+            <WolfirLogo size={24} animated={false} />
             <div>
-              <h2 className="text-sm font-bold text-white leading-tight">Nova Sentinel</h2>
+              <WolfirWordmark size="sm" dark />
               <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                 {mode === 'demo' ? 'Demo Mode' : 'Console'}
               </p>
             </div>
           </div>
         )}
-        {collapsed && <NovaSentinelLogo size={24} animated={false} />}
+        {collapsed && <WolfirLogo size={24} animated={false} />}
         {!isMobile && (
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -113,7 +113,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {!collapsed && mode === 'console' && awsAccountId && (
         <div className="px-4 py-2">
           <div className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 truncate" title={`Connected: ${awsAccountId}`}>
-            Connected: {awsAccountId}
+            Connected: {maskAccountId(awsAccountId)}
           </div>
         </div>
       )}
@@ -215,8 +215,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-[#0f172a] flex">
-      {/* Desktop Sidebar — premium dark theme (Seddle-inspired) */}
-      <aside className={`hidden lg:flex flex-col bg-slate-900/95 border-r border-slate-700/50 transition-all duration-300 flex-shrink-0 ${
+      {/* Desktop Sidebar — premium dark theme with subtle transition to content */}
+      <aside className={`hidden lg:flex flex-col bg-slate-900/95 border-r border-slate-700/50 transition-all duration-300 flex-shrink-0 shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)] ${
         collapsed ? 'w-16' : 'w-60'
       }`}>
         {renderSidebar()}

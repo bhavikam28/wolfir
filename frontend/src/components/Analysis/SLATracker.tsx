@@ -35,9 +35,9 @@ function formatSLA(seconds: number): string {
 }
 
 const SLA_DESCRIPTIONS: Record<string, string> = {
-  detection: 'Time from incident start to first detection. Industry target: 15 min. Nova Sentinel meets this by analyzing CloudTrail in seconds.',
+  detection: 'Time from incident start to first detection. Industry target: 15 min. wolfir meets this by analyzing CloudTrail in seconds.',
   containment: 'Time to contain the threat (e.g., isolate resources). Target: 1 hr. We meet this by generating containment steps immediately.',
-  remediation: 'Time to full remediation plan. Target: 24 hr. Nova Sentinel produces actionable remediation with AWS CLI in minutes.',
+  remediation: 'Time to full remediation plan. Target: 24 hr. wolfir produces actionable remediation with AWS CLI in minutes.',
   documentation: 'Time to document for postmortem. Target: 48 hr. Automated JIRA/Slack/Confluence docs generated at analysis completion.',
 };
 
@@ -48,8 +48,8 @@ export const SLATracker: React.FC<SLATrackerProps> = ({ checkpoints, compact }) 
   const totalCount = checkpoints.length;
   const allMet = metCount === totalCount;
   const summaryText = allMet
-    ? 'Nova Sentinel vs. industry targets — all checkpoints met'
-    : `Nova Sentinel vs. industry targets — ${metCount} of ${totalCount} checkpoints met`;
+    ? 'wolfir vs. industry targets — all checkpoints met'
+    : `wolfir vs. industry targets — ${metCount} of ${totalCount} checkpoints met`;
 
   return (
     <motion.div
@@ -75,7 +75,7 @@ export const SLATracker: React.FC<SLATrackerProps> = ({ checkpoints, compact }) 
         </span>
       </div>
       <div className="p-3">
-        <p className="text-[11px] text-slate-600 mb-3">Industry-standard incident response targets. Nova Sentinel measures elapsed time from analysis start to each checkpoint.</p>
+        <p className="text-[11px] text-slate-600 mb-3">Industry-standard incident response targets. wolfir measures elapsed time from analysis start to each checkpoint.</p>
         <div className={`flex ${compact ? 'flex-wrap gap-2' : 'flex-col gap-3'}`}>
           {checkpoints.map((cp, i) => (
             <motion.div

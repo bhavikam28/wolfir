@@ -5,7 +5,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Cloud, ArrowRight, ArrowLeft } from 'lucide-react';
-import NovaSentinelLogo from '../Logo';
+import WolfirLogo from '../Logo';
 
 interface LoginPageProps {
   onTryDemo: () => void;
@@ -49,13 +49,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onTryDemo, onConnectAWS, onBackTo
           className="text-center mb-12"
         >
           <div className="flex justify-center mb-6">
-            <NovaSentinelLogo size={48} animated={true} />
+            <WolfirLogo size={48} animated={true} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-2">
             Welcome Back
           </h1>
           <p className="text-sm text-slate-500">
-            Sign in to Nova Sentinel to continue
+            Sign in to wolfir to continue
           </p>
         </motion.div>
 
@@ -119,7 +119,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onTryDemo, onConnectAWS, onBackTo
         <a href="#" className="text-[11px] text-slate-400 hover:text-slate-600">Terms</a>
         <span className="mx-2 text-slate-300">·</span>
         <a href="#" className="text-[11px] text-slate-400 hover:text-slate-600">Privacy</a>
-        <p className="text-[11px] text-slate-400 mt-1">© 2026 Nova Sentinel. All rights reserved.</p>
+        <p className="text-[11px] text-slate-400 mt-1">© 2026 wolfir. All rights reserved.</p>
       </div>
     </div>
   );

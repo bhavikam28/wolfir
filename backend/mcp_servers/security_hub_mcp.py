@@ -3,9 +3,9 @@ Security Hub MCP Server — Custom implementation (boto3)
 
 Provides MCP-compatible tools for AWS Security Hub findings.
 Pre-correlated, severity-scored findings from GuardDuty, Inspector, etc.
-— ideal input for the Nova Sentinel pipeline.
+— ideal input for the wolfir pipeline.
 
-Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
+Inspired by awslabs/mcp patterns. Integrated into wolfir's FastMCP.
 """
 import asyncio
 from typing import Dict, Any, List, Optional
@@ -22,7 +22,7 @@ def _get_sh_client(session: boto3.Session, region: str, target_role_arn: Optiona
     """Create Security Hub client, optionally using AssumeRole."""
     if target_role_arn:
         sts = session.client('sts', region_name=region)
-        assumed = sts.assume_role(RoleArn=target_role_arn, RoleSessionName="nova-sentinel-securityhub")
+        assumed = sts.assume_role(RoleArn=target_role_arn, RoleSessionName="wolfir-securityhub")
         creds = assumed['Credentials']
         return boto3.client('securityhub', region_name=region,
             aws_access_key_id=creds['AccessKeyId'],

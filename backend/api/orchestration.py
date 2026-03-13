@@ -54,7 +54,16 @@ async def analyze_incident(
                 status_code=400,
                 detail="events must be valid JSON"
             )
-        
+        if not isinstance(events_list, list):
+            raise HTTPException(status_code=400, detail="events must be a JSON array")
+        # Input sanitization: cap event count to prevent huge/malicious payloads
+        MAX_EVENTS = 500
+        if len(events_list) > MAX_EVENTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Too many events (max {MAX_EVENTS}). Use a smaller time range or filter."
+            )
+
         # Read diagram if provided
         diagram_data = None
         if diagram:
@@ -179,7 +188,8 @@ async def analyze_from_cloudtrail(
             return {
                 "incident_id": f"INC-{uuid.uuid4().hex[:6].upper()}",
                 "status": "no_events",
-                "message": f"No security-relevant CloudTrail events found in the last {days_back} days.",
+                "message": f"No security events in the last {days_back} days — your account is quiet! Try expanding to 30 days or checking a different region.",
+                "days_back": days_back,
                 "results": {},
                 "metadata": {"incident_type": "No events"},
             }

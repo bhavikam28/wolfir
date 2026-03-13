@@ -1,6 +1,6 @@
-# AI Security Strategy — Nova Sentinel Pivot
+# AI Security Strategy — wolfir Pivot
 
-**Goal:** Shift Nova Sentinel from cloud-centric incident response to **AI Security Posture Management (AI-SPM)**, positioning it as a differentiated player in a market where Wiz (now merged with Google) is the dominant incumbent.
+**Goal:** Shift wolfir from cloud-centric incident response to **AI Security Posture Management (AI-SPM)**, positioning it as a differentiated player in a market where Wiz (now merged with Google) is the dominant incumbent.
 
 ---
 
@@ -171,7 +171,7 @@ From the Wiz dashboards and [Wiz AI Security Academy](https://www.wiz.io/academy
 
 ## Part 6: Differentiation vs. Wiz
 
-| Dimension | Wiz | Nova Sentinel (Proposed) |
+| Dimension | Wiz | wolfir (Proposed) |
 |-----------|-----|---------------------------|
 | **Focus** | Multi-cloud (AWS, Azure, GCP) | **AWS-native** — Bedrock, SageMaker, MCP |
 | **AI Models** | Generic | **Amazon Nova** — first-class support |
@@ -209,4 +209,4 @@ From the Wiz dashboards and [Wiz AI Security Academy](https://www.wiz.io/academy
 
 ---
 
-*Document generated from Wiz dashboard analysis and Nova Sentinel codebase review. Use as a living strategy document.*
+*Document generated from Wiz dashboard analysis and wolfir codebase review. Use as a living strategy document.*

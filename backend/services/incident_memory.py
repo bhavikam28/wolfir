@@ -1,7 +1,7 @@
 """
 Incident Memory Service — DynamoDB-backed persistent cross-incident memory.
 
-DynamoDB Table: "nova-sentinel-incident-memory"
+DynamoDB Table: "wolfir-incident-memory"
 - Partition Key: account_id (String)
 - Sort Key: incident_id (String)
 - GSI: severity-index (severity as partition key, timestamp as sort key)
@@ -40,7 +40,7 @@ class CorrelationResult:
     correlation_summary: str
 
 
-TABLE_NAME = "nova-sentinel-incident-memory"
+TABLE_NAME = "wolfir-incident-memory"
 DEFAULT_ACCOUNT = "demo-account"
 
 # In-memory fallback when DynamoDB unavailable (e.g. local demo without AWS)

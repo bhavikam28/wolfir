@@ -7,5 +7,5 @@ variable "aws_region" {
 variable "bucket_name_prefix" {
   description = "Prefix for the S3 bucket name (account ID is appended)"
   type        = string
-  default     = "nova-sentinel-kb-playbooks"
+  default     = "wolfir-kb-playbooks"
 }

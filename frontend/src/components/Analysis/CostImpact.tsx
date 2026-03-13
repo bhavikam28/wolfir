@@ -93,9 +93,9 @@ export function estimateCosts(
       label: 'Data Breach Exposure',
       icon: Database,
       amount,
-      description: 'Potential liability based on industry breach cost data for the scope observed.',
-      methodology: `Estimated from IBM CODB 2025: avg $4.88M per breach, scaled to observed scope. ${hasCritical ? 'Critical severity detected (+$25K exposure)' : 'Standard severity (+$5K exposure)'}. Includes notification costs, legal fees, and regulatory penalties.`,
-      source: 'IBM Cost of Data Breach Report 2025',
+      description: `Potential liability based on IBM Cost of Data Breach Report 2025 (avg $4.45M/incident), scaled to observed scope.`,
+      methodology: `Formula: IBM CODB 2025 average ($4.45M/incident) × scope factor. ${hasCritical ? 'Critical severity detected (+$25K exposure)' : 'Standard severity (+$5K exposure)'}. Includes notification costs, legal fees, and regulatory penalties.`,
+      source: 'IBM Cost of Data Breach Report 2025 (avg $4.45M/incident)',
       sourceUrl: 'https://www.ibm.com/reports/data-breach',
       color: 'text-red-700',
       bg: 'bg-red-50',
@@ -120,7 +120,7 @@ export function estimateCosts(
     label: 'Manual Remediation (Traditional)',
     icon: AlertTriangle,
     amount: Math.round((hasCritical ? 12000 : 4500) * scaleDown),
-    description: 'Estimated cost of security team labor for manual incident response without Nova Sentinel.',
+    description: 'Estimated cost of security team labor for manual incident response without wolfir.',
     methodology: `${hasCritical ? '3 security engineers × 20hrs × $200/hr' : '2 security engineers × 15hrs × $150/hr'}. Includes investigation, containment, eradication, recovery, and post-incident review.`,
     source: 'Bureau of Labor Statistics / Glassdoor',
     sourceUrl: 'https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm',
@@ -243,8 +243,8 @@ const CostImpact: React.FC<CostImpactProps> = ({
       total: Math.round(remediationSaving + downtimeSaving),
     };
   }, [costs]);
-  const novaSentinelSavings = savingsBreakdown.total;
-  const totalWithNova = totalTraditional - novaSentinelSavings;
+  const wolfirSavings = savingsBreakdown.total;
+  const totalWithWolfir = totalTraditional - wolfirSavings;
 
   const maxCost = Math.max(...costs.map(c => c.amount));
   const barColors: Record<string, string> = {
@@ -267,7 +267,7 @@ const CostImpact: React.FC<CostImpactProps> = ({
             <div>
             <h3 className="text-lg font-bold text-slate-800 tracking-tight">Cost Impact Estimation</h3>
             <p className="text-sm text-slate-500 mt-1">
-              Estimated financial exposure and Nova Sentinel savings
+              Estimated financial exposure and wolfir savings
             </p>
             </div>
           </div>
@@ -297,27 +297,46 @@ const CostImpact: React.FC<CostImpactProps> = ({
                 className="px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-400/30"
               >
                 <p className="text-[9px] font-bold text-emerald-300 uppercase">Nova Saves</p>
-                <p className="text-base font-bold text-emerald-200 font-mono">${novaSentinelSavings.toLocaleString()}</p>
+                <p className="text-base font-bold text-emerald-200 font-mono">${wolfirSavings.toLocaleString()}</p>
               </motion.div>
             )}
           </div>
           <p className="px-4 py-2 text-[11px] text-slate-500 bg-slate-50 border-t border-slate-100">
-            {costs.map((c) => `${c.label} ($${c.amount.toLocaleString()})`).join(' + ')} · {timeline.events?.length || 0} events · Expand below for methodology
+            {costs.map((c) => {
+              const cite = c.id === 'breach' ? ` — formula: IBM Cost of Data Breach Report 2025 (avg $4.45M/incident) × scope factor` : '';
+              return `${c.label} ($${c.amount.toLocaleString()}${cite})`;
+            }).join(' + ')} · {timeline.events?.length || 0} events · Expand below for methodology
           </p>
         </div>
 
         {/* Before/After comparison */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="p-4 rounded-xl bg-gradient-to-br from-rose-50 to-white border border-rose-100 shadow-sm">
-            <div className="text-[11px] font-semibold text-rose-600 uppercase tracking-widest mb-1.5">Without Nova Sentinel</div>
+            <div className="text-[11px] font-semibold text-rose-600 uppercase tracking-widest mb-1.5">Without wolfir</div>
             <div className="text-2xl font-bold text-rose-700 tabular-nums tracking-tight">${totalTraditional.toLocaleString()}</div>
             <p className="text-xs text-rose-500 mt-1.5">Traditional incident response</p>
           </div>
           <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-white border border-teal-100 shadow-sm">
-            <div className="text-[11px] font-semibold text-teal-600 uppercase tracking-widest mb-1.5">With Nova Sentinel</div>
-            <div className="text-2xl font-bold text-teal-700 tabular-nums tracking-tight">${totalWithNova.toLocaleString()}</div>
-            <p className="text-xs text-teal-600 mt-1.5 font-medium">Savings: ${novaSentinelSavings.toLocaleString()}</p>
+            <div className="text-[11px] font-semibold text-teal-600 uppercase tracking-widest mb-1.5">With wolfir</div>
+            <div className="text-2xl font-bold text-teal-700 tabular-nums tracking-tight">${totalWithWolfir.toLocaleString()}</div>
+            <p className="text-xs text-teal-600 mt-1.5 font-medium">Savings: ${wolfirSavings.toLocaleString()}</p>
           </div>
+        </div>
+
+        {/* Cost formula + $0.013/incident derivation */}
+        <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Cost Methodology</p>
+          <p className="text-xs text-slate-600 mb-2">
+            <strong>IBM Cost of Data Breach Report 2025</strong> — avg $4.45M/incident. wolfir scales estimates by event count and severity. Data breach liability uses formula: IBM CODB avg × scope factor.
+          </p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">wolfir per-incident cost (Nova)</p>
+          <p className="text-xs text-slate-600">
+            ~$0.013/incident = 116 Nova calls × 130 tokens avg × $0.000053/token (Nova 2 Lite). Breakdown: TemporalAgent 45 calls, RiskScorer 18, RemediationAgent 22, DocAgent 23, Visual 8 — total ~116 calls.
+          </p>
+          <a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:text-indigo-800 mt-1">
+            <ExternalLink className="w-3 h-3" />
+            IBM Cost of Data Breach Report
+          </a>
         </div>
 
         <div className="flex gap-4 mb-4">
@@ -333,7 +352,7 @@ const CostImpact: React.FC<CostImpactProps> = ({
               <motion.div
                 className="h-full rounded-full bg-teal-500"
                 initial={{ width: 0 }}
-                animate={{ width: `${totalTraditional > 0 ? Math.round((totalWithNova / totalTraditional) * 100) : 0}%` }}
+                animate={{ width: `${totalTraditional > 0 ? Math.round((totalWithWolfir / totalTraditional) * 100) : 0}%` }}
                 transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
               />
             </div>
@@ -349,9 +368,9 @@ const CostImpact: React.FC<CostImpactProps> = ({
             </div>
           </div>
           <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
-            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Nova Sentinel Saves</div>
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">wolfir Saves</div>
             <div className="text-xl font-bold text-teal-600 tabular-nums tracking-tight">
-              ${novaSentinelSavings.toLocaleString()}
+              ${wolfirSavings.toLocaleString()}
             </div>
           </div>
           <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
@@ -397,7 +416,13 @@ const CostImpact: React.FC<CostImpactProps> = ({
                       </div>
                     </div>
                     <CompactBar value={cost.amount} max={maxCost} color={barColors[cost.color] || '#6366F1'} />
-                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">{cost.description}</p>
+                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                        {cost.id === 'breach' ? (
+                          <>Breach liability: ${cost.amount.toLocaleString()} — based on IBM Cost of Data Breach Report 2025 (avg $4.45M/incident), scaled to observed scope. <span className="font-medium text-slate-600">Formula: IBM CODB avg × scope factor (events, severity).</span></>
+                        ) : (
+                          cost.description
+                        )}
+                      </p>
                   </div>
                 </div>
 
@@ -448,7 +473,7 @@ const CostImpact: React.FC<CostImpactProps> = ({
         })}
       </div>
 
-      {/* Nova Sentinel ROI */}
+      {/* wolfir ROI */}
       <div className="px-5 pb-5">
         <div className="p-4 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
@@ -456,10 +481,10 @@ const CostImpact: React.FC<CostImpactProps> = ({
               <TrendingUp className="w-5 h-5 text-teal-600" />
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-slate-800">Nova Sentinel ROI</h4>
+              <h4 className="text-sm font-bold text-slate-800">wolfir ROI</h4>
               <p className="text-xs text-slate-600 mb-2">
                 Autonomous response reduces manual remediation by <span className="font-bold">100%</span> and 
-                cuts downtime by <span className="font-bold">85%</span>, saving an estimated <span className="font-bold">${novaSentinelSavings.toLocaleString()}</span> per incident.
+                cuts downtime by <span className="font-bold">85%</span>, saving an estimated <span className="font-bold">${wolfirSavings.toLocaleString()}</span> per incident.
               </p>
               <a
                 href="https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm"

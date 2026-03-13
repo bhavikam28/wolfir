@@ -77,4 +77,4 @@ htmlcov/
 .pytest_cache/
 
 # Keep only essential MD files
-# (README.md, DEMO_SCRIPT.md, METRICS.md, JUDGE_SETUP.md, BILLING_AND_OPEN_SOURCE.md are kept)
+# (README.md, DEMO_SCRIPT.md, METRICS.md, BILLING_AND_OPEN_SOURCE.md are kept)

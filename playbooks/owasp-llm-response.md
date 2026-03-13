@@ -16,7 +16,7 @@ This playbook guides response to LLM-related security incidents aligned with the
 - **LLM10** Model Theft — Unauthorized model extraction
 
 ## Detection Indicators
-- Nova Sentinel OWASP LLM report shows WARNING or ALERT for any category
+- wolfir OWASP LLM report shows WARNING or ALERT for any category
 - Bedrock Guardrails blocking content (check CloudWatch metrics)
 - CloudTrail: InvokeModel from unexpected principals (Shadow AI)
 - Anomalous model invocation patterns (rate, model ID, region)

@@ -4,7 +4,7 @@ IAM MCP Server — Custom implementation (boto3)
 Provides MCP-compatible tools for IAM security analysis,
 policy auditing, role enumeration, and access review.
 
-Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
+Inspired by awslabs/mcp patterns. Integrated into wolfir's FastMCP.
 """
 import json
 import asyncio

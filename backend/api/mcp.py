@@ -1,6 +1,6 @@
 """
 MCP Server API endpoints
-Exposes Nova Sentinel security tools via Model Context Protocol.
+Exposes wolfir security tools via Model Context Protocol.
 
 Three interfaces:
 1. Standard MCP SSE endpoint (mounted at /mcp/) — for MCP-compatible clients

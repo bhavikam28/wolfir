@@ -11,16 +11,16 @@ const FAQSection: React.FC = () => {
 
   const faqs = [
     {
-      q: 'What is Nova Sentinel?',
-      a: 'Nova Sentinel is an agentic incident response pipeline powered by Amazon Nova. It orchestrates 5 Nova models plus Nova Act to go from security alert to remediation plan to documentation — autonomously, with human-in-the-loop approval for risky actions.',
+      q: 'What is wolfir?',
+      a: 'wolfir is an agentic incident response pipeline powered by Amazon Nova. It orchestrates 5 Nova models plus Nova Act to go from security alert to remediation plan to documentation — autonomously, with human-in-the-loop approval for risky actions.',
     },
     {
-      q: 'Who is Nova Sentinel for?',
-      a: 'Built for SOC analysts, cloud security engineers, and incident responders — including teams using AWS IAM Identity Center (SSO). If you\'re drowning in alerts and need autonomous response, Nova Sentinel is for you.',
+      q: 'Who is wolfir for?',
+      a: 'Built for SOC analysts, cloud security engineers, and incident responders — including teams using AWS IAM Identity Center (SSO). If you\'re drowning in alerts and need autonomous response, wolfir is for you.',
     },
     {
       q: 'What is Demo mode vs. real AWS analysis?',
-      a: 'Demo mode is a preview only — it shows how Nova Sentinel looks and works when connected to a real AWS account. It uses sample data (no real CloudTrail, no real IAM). Use it to explore the UI, workflow, and features. For actual incident response and security analysis, connect your AWS account and run real analysis against your CloudTrail logs.',
+      a: 'Demo mode is a preview only — it shows how wolfir looks and works when connected to a real AWS account. It uses sample data (no real CloudTrail, no real IAM). Use it to explore the UI, workflow, and features. For actual incident response and security analysis, connect your AWS account and run real analysis against your CloudTrail logs.',
       badges: [
         { icon: CheckCircle2, text: 'Demo: Preview only — sample data, no AWS account', color: 'bg-amber-50 border-amber-200 text-amber-700' },
         { icon: CheckCircle2, text: 'Real AWS: Your CloudTrail, your IAM — actual analysis', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
@@ -46,16 +46,16 @@ const FAQSection: React.FC = () => {
       a: 'Yes. We use your local AWS CLI profile or AWS SSO. No keys are stored on disk or transmitted. You can audit our open-source code on GitHub.',
     },
     {
-      q: 'Does Nova Sentinel use Amazon Bedrock Guardrails?',
-      a: 'Nova Sentinel uses MITRE ATLAS for AI pipeline security — prompt injection detection, API abuse monitoring, output validation. Amazon Bedrock Guardrails add a complementary layer: content filters, prompt-attack blocking, PII masking at the API level. We recommend enabling Guardrails for defense in depth. See the AI Pipeline Security tab for details.',
+      q: 'Does wolfir use Amazon Bedrock Guardrails?',
+      a: 'wolfir uses MITRE ATLAS for AI pipeline security — prompt injection detection, API abuse monitoring, output validation. Amazon Bedrock Guardrails add a complementary layer: content filters, prompt-attack blocking, PII masking at the API level. We recommend enabling Guardrails for defense in depth. See the AI Pipeline Security tab for details.',
     },
     {
-      q: 'What agents does Nova Sentinel use?',
-      a: 'Nova Sentinel uses 5 specialized pipeline agents (Detect, Investigate, Classify, Remediate, Document) plus an Agentic Query agent that autonomously picks tools from 5 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas). Security Health Check runs 5 agent queries with no incident required. All orchestrated via Strands Agents SDK.',
+      q: 'What agents does wolfir use?',
+      a: 'wolfir uses 5 specialized pipeline agents (Detect, Investigate, Classify, Remediate, Document) plus an Agentic Query agent that autonomously picks tools from 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security). Security Health Check runs 5 agent queries with no incident required. All orchestrated via Strands Agents SDK.',
     },
     {
       q: 'What does "agentic" mean?',
-      a: 'Multiple AI models work together with shared state. Nova Sentinel uses 5 Nova models: Temporal (timeline), Risk Scorer (severity), Remediation (action plan), Documentation (JIRA/Slack/Confluence), plus an Autonomous Agent that picks its own tools. Each does what it\'s best at — no manual triage.',
+      a: 'Multiple AI models work together with shared state. wolfir uses 5 Nova models: Temporal (timeline), Risk Scorer (severity), Remediation (action plan), Documentation (JIRA/Slack/Confluence), plus an Autonomous Agent that picks its own tools. Each does what it\'s best at — no manual triage.',
     },
     {
       q: 'How fast is the analysis?',

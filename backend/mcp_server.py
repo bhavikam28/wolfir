@@ -1,5 +1,5 @@
 """
-Nova Sentinel MCP Server
+wolfir MCP Server
 Standards-compliant Model Context Protocol server using the real mcp package.
 
 Uses FastMCP from the official mcp Python SDK to expose security analysis tools
@@ -42,11 +42,11 @@ from utils.mock_data import generate_crypto_mining_scenario, generate_data_exfil
 # Using the official MCP Python SDK (mcp>=1.11.0)
 
 mcp_server = FastMCP(
-    "nova-sentinel-security",
+    "wolfir-security",
     instructions=(
-        "Nova Sentinel — AI-powered AWS security analysis via Model Context Protocol. "
-        "Orchestrates 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, "
-        "Well-Architected Security) through Strands Agents SDK. "
+        "wolfir — AI-powered AWS security analysis via Model Context Protocol. "
+        "Orchestrates 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security) "
+        "through Strands Agents SDK. "
         "Exposes CloudTrail analysis, IAM auditing, risk scoring, remediation planning, "
         "visual report generation, and documentation tools."
     ),
@@ -574,9 +574,9 @@ async def get_demo_events(scenario: str) -> dict:
 
 # ========== MCP RESOURCES ==========
 
-@mcp_server.resource("nova-sentinel://models")
+@mcp_server.resource("wolfir://models")
 async def get_models() -> str:
-    """List all Nova AI models used by Nova Sentinel."""
+    """List all Nova AI models used by wolfir."""
     models = {
         "models": [
             {"id": "amazon.nova-2-lite-v1:0", "name": "Nova 2 Lite", "role": "Temporal Analysis, Documentation, Remediation"},
@@ -589,11 +589,11 @@ async def get_models() -> str:
     return json.dumps(models, indent=2)
 
 
-@mcp_server.resource("nova-sentinel://architecture")
+@mcp_server.resource("wolfir://architecture")
 async def get_architecture() -> str:
-    """Describe Nova Sentinel's multi-agent architecture."""
+    """Describe wolfir's multi-agent architecture."""
     arch = {
-        "name": "Nova Sentinel",
+        "name": "wolfir",
         "framework": "Strands Agents SDK + MCP Server (FastMCP)",
         "mcp_servers": [
             "cloudtrail-mcp-server — CloudTrail event lookup, security scanning, anomaly detection",
@@ -615,9 +615,9 @@ async def get_architecture() -> str:
     return json.dumps(arch, indent=2)
 
 
-@mcp_server.resource("nova-sentinel://mcp-servers")
+@mcp_server.resource("wolfir://mcp-servers")
 async def get_mcp_servers() -> str:
-    """List all AWS MCP servers integrated into Nova Sentinel."""
+    """List all AWS MCP servers integrated into wolfir."""
     servers = {
         "mcp_servers": [
             {
@@ -652,9 +652,9 @@ async def get_mcp_servers() -> str:
 # ========== SERVER INFO (for REST API compatibility) ==========
 
 MCP_SERVER_INFO = {
-    "name": "nova-sentinel-mcp",
+    "name": "wolfir-mcp",
     "version": "3.0.0",
-    "description": "Nova Sentinel Security Analysis MCP Server — Multi-MCP Orchestration Platform",
+    "description": "wolfir Security Analysis MCP Server — Multi-MCP Orchestration Platform",
     "sdk": "mcp>=1.11.0 (FastMCP)",
     "capabilities": {
         "tools": True,

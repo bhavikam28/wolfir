@@ -2,7 +2,7 @@
 
 This Terraform creates an S3 bucket and uploads sample security playbooks. You then create a **Bedrock Knowledge Base with S3 Vectors** in the console and connect it to this bucket.
 
-**Why optional?** Nova Sentinel works without a Knowledge Base. This adds RAG for enhanced playbook retrieval. Judges and users can skip it.
+**Why optional?** wolfir works without a Knowledge Base. This adds RAG for enhanced playbook retrieval. Users can skip this step.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ terraform apply
 ## Create Knowledge Base (Console)
 
 1. **Bedrock console** → Knowledge bases → **Create knowledge base**
-2. **Name:** `nova-sentinel-playbooks`
+2. **Name:** `wolfir-playbooks`
 3. **Vector store:** Quick create → **S3 vector bucket**
 4. **Data source:** Create new → S3 URI: `s3://<bucket-from-output>/`
 5. **Embedding model:** `amazon.titan-embed-text-v2:0` or Nova embeddings

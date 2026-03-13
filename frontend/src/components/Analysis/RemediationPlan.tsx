@@ -90,6 +90,7 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({
   const [novaActExpanded, setNovaActExpanded] = useState(false);
   const [rubricScore, setRubricScore] = useState<{ overall_score: number; summary: string } | null>(null);
   const [rubricLoading, setRubricLoading] = useState(false);
+  const [rollbackExpanded, setRollbackExpanded] = useState(false);
 
   const toggleStep = (step: number) => {
     const newExpanded = new Set(expandedSteps);
@@ -608,18 +609,23 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({
                           )}
                         </div>
                       ) : (
-                        <button
-                          onClick={handleExecute}
-                          disabled={executing}
-                          className={`px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 transition-colors ${
-                            classification === 'APPROVAL'
-                              ? 'bg-amber-600 text-white hover:bg-amber-700'
-                              : 'btn-nova bg-indigo-600 text-white hover:bg-indigo-700'
-                          }`}
-                        >
-                          <Play className="w-3.5 h-3.5" />
-                          {classification === 'APPROVAL' ? 'Approve & Execute' : classification === 'AUTO' ? 'Execute' : apiCall ? 'Copy Command' : 'Execute'} Step
-                        </button>
+                        <div className="space-y-1.5">
+                          <button
+                            onClick={handleExecute}
+                            disabled={executing}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 transition-colors ${
+                              classification === 'APPROVAL'
+                                ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                : 'btn-nova bg-indigo-600 text-white hover:bg-indigo-700'
+                            }`}
+                          >
+                            <Play className="w-3.5 h-3.5" />
+                            {classification === 'APPROVAL' ? 'Approve & Execute' : classification === 'AUTO' ? 'Execute' : apiCall ? 'Copy Command' : 'Execute'} Step
+                          </button>
+                          {demoMode && (
+                            <p className="text-[10px] text-amber-700 font-medium mt-2">Demo: simulating execution. In console mode, this calls the AWS API.</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </motion.div>
@@ -630,13 +636,63 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({
         })}
       </div>
 
-      {rollbackPlan && (
-        <div className="mx-6 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="text-xs font-bold text-amber-900 mb-0.5">Rollback Plan</h4>
-            <p className="text-xs text-amber-700">{rollbackPlan}</p>
+      {/* Rollback Plan — show existing or generate from steps */}
+      {(rollbackPlan || (allSteps.length > 0 && !rollbackPlan)) && (
+        <div className="mx-6 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-xs font-bold text-amber-900 mb-0.5">Rollback Plan</h4>
+                {rollbackPlan ? (
+                  <p className="text-xs text-amber-700">{rollbackPlan}</p>
+                ) : (
+                  <p className="text-xs text-amber-700">Execute these commands in reverse order to undo applied remediation steps.</p>
+                )}
+              </div>
+            </div>
+            {!rollbackPlan && allSteps.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const withRollback = allSteps
+                    .filter((s: any) => s.api_call || s.command || s.aws_cli_command)
+                    .map((s: any) => s.api_call || s.command || s.aws_cli_command)
+                    .filter(Boolean);
+                  if (withRollback.length > 0) {
+                    const undo = [...withRollback].reverse().map((cmd, i) => `# Undo step ${withRollback.length - i}\n${cmd}`).join('\n\n');
+                    navigator.clipboard?.writeText(undo);
+                    setRollbackExpanded(true);
+                  }
+                }}
+                className="px-3 py-1.5 text-[10px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 shrink-0"
+                title="Creates undo sequence from executed steps and copies to clipboard"
+              >
+                Generate rollback plan & show
+              </button>
+            )}
           </div>
+          {!rollbackPlan && (() => {
+            const rollbackCmds = allSteps
+              .filter((s: any) => s.api_call || s.command || s.aws_cli_command)
+              .map((s: any) => s.api_call || s.command || s.aws_cli_command)
+              .filter(Boolean);
+            if (rollbackCmds.length > 0) {
+              const generated = [...rollbackCmds].reverse().map((cmd, i) => `# Undo step ${rollbackCmds.length - i}\n${cmd}`).join('\n\n');
+              return (
+                <details className="mt-2" open={rollbackExpanded}>
+                  <summary
+                    className="text-[10px] font-bold text-amber-800 cursor-pointer"
+                    onClick={(e) => { e.preventDefault(); setRollbackExpanded(v => !v); }}
+                  >
+                    {rollbackExpanded ? 'Hide' : 'Show'} generated undo sequence
+                  </summary>
+                  <pre className="mt-2 text-[10px] text-amber-800 bg-amber-100/50 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono">{generated}</pre>
+                </details>
+              );
+            }
+            return null;
+          })()}
         </div>
       )}
     </div>

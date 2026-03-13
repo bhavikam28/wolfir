@@ -1,5 +1,5 @@
 """
-Nova Sentinel — FastAPI Application
+wolfir — FastAPI Application
 AI-Powered Security Incident Response using Amazon Nova
 
 Architecture:
@@ -13,11 +13,15 @@ Architecture:
 import os
 import json
 import boto3
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 
 from api import analysis, demo, visual, remediation, voice, orchestration, storage, documentation, auth, mcp, nova_act, incident_history, ai_security, threat_intel, report, changeset, rubric, protocol
 from utils.config import get_settings
@@ -33,7 +37,7 @@ async def lifespan(app: FastAPI):
     import json
     import boto3
     logger.warning("=" * 70)
-    logger.warning("NOVA SENTINEL — Starting Up")
+    logger.warning("WOLFIR — Starting Up")
     logger.warning("=" * 70)
     logger.warning("This application uses YOUR AWS account and credentials.")
     logger.warning("All AWS charges (Bedrock, DynamoDB, S3) will be billed to YOUR account.")
@@ -57,7 +61,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"AWS connected: Account {identity['Account']}, ARN: {identity['Arn']}")
     except Exception as e:
         logger.error(f"AWS CREDENTIALS NOT CONFIGURED: {e}")
-        logger.error("Nova Sentinel requires valid AWS credentials with Bedrock access.")
+        logger.error("wolfir requires valid AWS credentials with Bedrock access.")
         logger.error("Run: aws configure OR set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY")
 
     # Validate Bedrock model access
@@ -81,19 +85,25 @@ async def lifespan(app: FastAPI):
 
     yield
 
+# Rate limiter — 60 req/min per IP for API protection
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+
 # Create FastAPI app
 app = FastAPI(
-    title="Nova Sentinel",
+    title="wolfir",
     description=(
         "AI-Powered Security Incident Response using Amazon Nova — "
         "Strands Agents SDK + MCP Server + 5 Nova Bedrock Models + Nova Act SDK + "
-        "5 AWS MCP Servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas)"
+        "6 AWS MCP Servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security)"
     ),
     version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Max request body size (5MB) — prevents memory exhaustion from oversized POSTs
 MAX_BODY_SIZE = 5 * 1024 * 1024
@@ -124,8 +134,8 @@ _cors_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
     "http://localhost:3000",
-    "https://nova-sentinel.vercel.app",
-    "https://www.nova-sentinel.vercel.app",
+    "https://wolfir.vercel.app",
+    "https://www.wolfir.vercel.app",
 ]
 if os.environ.get("FRONTEND_URL"):
     url = os.environ["FRONTEND_URL"].rstrip("/")
@@ -174,7 +184,7 @@ except Exception as e:
 async def root():
     """Root endpoint"""
     return {
-        "service": "Nova Sentinel",
+        "service": "wolfir",
         "version": "3.0.0",
         "status": "running",
         "description": "AI-Powered Security Incident Response — 4 Nova Bedrock models + Nova Act SDK",
@@ -214,7 +224,7 @@ async def health_check():
             "nova_canvas": settings.nova_canvas_model_id,
         },
         "frameworks": {
-            "mcp": "MCP Server (FastMCP) — 5 AWS MCP servers, 14 Strands tools",
+            "mcp": "MCP Server (FastMCP) — 6 AWS MCP servers, 23+ tools",
             "strands": "Strands Agents SDK — 12 @tool decorators",
             "nova_act": "Nova Act SDK — browser automation",
         },
@@ -243,7 +253,7 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     
-    logger.info(f"Starting Nova Sentinel on {settings.api_host}:{settings.api_port}")
+    logger.info(f"Starting wolfir on {settings.api_host}:{settings.api_port}")
     
     uvicorn.run(
         "main:app",

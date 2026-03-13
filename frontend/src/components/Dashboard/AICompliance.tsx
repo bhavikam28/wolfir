@@ -37,13 +37,20 @@ const NIST_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
 const AICompliance: React.FC = () => {
   const [owasp, setOwasp] = useState<typeof DEMO_OWASP | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSimulated, setIsSimulated] = useState(false);
   const [expandedOwasp, setExpandedOwasp] = useState<Set<string>>(new Set());
   const [expandedNist, setExpandedNist] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     api.get('/api/ai-security/owasp-llm')
-      .then((r) => setOwasp(r.data))
-      .catch(() => setOwasp(DEMO_OWASP))
+      .then((r) => {
+        setOwasp(r.data);
+        setIsSimulated(!!(r.data as { is_simulated?: boolean })?.is_simulated);
+      })
+      .catch(() => {
+        setOwasp(DEMO_OWASP);
+        setIsSimulated(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -121,6 +128,17 @@ const AICompliance: React.FC = () => {
             <div className="h-48 bg-slate-100 animate-pulse rounded-xl" />
           ) : (
             <>
+              {isSimulated && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
+                  <FileText className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Assessment based on wolfir architecture review</p>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      This posture reflects wolfir&apos;s own AI pipeline design — prompt injection guards, output validation, Bedrock Guardrails integration. Connect AWS backend for environment-specific OWASP and NIST checks against your Bedrock and IAM configuration.
+                    </p>
+                  </div>
+                </div>
+              )}
               {/* OWASP LLM — Wiz-style compact table with expandable rows */}
               <div className="rounded-xl border border-slate-200/80 overflow-hidden bg-white">
                 <div className="flex items-center justify-between px-5 py-3 bg-slate-50/80 border-b border-slate-200/80">
@@ -128,6 +146,7 @@ const AICompliance: React.FC = () => {
                     <h4 className="text-sm font-bold text-slate-900">OWASP LLM Security Top 10</h4>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Posture: <strong className="text-emerald-600">{percent}%</strong> passed ({passedCount}/{totalCount})
+                      {isSimulated && <span className="ml-2 text-amber-600 font-medium">· Architecture review</span>}
                     </p>
                   </div>
                   <a

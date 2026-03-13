@@ -1,5 +1,5 @@
 """
-Strands Agents SDK Orchestrator for Nova Sentinel
+Strands Agents SDK Orchestrator for wolfir
 Uses the REAL strands-agents package for multi-agent security analysis.
 
 Each security capability is registered as a Strands @tool.
@@ -614,7 +614,7 @@ STRANDS_TOOLS = [
 
 # ========== STRANDS AGENT ==========
 
-SYSTEM_PROMPT = """You are Nova Sentinel's security orchestrator, powered by Amazon Nova 2 Lite
+SYSTEM_PROMPT = """You are wolfir's security orchestrator, powered by Amazon Nova 2 Lite
 and coordinating multiple AWS MCP servers through the Strands Agents SDK.
 
 You have access to these tool categories:

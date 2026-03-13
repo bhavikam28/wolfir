@@ -1,12 +1,19 @@
 /**
- * Project-relevant stats — Seddle-style cards
- * Numbers that matter for Nova Sentinel
+ * Project-relevant stats — defensible numbers
+ * 11k alerts: Ponemon/Cost of Data Breach; 5 Nova: product; 23 tools: MCP count; 90d: CloudTrail max
  */
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Cpu, Shield, FileText } from 'lucide-react';
 
 const STATS = [
+  {
+    value: '11K+',
+    suffix: '',
+    label: 'Alerts per day (avg SOC)',
+    sub: 'Ponemon Institute — most go uninvestigated',
+    icon: Zap,
+  },
   {
     value: '5',
     suffix: '',
@@ -17,21 +24,14 @@ const STATS = [
   {
     value: '23',
     suffix: '',
-    label: 'MCP tools across 5 AWS servers',
-    sub: 'CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas',
-    icon: Zap,
-  },
-  {
-    value: '6',
-    suffix: '',
-    label: 'MITRE ATLAS techniques monitored',
-    sub: 'AI pipeline security — who protects the AI?',
+    label: 'MCP tools across 6 servers',
+    sub: 'CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security',
     icon: Shield,
   },
   {
     value: '90',
     suffix: 'd',
-    label: 'CloudTrail lookback for root cause',
+    label: 'CloudTrail lookback',
     sub: 'Kill chain tracing, campaign correlation',
     icon: FileText,
   },
@@ -50,7 +50,7 @@ const StatsCards: React.FC = () => {
           <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-[0.2em] mb-2">
             By the numbers
           </p>
-          <h2 className="text-xl font-bold text-slate-900">Everything you need for incident response</h2>
+          <h2 className="text-xl font-bold text-slate-900">Cloud + AI security in one platform</h2>
         </motion.div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {STATS.map((stat, i) => {

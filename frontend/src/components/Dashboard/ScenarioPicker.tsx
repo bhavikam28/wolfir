@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, Shield, AlertTriangle, Play } from 'lucide-react';
+import { ArrowRight, Loader2, Shield, AlertTriangle, Play, HelpCircle } from 'lucide-react';
 import type { DemoScenario } from '../../types/incident';
 
 interface ScenarioPickerProps {
@@ -24,6 +24,7 @@ const SCENARIO_ICONS: Record<string, React.ComponentType<{ className?: string }>
   'data-exfiltration': (p) => <SvgIcon className={p.className || 'w-5 h-5'}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></SvgIcon>,
   'privilege-escalation': (p) => <SvgIcon className={p.className || 'w-5 h-5'}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></SvgIcon>,
   'unauthorized-access': (p) => <SvgIcon className={p.className || 'w-5 h-5'}><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></SvgIcon>,
+  'shadow-ai': (p) => <SvgIcon className={p.className || 'w-5 h-5'}><path d="M12 2a2 2 0 012 2v1a2 2 0 01-2 2h-1" /><path d="M12 8v4" /><path d="M8 16h8" /><path d="M4 12a8 8 0 0116 0" /></SvgIcon>,
 };
 
 /* Premium minimal palette — indigo/slate only (no red/orange) */
@@ -119,20 +120,41 @@ const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
         })}
       </div>
 
-      {/* Mode toggle & Info */}
+      {/* Mode toggle — clear labels for judges */}
       {onUseFullAIChange && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-            <span className="text-xs text-slate-600">Default: instant demo (~2s). Toggle for full Nova AI:</span>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useFullAI}
-                onChange={(e) => onUseFullAIChange(e.target.checked)}
-                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <span className="text-xs font-medium text-slate-700">Use full AI analysis</span>
-            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-600">Demo mode:</span>
+              <span
+                className="text-slate-400 hover:text-slate-600 cursor-help"
+                title="Instant Demo: Pre-computed results, no backend needed — works on Vercel. Full AI: Live Bedrock pipeline (~45s) — requires backend running locally."
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </span>
+            </div>
+            <div className="flex rounded-lg overflow-hidden border border-slate-200 bg-white">
+              <button
+                type="button"
+                onClick={() => onUseFullAIChange(false)}
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${
+                  !useFullAI ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+                title="Pre-computed results, no backend needed — works on Vercel"
+              >
+                Instant Demo (no backend needed)
+              </button>
+              <button
+                type="button"
+                onClick={() => onUseFullAIChange(true)}
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${
+                  useFullAI ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+                title="Live Bedrock pipeline (~45s) — requires backend running locally"
+              >
+                Full AI (requires backend running)
+              </button>
+            </div>
           </div>
           {useFullAI && (
             <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
@@ -149,7 +171,7 @@ const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
         <p className="text-xs text-indigo-600 leading-relaxed">
           {useFullAI
             ? 'Full 5-agent Nova AI pipeline: Detection (Nova Pro), Investigation (Nova 2 Lite), Classification (Nova Micro), Remediation, Documentation.'
-            : 'Instant demo uses pre-computed results. Enable "Use full AI analysis" above to run the full Nova pipeline (~45s).'}
+            : 'Instant demo uses pre-computed results. Switch to "Full AI" above to run the full Nova pipeline (~45s).'}
         </p>
       </div>
     </div>

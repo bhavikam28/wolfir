@@ -53,7 +53,7 @@ function detectToolsUsed(text: string): { tool: string; icon: React.ComponentTyp
 }
 
 /**
- * Demo fallback responses — used when backend is offline (Vercel-only demo for judges).
+ * Demo fallback responses — used when backend is offline (Vercel-only demo).
  * These simulate what the Strands Agent would return for each suggested prompt.
  */
 const DEMO_FALLBACKS: Record<string, string> = {
@@ -144,7 +144,7 @@ Anomaly detected: Compute cost spike
 Other services:
   • S3: $18.92 (normal)
   • DynamoDB: $4.10 (normal)
-  • Bedrock: $12.40 (normal — Nova Sentinel usage)
+  • Bedrock: $12.40 (normal — wolfir usage)
   • Data transfer: $199.50 (unusual — high outbound)
 
 Risk assessment: The 619% EC2 spike combined with unusual data transfer strongly suggests cryptocurrency mining or data exfiltration. The p3.2xlarge instances have GPU — commonly used for mining.
@@ -216,6 +216,19 @@ function getDemoFallback(prompt: string): string | null {
   return null;
 }
 
+/** Add contextual variation — include user query and varied lead-in so demo responses feel less rigid */
+function varyDemoResponse(baseResponse: string, userPrompt: string): string {
+  const lower = userPrompt.toLowerCase();
+  const topic = lower.includes('audit') ? 'audit' : lower.includes('scan') ? 'scan' : lower.includes('investigate') ? 'investigation' : lower.includes('check') ? 'check' : 'query';
+  const leadIns = [
+    `Based on your ${topic} request ("${userPrompt.slice(0, 80)}${userPrompt.length > 80 ? '...' : ''}"):\n\n`,
+    `Here are the results for your ${topic}:\n\n`,
+    `Analysis from your prompt:\n\n`,
+  ];
+  const leadIn = leadIns[Math.floor(Math.random() * leadIns.length)];
+  return `${leadIn}${baseResponse}`;
+}
+
 interface AgenticQueryProps {
   backendOffline?: boolean;
 }
@@ -250,12 +263,15 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
       const fallback = getDemoFallback(trimmed);
       if (backendOffline) {
         if (fallback) {
-          await new Promise(r => setTimeout(r, 800));
+          // Typing/thinking feel: 1.2–1.6s delay, contextual variation
+          const delay = 1200 + Math.random() * 400;
+          await new Promise(r => setTimeout(r, delay));
+          const varied = varyDemoResponse(fallback, trimmed);
           setElapsedMs(Date.now() - startRef.current);
-          setResponse(fallback);
+          setResponse(varied);
           setIsDemoFallback(true);
           setConversationHistory((prev) => {
-            const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: fallback }];
+            const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: varied }];
             return next.slice(-MAX_HISTORY_EXCHANGES * 2);
           });
         } else {
@@ -275,12 +291,13 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
     } catch (err: any) {
       const fallback = getDemoFallback(trimmed);
       if (fallback) {
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 1200 + Math.random() * 400));
+        const varied = varyDemoResponse(fallback, trimmed);
         setElapsedMs(Date.now() - startRef.current);
-        setResponse(fallback);
+        setResponse(varied);
         setIsDemoFallback(true);
         setConversationHistory((prev) => {
-          const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: fallback }];
+          const next = [...prev, { role: 'user' as const, content: trimmed }, { role: 'assistant' as const, content: varied }];
           return next.slice(-MAX_HISTORY_EXCHANGES * 2);
         });
       } else {
@@ -327,6 +344,10 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
                   <h2 className="text-lg font-bold text-slate-900">Autonomous Agent</h2>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-indigo-100 text-indigo-700 border-indigo-200">
                     Strands Agents SDK
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-100 text-emerald-700 border-emerald-200" title="MITRE ATLAS + Bedrock Guardrails block prompt injection and dangerous tool calls (e.g. iam:DeleteUser)">
+                    <Shield className="w-3 h-3 inline mr-0.5" />
+                    MITRE ATLAS · Prompt injection protected
                   </span>
                   {historyCount > 0 && (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-violet-100 text-violet-700 border-violet-200">
@@ -431,7 +452,14 @@ export default function AgenticQuery({ backendOffline = false }: AgenticQueryPro
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">Agent planning and executing tools...</p>
+                  <p className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                    Agent planning and executing tools
+                    <span className="inline-flex gap-0.5">
+                      <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.6, repeat: Infinity }}>.</motion.span>
+                      <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}>.</motion.span>
+                      <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}>.</motion.span>
+                    </span>
+                  </p>
                   <p className="text-xs text-slate-500">Deciding which tools to call for: &quot;{submittedPrompt?.slice(0, 60)}{(submittedPrompt?.length || 0) > 60 ? '...' : ''}&quot;</p>
                 </div>
               </div>

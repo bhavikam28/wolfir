@@ -4,7 +4,7 @@ CloudTrail MCP Server — Custom implementation (boto3)
 Provides MCP-compatible tools for CloudTrail event analysis,
 security-focused event lookup, and anomaly detection.
 
-Inspired by awslabs/mcp patterns. Integrated into Nova Sentinel's FastMCP.
+Inspired by awslabs/mcp patterns. Integrated into wolfir's FastMCP.
 """
 import json
 import asyncio
@@ -22,7 +22,7 @@ def _get_ct_client(session: boto3.Session, region: str, target_role_arn: Optiona
     """Create CloudTrail client, optionally using AssumeRole."""
     if target_role_arn:
         sts = session.client('sts', region_name=region)
-        assumed = sts.assume_role(RoleArn=target_role_arn, RoleSessionName="nova-sentinel-cloudtrail")
+        assumed = sts.assume_role(RoleArn=target_role_arn, RoleSessionName="wolfir-cloudtrail")
         creds = assumed['Credentials']
         return boto3.client('cloudtrail', region_name=region,
             aws_access_key_id=creds['AccessKeyId'],

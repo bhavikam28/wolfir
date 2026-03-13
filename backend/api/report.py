@@ -75,7 +75,7 @@ def _render_pdf(incident_id: str, markdown: str, cover_b64: Optional[str]) -> by
         ]))
         story.append(header_table)
         from datetime import datetime
-        gen_str = f"Generated {datetime.now().strftime('%m/%d/%Y, %I:%M:%S %p')} | Nova Sentinel"
+        gen_str = f"Generated {datetime.now().strftime('%m/%d/%Y, %I:%M:%S %p')} | wolfir"
         story.append(Paragraph(
             gen_str,
             ParagraphStyle("Sub", parent=styles["Normal"], fontSize=10, alignment=TA_CENTER, textColor=colors.HexColor("#64748b"))
@@ -165,7 +165,7 @@ async def export_pdf(req: ExportPdfRequest) -> StreamingResponse:
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="nova-sentinel-report-{req.incident_id}.pdf"'},
+            headers={"Content-Disposition": f'attachment; filename="wolfir-report-{req.incident_id}.pdf"'},
         )
     except HTTPException:
         raise

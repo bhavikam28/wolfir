@@ -172,6 +172,8 @@ interface VoiceAssistantProps {
   incidentContext?: any;
   incidentId?: string;
   isAnalysisComplete?: boolean;
+  /** When true, render inline in tab (no floating button) — tab IS the voice interface */
+  embedded?: boolean;
 }
 
 interface ChatMessage {
@@ -185,8 +187,8 @@ interface ChatMessage {
   processingTime?: number;
 }
 
-const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: VoiceAssistantProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete, embedded = false }: VoiceAssistantProps) => {
+  const [isOpen, setIsOpen] = useState(embedded);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
@@ -223,12 +225,12 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
         id: 'welcome',
         role: 'assistant',
         text: isAnalysisComplete
-          ? `Hi, I'm Aria — Nova Sentinel's security intelligence assistant. I'm here to help you understand incident ${incidentId || 'analysis'}. Ask me about the root cause, attack patterns, compliance impacts, cost estimates, or remediation steps.`
-          : "Hi, I'm Aria — Nova Sentinel's AI-powered security assistant. Start an analysis, and I can walk you through findings, explain threats, or recommend next steps. You can also ask me about AWS security best practices.",
+          ? `Hi, I'm Aria — wolfir's security intelligence assistant. I'm here to help you understand incident ${incidentId || 'analysis'}. Ask me about the root cause, attack patterns, compliance impacts, cost estimates, or remediation steps.`
+          : "Hi, I'm Aria — wolfir's AI-powered security assistant. Start an analysis, and I can walk you through findings, explain threats, or recommend next steps. You can also ask me about AWS security best practices.",
         timestamp: new Date(),
         suggestions: isAnalysisComplete 
           ? ['What is the root cause?', 'Explain the attack path', 'Show compliance impact', 'Have you seen this attack pattern before?']
-          : ['How does Nova Sentinel work?', 'What scenarios can you analyze?', 'Explain multi-agent architecture']
+          : ['How does wolfir work?', 'What scenarios can you analyze?', 'Explain multi-agent architecture']
       }]);
     }
   }, [isOpen]);
@@ -490,43 +492,47 @@ const VoiceAssistant = ({ incidentContext, incidentId, isAnalysisComplete }: Voi
 
   return (
     <>
-      {/* Floating Toggle Button */}
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${
-          isOpen 
-            ? 'bg-slate-700 hover:bg-slate-800' 
-            : 'bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {isOpen ? (
-          <X className="w-5 h-5 text-white" />
-        ) : (
-          <div className="relative">
-            <MessageSquare className="w-5 h-5 text-white" />
-            {isAnalysisComplete && (
-              <motion.div
-                className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            )}
-          </div>
-        )}
-      </motion.button>
+      {/* Floating Toggle Button — hidden when embedded (tab IS the interface) */}
+      {!embedded && (
+        <motion.button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${
+            isOpen 
+              ? 'bg-slate-700 hover:bg-slate-800' 
+              : 'bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {isOpen ? (
+            <X className="w-5 h-5 text-white" />
+          ) : (
+            <div className="relative">
+              <MessageSquare className="w-5 h-5 text-white" />
+              {isAnalysisComplete && (
+                <motion.div
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
+            </div>
+          )}
+        </motion.button>
+      )}
 
-      {/* Chat Panel */}
+      {/* Chat Panel — inline when embedded, floating otherwise */}
       <AnimatePresence>
-        {isOpen && (
+        {(isOpen || embedded) && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: embedded ? 0 : 20, scale: embedded ? 1 : 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            exit={{ opacity: 0, y: embedded ? 0 : 20, scale: embedded ? 1 : 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`fixed bottom-24 right-6 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col ${
-              expanded ? 'w-[500px] h-[600px]' : 'w-[380px] h-[480px]'
+            className={`bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col ${
+              embedded
+                ? `w-full ${expanded ? 'min-h-[680px]' : 'min-h-[520px]'}`
+                : `fixed bottom-24 right-6 z-50 ${expanded ? 'w-[500px] h-[600px]' : 'w-[380px] h-[480px]'}`
             }`}
           >
             {/* Header */}

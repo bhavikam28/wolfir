@@ -1,6 +1,6 @@
 # Project Name Suggestions
 
-Judges and feedback suggest avoiding straightforward names like "Nova Sentinel." Seddle is a good example — short, unique, memorable, not immediately descriptive.
+Short, unique, memorable names work well — e.g. Seddle: not immediately descriptive but distinctive.
 
 ## Top Picks (Seddle-style)
 
@@ -24,4 +24,4 @@ Judges and feedback suggest avoiding straightforward names like "Nova Sentinel."
 
 ## Recommendation
 
-**Secora** or **Lumis** — both are short, unique, and avoid the "Nova Sentinel" style of being too descriptive. They feel premium and memorable like Seddle.
+**Secora** or **Lumis** — both are short, unique, and avoid the "wolfir" style of being too descriptive. They feel premium and memorable like Seddle.

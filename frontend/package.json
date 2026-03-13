@@ -1,5 +1,5 @@
 {
-  "name": "nova-sentinel-frontend",
+  "name": "wolfir-frontend",
   "private": true,
   "version": "1.0.1",
   "type": "module",
@@ -21,6 +21,7 @@
     "lucide-react": "^0.321.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "reactflow": "^11.11.4",
     "recharts": "^2.10.4"
   },

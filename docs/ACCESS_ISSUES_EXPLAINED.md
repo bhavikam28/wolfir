@@ -44,6 +44,6 @@ Add a policy that allows Security Hub read access. Example:
 
 Or attach the AWS managed policy `AWSSecurityHubReadOnlyAccess` to the `secops-lens-pro` user.
 
-## Nova Sentinel Behavior
+## wolfir Behavior
 
-Nova Sentinel handles this gracefully: when Security Hub returns an access error, the agent reports it as a finding ("Limited Security Visibility") and continues with other checks (CloudTrail, IAM, etc.). The analysis still completes; Security Hub findings are simply not included.
+wolfir handles this gracefully: when Security Hub returns an access error, the agent reports it as a finding ("Limited Security Visibility") and continues with other checks (CloudTrail, IAM, etc.). The analysis still completes; Security Hub findings are simply not included.

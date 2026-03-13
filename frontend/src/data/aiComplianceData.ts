@@ -72,7 +72,7 @@ export const OWASP_LLM_DETAILS: Record<string, { description: string; example: s
   LLM04: {
     description: 'Poisoned data flows through training or inference pipelines via APIs, corrupting datasets or models. Aimed at skewing output.',
     example: 'Hugging Face pipeline poisoning — malicious data in training pipelines.',
-    whatWeTested: 'N/A — Nova Sentinel uses foundation models without custom fine-tuning. No training pipeline to attack.',
+    whatWeTested: 'N/A — wolfir uses foundation models without custom fine-tuning. No training pipeline to attack.',
   },
   LLM05: {
     description: 'Unsanitized model outputs cause downstream harm — code execution, XSS, or unintended API calls.',

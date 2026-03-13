@@ -4,7 +4,7 @@
 Prompt injection occurs when adversaries craft inputs with hidden instructions to override AI model behavior, potentially causing unauthorized actions, data leakage, or system compromise. This playbook guides detection and response.
 
 ## Detection Indicators
-- Nova Sentinel MITRE ATLAS: AML.T0051 status WARNING or ALERT
+- wolfir MITRE ATLAS: AML.T0051 status WARNING or ALERT
 - Bedrock Guardrails blocking prompt-attack content (CloudWatch metrics)
 - Pattern matches: "ignore previous instructions", "you are now", "jailbreak", base64 payloads
 - Anomalous model outputs (revealing system prompts, executing unintended commands)
@@ -36,7 +36,7 @@ Prompt injection occurs when adversaries craft inputs with hidden instructions t
 - **Defense in depth**: Bedrock Guardrails + application-level input validation
 - **Output validation**: Scan model responses for PII, secrets, system prompt fragments
 - **Least privilege**: Limit Bedrock Agent tool permissions; avoid broad IAM policies
-- **Monitoring**: Use Nova Sentinel AI Security Posture dashboard for ongoing AML.T0051 status
+- **Monitoring**: Use wolfir AI Security Posture dashboard for ongoing AML.T0051 status
 
 ## AWS Resources
 - [Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)
