@@ -818,7 +818,7 @@ function App() {
                 {orchestrationResult && (
                   <div className="px-4 py-3 flex items-center justify-between gap-3">
                     <p className="text-xs text-slate-600">
-                      The pipeline ran {orchestrationResult.agents?.length ?? 4} agents in sequence. Want to see the agent think for itself?
+                      The pipeline ran {Object.keys(orchestrationResult.agents || {}).length || 4} agents in sequence. Want to see the agent think for itself?
                     </p>
                     <button onClick={() => setActiveFeature('agentic-query')}
                       className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border border-indigo-200 rounded-lg transition-colors">

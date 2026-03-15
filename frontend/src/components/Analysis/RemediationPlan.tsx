@@ -113,16 +113,6 @@ const RemediationPlan: React.FC<RemediationPlanProps> = ({
     return styles[risk.toUpperCase()] || styles.MEDIUM;
   };
 
-  const getRiskNumberStyle = (risk: string) => {
-    const styles: Record<string, string> = {
-      LOW: 'bg-emerald-100 text-emerald-700',
-      MEDIUM: 'bg-amber-100 text-amber-700',
-      HIGH: 'bg-red-100 text-red-700',
-      CRITICAL: 'bg-red-200 text-red-800',
-    };
-    return styles[risk.toUpperCase()] || 'bg-indigo-100 text-indigo-700';
-  };
-
   const getPriorityStyles = (priority: string) => {
     const styles: Record<string, string> = {
       IMMEDIATE: 'bg-red-100 text-red-700 border-red-300',

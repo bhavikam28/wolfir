@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Activity, AlertTriangle, FileText, Eye, ChevronRight,
-  Clock, GitBranch, Zap, CheckCircle, AlertCircle, Server, Globe,
+  CheckCircle, AlertCircle, Server, Globe,
   Lock, TrendingUp, Radio,
 } from 'lucide-react';
 

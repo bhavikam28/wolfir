@@ -658,27 +658,6 @@ aws iam enable-mfa-device --user-name <USERNAME> --serial-number <MFA_ARN> --aut
   return controls;
 }
 
-const METHODOLOGY_TEXT = `How controls are selected and evaluated:
-
-INCIDENT-TRIGGERED (status derived from CloudTrail events):
-• IAM/privilege events → CIS 1.16, NIST AC-6, SOC 2 CC6.1, PCI Req 7–8, SOX ITGC-AC, HIPAA §164.312
-• S3 / data events (GetObject, PutObject, bucket ACLs) → CIS 2.x, NIST SC-28, CC6.7, PCI Req 3–4, HIPAA encryption
-• Security group / network changes → CIS 4–5, NIST SC-7, PCI Req 11, WAF/IDS controls
-• RunInstances / EC2 abuse → NIST SI-3, RA-5, PCI Req 2–2, system hardening controls
-
-BASELINE (always evaluated):
-• CloudTrail logging, root MFA, IAM Access Analyzer, public S3 blocks, RDS encryption,
-  log validation, continuous monitoring — required by all 6 frameworks regardless of incident type
-
-NOT EVALUATED (marked as pending):
-• Controls that require AWS Config Rules, Security Hub, or direct API inspection to verify.
-  Enable AWS Config + Security Hub for complete automated evaluation.
-
-⚠ Status is inferred from incident timeline events. Always verify with an authoritative compliance scan.
-  Full CIS Benchmark: 92 recommendations. Full NIST 800-53: 1000+ controls. This tab shows the most relevant subset.
-
-AI-specific frameworks (OWASP LLM Top 10, NIST AI RMF, MITRE ATLAS) are in the AI Compliance tab.`;
-
 type CliExecState = 'idle' | 'confirming' | 'running' | 'done' | 'error';
 
 type SeverityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low';

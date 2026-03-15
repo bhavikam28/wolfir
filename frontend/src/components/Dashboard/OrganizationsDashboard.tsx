@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Shield, AlertTriangle, ChevronDown, ChevronUp,
   CheckCircle2, XCircle, Globe, Zap, Lock, AlertCircle,
-  ArrowRight, Target, Clock, Activity, Database, Info,
+  ArrowRight, Target, Clock, Activity, Info,
   Play, Loader2, CheckCircle, Wrench,
 } from 'lucide-react';
 import { remediationAPI } from '../../services/api';
@@ -202,14 +202,6 @@ aws cloudwatch put-metric-alarm \\
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const ENV_STYLE: Record<AccountEnv, { bg: string; text: string; dot: string }> = {
-  production:  { bg: 'bg-red-50',     text: 'text-red-700',    dot: 'bg-red-400' },
-  staging:     { bg: 'bg-amber-50',   text: 'text-amber-700',  dot: 'bg-amber-400' },
-  development: { bg: 'bg-blue-50',    text: 'text-blue-700',   dot: 'bg-blue-400' },
-  security:    { bg: 'bg-violet-50',  text: 'text-violet-700', dot: 'bg-violet-400' },
-  management:  { bg: 'bg-slate-100',  text: 'text-slate-700',  dot: 'bg-slate-400' },
-};
-
 const THREAT_STYLE: Record<ThreatLevel, { dot: string; bg: string; text: string; border: string }> = {
   critical: { dot: 'bg-red-500',     bg: 'bg-red-50',     text: 'text-red-700',    border: 'border-red-200' },
   high:     { dot: 'bg-orange-500',  bg: 'bg-orange-50',  text: 'text-orange-700', border: 'border-orange-200' },
@@ -221,7 +213,6 @@ const THREAT_STYLE: Record<ThreatLevel, { dot: string; bg: string; text: string;
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 const AccountCard: React.FC<{ account: OrgAccount; onClick: () => void; selected: boolean }> = ({ account, onClick, selected }) => {
-  const envS = ENV_STYLE[account.env];
   const thS = THREAT_STYLE[account.threatLevel];
   return (
     <button
@@ -262,7 +253,7 @@ interface OrganizationsDashboardProps {
   isRealMode?: boolean;
 }
 
-export default function OrganizationsDashboard({ awsAccountId, isRealMode = false }: OrganizationsDashboardProps) {
+export default function OrganizationsDashboard({ awsAccountId: _awsAccountId, isRealMode = false }: OrganizationsDashboardProps) {
   const [selectedAccount, setSelectedAccount] = useState<OrgAccount | null>(null);
   const [expandedOU, setExpandedOU] = useState<string | null>('dev-ou');
   const [activeTab, setActiveTab] = useState<'org' | 'threats' | 'scps'>('org');

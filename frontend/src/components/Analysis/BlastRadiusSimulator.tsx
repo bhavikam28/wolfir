@@ -132,7 +132,7 @@ export function computeSCPControls(identity: IdentityOption): Array<{ scp: strin
 }
 
 /** Generate blast radius based on the compromised identity's known permissions */
-function computeBlastRadius(identity: IdentityOption, incidentType?: string): ReachableResource[] {
+function computeBlastRadius(identity: IdentityOption, _incidentType?: string): ReachableResource[] {
   const isPrivEsc = identity.type === 'role' && identity.permissions.includes('iam:AssumeRole');
   const hasS3 = identity.permissions.some(p => p.includes('s3'));
   const hasEC2 = identity.permissions.some(p => p.includes('ec2'));
@@ -453,7 +453,7 @@ aws guardduty list-detectors`,
 }
 
 /** Demo identities extracted from incident context */
-function getDemoIdentities(timeline?: Timeline, incidentType?: string): IdentityOption[] {
+function getDemoIdentities(_timeline?: Timeline, incidentType?: string): IdentityOption[] {
   const inc = (incidentType || '').toLowerCase();
   if (inc.includes('priv') || inc.includes('escalat')) {
     return [
@@ -493,7 +493,7 @@ function getDemoIdentities(timeline?: Timeline, incidentType?: string): Identity
   ];
 }
 
-export default function BlastRadiusSimulator({ timeline, incidentType, backendOffline = true }: BlastRadiusSimulatorProps) {
+export default function BlastRadiusSimulator({ timeline, incidentType, backendOffline: _backendOffline = true }: BlastRadiusSimulatorProps) {
   const identities = useMemo(() => getDemoIdentities(timeline, incidentType), [incidentType]);
   const [selectedId, setSelectedId] = useState(identities[0]?.id ?? '');
   const [simulated, setSimulated] = useState(false);
@@ -554,10 +554,6 @@ export default function BlastRadiusSimulator({ timeline, incidentType, backendOf
     setRemGenerating(false);
     setShowRemediation(true);
     setExpandedStep(steps[0]?.id ?? null);
-  };
-
-  const handleApprove = (stepId: string) => {
-    setRemSteps(prev => prev.map(s => s.id === stepId ? { ...s, execState: 'approved' } : s));
   };
 
   const handleSkip = (stepId: string) => {

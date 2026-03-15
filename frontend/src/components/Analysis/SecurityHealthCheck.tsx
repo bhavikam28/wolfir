@@ -2,7 +2,7 @@
  * Security Health Check — Rich visual dashboard for proactive AWS security posture audit.
  * Shows donut charts, bar charts, stat cards, coverage summary, and prioritized remediation.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -10,8 +10,8 @@ import {
 } from 'recharts';
 import {
   Shield, CheckCircle2, Copy, ChevronDown, ChevronUp,
-  Server, Database, DollarSign, Lock, AlertTriangle,
-  Eye, RefreshCw, Info, XCircle,
+  Server, Database, DollarSign, Lock,
+  Eye, RefreshCw, Info,
 } from 'lucide-react';
 import { threatModelAPI } from '../../services/api';
 
@@ -387,7 +387,6 @@ const CategoryBar: React.FC<{ findings: HealthCheckFinding[] }> = ({ findings })
 /** Radial gauge for security score */
 const ScoreGauge: React.FC<{ score: number; grade: string }> = ({ score, grade }) => {
   const gradeConf = GRADE_CONFIG[grade as keyof typeof GRADE_CONFIG] || GRADE_CONFIG.C;
-  const data = [{ value: score, fill: 'url(#scoreGrad)' }, { value: 100 - score, fill: '#f1f5f9' }];
 
   return (
     <div className="relative flex flex-col items-center">
@@ -412,61 +411,6 @@ const ScoreGauge: React.FC<{ score: number; grade: string }> = ({ score, grade }
         style={{ color: score < 50 ? '#dc2626' : score < 70 ? '#d97706' : '#059669' }}>
         Grade {grade} · {gradeConf.text}
       </span>
-    </div>
-  );
-};
-
-// ─── Coverage summary badge ────────────────────────────────────────────────────
-
-const CoverageSummary: React.FC<{ coverage: NonNullable<SecurityHealthCheckResult['coverage']> }> = ({ coverage }) => {
-  const [expanded, setExpanded] = useState(false);
-  const failCount = coverage.filter(c => !c.ok).length;
-  if (coverage.length === 0) return null;
-  return (
-    <div className={`rounded-xl border ${failCount > 0 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'} overflow-hidden`}>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-3"
-      >
-        <div className="flex items-center gap-2">
-          {failCount > 0 ? <AlertTriangle className="w-4 h-4 text-amber-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-          <span className={`text-xs font-bold ${failCount > 0 ? 'text-amber-800' : 'text-emerald-800'}`}>
-            Scan Coverage: {coverage.filter(c => c.ok).length}/{coverage.length} checks completed
-            {failCount > 0 && ` · ${failCount} skipped (insufficient IAM permissions)`}
-          </span>
-        </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
-      </button>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
-            className="overflow-hidden border-t border-amber-200/60">
-            <div className="px-4 py-3 space-y-2">
-              {coverage.map((c, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  {c.ok
-                    ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                    : <XCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />}
-                  <div className="min-w-0">
-                    <p className={`text-[11px] font-semibold ${c.ok ? 'text-emerald-800' : 'text-amber-800'}`}>{c.label}</p>
-                    {!c.ok && c.note && <p className="text-[10px] text-amber-700 mt-0.5">{c.note}</p>}
-                  </div>
-                </div>
-              ))}
-              {failCount > 0 && (
-                <div className="mt-2 pt-2 border-t border-amber-200/60">
-                  <p className="text-[11px] text-amber-800 font-medium">
-                    To unlock full coverage, attach the <strong>SecurityAudit</strong> AWS managed policy to your IAM user:
-                  </p>
-                  <pre className="mt-1 text-[10px] text-amber-900 bg-amber-100 rounded px-2 py-1 font-mono overflow-x-auto">
-                    aws iam attach-user-policy --user-name YOUR_USER --policy-arn arn:aws:iam::aws:policy/SecurityAudit
-                  </pre>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
