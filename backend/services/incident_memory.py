@@ -27,6 +27,12 @@ from botocore.exceptions import ClientError
 from utils.config import get_settings
 from utils.logger import logger
 
+try:
+    from services.embedding_service import embed_text, cosine_similarity as _cosine_sim
+    _EMBEDDINGS_AVAILABLE = True
+except ImportError:
+    _EMBEDDINGS_AVAILABLE = False
+
 # Lock for in-memory fallback (thread-safe when DynamoDB unavailable)
 _IN_MEMORY_LOCK = threading.Lock()
 
@@ -340,20 +346,60 @@ class IncidentMemoryService:
                           (timeline.get("attack_pattern", "")[:80] if timeline.get("attack_pattern") else "Security Incident"))
             cur_fp = _correlation_fingerprint(attack_type, cur_mitre)
             now = datetime.utcnow()
+            cur_ioc_set = set(cur_iocs)
             for inc in recent:
+                if inc["incident_id"] == current_incident.get("incident_id"):
+                    continue
                 mitre = inc.get("mitre_techniques", [])
                 fp = _correlation_fingerprint(inc.get("attack_type", ""), mitre)
-                if fp == cur_fp and inc["incident_id"] != current_incident.get("incident_id"):
+                if fp == cur_fp:
                     pattern_matches.append(inc)
                 overlap = set(cur_mitre) & set(mitre)
                 if len(overlap) >= 2:
                     technique_overlaps.append({**inc, "shared_techniques": list(overlap)})
-            campaign_prob = min(0.95, 0.3 + 0.2 * len(pattern_matches) + 0.15 * len(technique_overlaps) + 0.1 * len(ioc_matches))
+                # IOC matching — IPs and IAM ARNs seen in both incidents
+                past_iocs = set(inc.get("ioc_indicators", []))
+                shared_iocs = cur_ioc_set & past_iocs
+                if shared_iocs:
+                    ioc_matches.append({**inc, "shared_iocs": list(shared_iocs)})
+
+            # Semantic similarity via Nova Embeddings (parallel, non-blocking)
+            max_sem_sim = 0.0
+            if _EMBEDDINGS_AVAILABLE and recent:
+                try:
+                    cur_text = f"{attack_type} {' '.join(cur_mitre)} {timeline.get('root_cause', '') or ''}".strip()
+                    cur_emb = await embed_text(cur_text)
+                    if cur_emb:
+                        past_texts = [
+                            f"{inc.get('attack_type', '')} {' '.join(inc.get('mitre_techniques', []))} {inc.get('summary', '')}".strip()
+                            for inc in recent
+                        ]
+                        past_embeddings = await asyncio.gather(
+                            *[embed_text(t) for t in past_texts],
+                            return_exceptions=True,
+                        )
+                        for emb in past_embeddings:
+                            if isinstance(emb, list):
+                                max_sem_sim = max(max_sem_sim, _cosine_sim(cur_emb, emb))
+                except Exception as emb_err:
+                    logger.debug(f"Embedding similarity skipped: {emb_err}")
+
+            campaign_prob = min(0.95,
+                0.3
+                + 0.2 * len(pattern_matches)
+                + 0.15 * len(technique_overlaps)
+                + 0.1 * len(ioc_matches)
+                + 0.15 * max_sem_sim
+            )
             summary_parts = []
             if pattern_matches:
                 summary_parts.append(f"Pattern Match: {pattern_matches[0]['incident_id']} used identical attack fingerprint.")
             if technique_overlaps:
                 summary_parts.append(f"Technique Overlap: {len(technique_overlaps)} incidents share 2+ MITRE techniques.")
+            if ioc_matches:
+                summary_parts.append(f"IOC Match: {len(ioc_matches)} past incident(s) share IP addresses or IAM principals.")
+            if max_sem_sim > 0.0:
+                summary_parts.append(f"Semantic Similarity (Nova Embeddings): {max_sem_sim:.0%} match with past incidents.")
             if campaign_prob > 0.6:
                 summary_parts.append(f"Campaign Assessment: {int(campaign_prob*100)}% probability this is a coordinated campaign.")
             correlation_summary = " ".join(summary_parts) if summary_parts else "No strong correlations found with past incidents."

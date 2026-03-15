@@ -18,6 +18,8 @@ import json
 import time
 import uuid
 import asyncio
+import threading
+import concurrent.futures
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -44,15 +46,26 @@ from utils.logger import logger
 
 # ========== ASYNC BRIDGE ==========
 # Strands tools are synchronous. Our agents use async Bedrock calls.
-# This bridge runs async code in a fresh event loop within the thread.
+# A single persistent worker thread owns one event loop for the process lifetime,
+# eliminating the per-call loop creation/destruction overhead of the old pattern.
+
+_WORKER_LOOP: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+_WORKER_THREAD: threading.Thread = threading.Thread(
+    target=_WORKER_LOOP.run_forever,
+    daemon=True,
+    name="wolfir-async-worker",
+)
+_WORKER_THREAD.start()
+
 
 def _run_async(coro):
-    """Run an async coroutine from a synchronous Strands tool context."""
-    loop = asyncio.new_event_loop()
+    """Submit a coroutine to the persistent worker loop and block until done."""
+    future = asyncio.run_coroutine_threadsafe(coro, _WORKER_LOOP)
     try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+        return future.result(timeout=180)
+    except concurrent.futures.TimeoutError:
+        future.cancel()
+        raise TimeoutError("Async tool call timed out after 180s")
 
 
 # ========== SHARED AGENT INSTANCES ==========
@@ -609,6 +622,7 @@ STRANDS_TOOLS = [
     ai_security_list_bedrock_models,
     ai_security_list_bedrock_agents,
     ai_security_guardrail_recommendations,
+    ai_security_owasp_llm_status,
 ]
 
 

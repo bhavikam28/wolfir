@@ -31,9 +31,11 @@ def _is_throttling(e: ClientError) -> bool:
     return code in ("ThrottlingException", "ServiceQuotaExceededException", "TooManyRequestsException")
 
 try:
-    from services.ai_pipeline_monitor import record_invocation
+    from services.ai_pipeline_monitor import record_invocation, record_guardrail_block
 except ImportError:
     def record_invocation(_: str) -> None:
+        pass
+    def record_guardrail_block(_: str) -> None:
         pass
 
 
@@ -144,13 +146,16 @@ class BedrockService:
             for item in msg_content:
                 if "text" in item:
                     text = item.get("text", "")
+            stop_reason = response.get("stopReason", "end_turn")
             try:
                 record_invocation(self.settings.nova_lite_model_id)
+                if stop_reason == "guardrail_intervened":
+                    record_guardrail_block(self.settings.nova_lite_model_id)
             except Exception:
                 pass
             return {
                 "text": text,
-                "stop_reason": response.get("stopReason", "end_turn"),
+                "stop_reason": stop_reason,
                 "usage": response.get("usage", {}),
             }
             
@@ -217,13 +222,16 @@ class BedrockService:
             message = output.get("message", {})
             msg_content = message.get("content", [])
             text = msg_content[0].get("text", "") if msg_content else ""
+            stop_reason = response.get("stopReason", "end_turn")
             try:
                 record_invocation(self.settings.nova_pro_model_id)
+                if stop_reason == "guardrail_intervened":
+                    record_guardrail_block(self.settings.nova_pro_model_id)
             except Exception:
                 pass
             return {
                 "text": text,
-                "stop_reason": response.get("stopReason", "end_turn"),
+                "stop_reason": stop_reason,
                 "usage": response.get("usage", {}),
             }
 
@@ -280,13 +288,16 @@ class BedrockService:
             output = response.get("output", {})
             msg_content = output.get("message", {}).get("content", [])
             text = msg_content[0].get("text", "") if msg_content else ""
+            stop_reason = response.get("stopReason", "end_turn")
             try:
                 record_invocation(self.settings.nova_micro_model_id)
+                if stop_reason == "guardrail_intervened":
+                    record_guardrail_block(self.settings.nova_micro_model_id)
             except Exception:
                 pass
             return {
                 "text": text,
-                "stop_reason": response.get("stopReason", "end_turn"),
+                "stop_reason": stop_reason,
                 "usage": response.get("usage", {}),
             }
             
@@ -405,7 +416,10 @@ class BedrockService:
             
             logger.info(f"Nova 2 Sonic response: {len(response_text)} chars text, "
                         f"{len(response_audio_chunks)} audio chunks")
-            
+            try:
+                record_invocation(self.settings.nova_sonic_model_id)
+            except Exception:
+                pass
             return result
             
         except ClientError as e:
@@ -476,7 +490,10 @@ class BedrockService:
             )
             
             response_body = json.loads(response['body'].read())
-            
+            try:
+                record_invocation(self.settings.nova_canvas_model_id)
+            except Exception:
+                pass
             return {
                 "images": response_body.get("images", []),
                 "error": response_body.get("error"),

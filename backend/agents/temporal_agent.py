@@ -15,6 +15,12 @@ from utils.prompts import (
 from utils.event_filter import filter_interesting_events
 from utils.logger import logger
 
+try:
+    from services.ai_pipeline_monitor import scan_for_prompt_injection
+    _INJECTION_SCANNER_AVAILABLE = True
+except ImportError:
+    _INJECTION_SCANNER_AVAILABLE = False
+
 
 class TemporalAgent:
     """
@@ -84,6 +90,39 @@ class TemporalAgent:
             logger.info(f"Starting temporal analysis of {len(trimmed_events)} events")
             if trimmed_events:
                 logger.debug(f"First event sample: {json.dumps(trimmed_events[0], indent=2, default=str)[:300]}")
+
+            # AML.T0051 — scan CloudTrail event data for prompt injection before passing to Nova.
+            # CloudTrail fields (resource names, user agents, request params) are user-influenced
+            # and could contain adversarial text designed to manipulate the model's analysis.
+            if _INJECTION_SCANNER_AVAILABLE:
+                injection_fields_to_scan = []
+                for ev in trimmed_events:
+                    ui = ev.get("userIdentity", {})
+                    if isinstance(ui, dict):
+                        injection_fields_to_scan.append(ui.get("arn", "") or "")
+                        injection_fields_to_scan.append(ui.get("userName", "") or "")
+                    injection_fields_to_scan.append(str(ev.get("sourceIPAddress", "") or ""))
+                    rp = ev.get("requestParameters") or {}
+                    if isinstance(rp, dict):
+                        for v in list(rp.values())[:5]:
+                            injection_fields_to_scan.append(str(v)[:200])
+
+                combined_event_text = " ".join(f for f in injection_fields_to_scan if f)
+                if combined_event_text:
+                    injection_result = scan_for_prompt_injection(combined_event_text)
+                    if injection_result.get("detected"):
+                        logger.warning(
+                            f"AML.T0051 — Prompt injection pattern detected in CloudTrail event data. "
+                            f"Detail: {injection_result.get('details', '')}. Sanitizing suspicious fields."
+                        )
+                        # Sanitize: truncate requestParameters values that triggered detection
+                        for ev in trimmed_events:
+                            rp = ev.get("requestParameters")
+                            if isinstance(rp, dict):
+                                ev["requestParameters"] = {
+                                    k: (str(v)[:50] + " [SANITIZED]" if len(str(v)) > 50 else v)
+                                    for k, v in rp.items()
+                                }
 
             # Format events for the prompt
             events_json = json.dumps(trimmed_events, indent=2, default=str)

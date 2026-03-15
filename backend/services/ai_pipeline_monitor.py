@@ -10,7 +10,17 @@ from typing import Dict, Any, List
 from datetime import datetime
 
 _invocation_counts: Dict[str, int] = {}
+_guardrail_blocks: Dict[str, int] = {}  # model_id → block count
 _baseline_calls = 10
+
+# All Amazon Nova model ID prefixes that wolfir intentionally uses.
+# Any model recorded in _invocation_counts that does NOT start with these
+# prefixes is unexpected and triggers AML.T0016 WARNING.
+_NOVA_PREFIXES = ("amazon.nova-", "us.amazon.nova-")
+
+
+def _is_expected_model(model_id: str) -> bool:
+    return model_id.startswith(_NOVA_PREFIXES)
 
 INJECTION_PATTERNS = [
     r"ignore\s+(previous|all)\s+instructions",
@@ -43,6 +53,11 @@ def scan_for_prompt_injection(input_text: str) -> Dict[str, Any]:
 def record_invocation(model: str) -> None:
     """Record an API invocation for monitoring."""
     _invocation_counts[model] = _invocation_counts.get(model, 0) + 1
+
+
+def record_guardrail_block(model: str) -> None:
+    """Record a Bedrock Guardrail intervention (stopReason == guardrail_intervened)."""
+    _guardrail_blocks[model] = _guardrail_blocks.get(model, 0) + 1
 
 
 def monitor_invocation_patterns(time_window_minutes: int = 60) -> Dict[str, Any]:
@@ -101,13 +116,34 @@ def generate_atlas_report() -> Dict[str, Any]:
     is_simulated = overlay is not None
     if overlay is not None:
         inv = overlay
+
+    # AML.T0016 — real runtime check: flag any model ID outside the approved Nova set
+    now_iso = datetime.utcnow().isoformat()
+    unexpected_models = sorted(m for m in _invocation_counts if not _is_expected_model(m))
+    t0016_status = "WARNING" if unexpected_models else "CLEAN"
+    t0016_detail = (
+        f"Unexpected model access detected: {', '.join(unexpected_models)}"
+        if unexpected_models
+        else "All invocations used approved Amazon Nova models"
+    )
+
+    # AML.T0024 — real runtime check: surface Bedrock Guardrail interventions
+    total_blocks = sum(_guardrail_blocks.values())
+    if total_blocks > 0:
+        blocked_by = ", ".join(f"{m} ({n}x)" for m, n in _guardrail_blocks.items())
+        t0024_status = "WARNING"
+        t0024_detail = f"Guardrail intervened {total_blocks} time(s): {blocked_by}"
+    else:
+        t0024_status = "CLEAN"
+        t0024_detail = "Output validation active — no guardrail interventions recorded"
+
     techniques = [
-        {"id": "AML.T0051", "name": "Prompt Injection", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "Pattern scanning active"},
-        {"id": "AML.T0016", "name": "Obtain Capabilities", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "No unusual model access"},
-        {"id": "AML.T0040", "name": "ML Inference API Access", "status": "WARNING" if inv.get("anomaly_detected") else "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": inv.get("anomaly_reason") or "Elevated invocation rate detected during incident analysis (expected: pipeline running)" if inv.get("total_invocations", 0) > 0 else "Normal invocation rate"},
-        {"id": "AML.T0043", "name": "Craft Adversarial Data", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "Input validation active"},
-        {"id": "AML.T0024", "name": "Exfiltration via Inference", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "Output validation active"},
-        {"id": "AML.T0048", "name": "Transfer Learning Attack", "status": "CLEAN", "last_checked": datetime.utcnow().isoformat(), "details": "N/A — no fine-tuning"},
+        {"id": "AML.T0051", "name": "Prompt Injection", "status": "CLEAN", "last_checked": now_iso, "details": "Pattern scanning active on user input and CloudTrail event data"},
+        {"id": "AML.T0016", "name": "Obtain Capabilities", "status": t0016_status, "last_checked": now_iso, "details": t0016_detail},
+        {"id": "AML.T0040", "name": "ML Inference API Access", "status": "WARNING" if inv.get("anomaly_detected") else "CLEAN", "last_checked": now_iso, "details": inv.get("anomaly_reason") or "Elevated invocation rate detected during incident analysis (expected: pipeline running)" if inv.get("total_invocations", 0) > 0 else "Normal invocation rate"},
+        {"id": "AML.T0043", "name": "Craft Adversarial Data", "status": "CLEAN", "last_checked": now_iso, "details": "Input validation active"},
+        {"id": "AML.T0024", "name": "Exfiltration via Inference", "status": t0024_status, "last_checked": now_iso, "details": t0024_detail},
+        {"id": "AML.T0048", "name": "Transfer Learning Attack", "status": "CLEAN", "last_checked": now_iso, "details": "N/A — no fine-tuning"},
     ]
     return {
         "techniques": techniques,
