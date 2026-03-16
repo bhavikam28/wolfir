@@ -30,14 +30,14 @@ wolfir is an **autonomous cloud security and AI security platform for AWS**, bui
 
 ### Pillar 1 — Cloud Security: End-to-End Incident Response
 
-You feed it CloudTrail events — from a live AWS account or one of five built-in attack scenarios — and a **five-agent Nova pipeline** fires automatically:
+You feed it CloudTrail events — from a live AWS account or one of three built-in attack scenarios — and a **five-agent Nova pipeline** fires automatically:
 
 **Detect → Investigate → Classify → Remediate → Document**
 
 The output is a complete incident response package, not a report. Here is everything it produces:
 
 **Attack Analysis**
-- Chronological attack timeline with kill chain reconstruction and root cause identification
+- Chronological attack timeline with attack chain reconstruction and root cause identification
 - **Interactive Attack Path Diagram** — a React Flow graph where every event is a clickable node. Click any node to see its risk score, MITRE ATT&CK technique, source IP, timestamp, and the exact IAM control that would have prevented it
 - Per-event risk scores with confidence intervals (e.g. 77/100, CI: 70–84) using three parallel Nova Micro calls via `asyncio.gather()`
 - MITRE ATT&CK technique mapping per finding
@@ -119,12 +119,10 @@ The output is a complete incident response package, not a report. Here is everyt
 - Reads actual VPC topology, identifies security groups, load balancers, databases, API gateways
 - 50+ check types in under 30 seconds — text models cannot do this; multimodal is non-negotiable
 
-**Five Built-In Demo Scenarios — No AWS Account Required**
-- IAM Privilege Escalation — 7 events, 94/100 CRITICAL, MITRE T1548.005
-- S3 Data Exfiltration — 12 events, 89/100 HIGH, PII exposure
-- Crypto Mining via Compromised Role — 9 events, 82/100 HIGH, EC2 RunInstances spike
-- Cross-Account Lateral Movement — 11 events, 91/100 CRITICAL, AssumeRole chain across 3 accounts
-- Shadow AI / Unauthorized Bedrock Use — 5 events, 76/100 HIGH, demonstrates the AI pillar catching what the cloud pillar cannot
+**Three Built-In Demo Scenarios — No AWS Account Required**
+- **IAM Privilege Escalation** — Contractor abuses AssumeRole chain to gain AdministratorAccess. MITRE T1098, T1078. 9 events. CRITICAL.
+- **AWS Organizations Cross-Account Breach** — Compromised Dev account role pivots via STS into Production and Security accounts across 3 OUs, 12 member accounts. 18 events. CRITICAL.
+- **Shadow AI / LLM Abuse** — Ungoverned Bedrock InvokeModel calls combined with a prompt injection attempt. Exercises the MITRE ATLAS self-monitoring pipeline — the AI security pillar catching what the cloud pillar cannot. 7 events. CRITICAL.
 
 ---
 

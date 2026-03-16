@@ -1,6 +1,6 @@
-# Building wolfir: An Autonomous AI Security Platform That Watches Itself
+# wolfir: The AI Security Platform That Watches Itself
 
-*How we built a multi-agent cloud security platform using 7 Amazon Nova capabilities, Strands Agents SDK, Bedrock Knowledge Bases, Terraform, Docker, and a MITRE ATLAS self-monitoring layer — and every architectural decision we made along the way.*
+*How we built wolfir — 7 Amazon Nova capabilities, Strands Agents SDK, and a MITRE ATLAS self-monitoring layer for cloud and AI security, with every architectural decision explained.*
 
 ---
 
@@ -40,7 +40,7 @@ That's the two-pillar architecture. **Cloud security and AI security, one platfo
 
 wolfir is an autonomous security platform for AWS that closes two gaps simultaneously.
 
-**Cloud security** — You feed it CloudTrail events (from a live AWS account or one of five demo scenarios) and a five-agent Nova pipeline runs: Detect → Investigate → Classify → Remediate → Document. The output is a complete incident response package:
+**Cloud security** — You feed it CloudTrail events (from a live AWS account or one of three demo scenarios) and a five-agent Nova pipeline runs: Detect → Investigate → Classify → Remediate → Document. The output is a complete incident response package:
 
 - Chronological attack timeline with root cause and attack chain reconstruction
 - Interactive attack path diagram (React Flow, click-to-inspect each node)
@@ -475,23 +475,21 @@ The graph is built from the temporal agent's attack chain reconstruction. Nodes 
 
 ## Demo Simulation Scenarios + Compliance Mapping
 
-### Five Pre-Built Attack Scenarios — No AWS Account Required
+### Three Pre-Built Attack Scenarios — No AWS Account Required
 
-wolfir ships with five real attack scenarios, each pre-computed with live Nova outputs so the full pipeline result loads in under 2 seconds without any cloud connection.
+wolfir ships with three real attack scenarios, each pre-computed with live Nova outputs so the full pipeline result loads in under 2 seconds without any cloud connection.
 
-![wolfir demo simulation scenarios and compliance mapping — five pre-built attack scenarios with severity ratings and 6-framework auto-compliance mapping](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-simulation-compliance.png)
+![wolfir demo simulation scenarios and compliance mapping — three pre-built attack scenarios with severity ratings and 6-framework auto-compliance mapping](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-simulation-compliance.png)
 
-*Figure 7 — Left: wolfir's five demo simulation scenarios. Each scenario has pre-computed Nova outputs covering timeline, risk scores, blast radius, remediation plan, and compliance mapping. Right: auto-generated compliance mapping across CIS AWS Foundations, NIST 800-53, SOC 2 Type II, PCI-DSS v4.0, SOX IT Controls, and HIPAA — each finding mapped to the specific control IDs it violates. No manual auditing required.*
+*Figure 7 — Left: wolfir's three demo simulation scenarios. Each scenario has pre-computed Nova outputs covering timeline, risk scores, blast radius, remediation plan, and compliance mapping. Right: auto-generated compliance mapping across CIS AWS Foundations, NIST 800-53, SOC 2 Type II, PCI-DSS v4.0, SOX IT Controls, and HIPAA — each finding mapped to the specific control IDs it violates. No manual auditing required.*
 
-The five scenarios cover the most common real-world AWS attack patterns:
+The three scenarios cover the most impactful real-world AWS attack patterns:
 
-1. **IAM Privilege Escalation** — Attacker obtains low-privilege credentials, creates a new policy version granting full admin, then uses it. 7 events. 94/100 CRITICAL. MITRE: T1548.005.
-2. **S3 Data Exfiltration** — Mass `GetObject` calls on `prod-customer-data` bucket. PII exposure detected via Macie patterns. 12 events. 89/100 HIGH.
-3. **Crypto Mining via Compromised Role** — `RunInstances` spike across us-east-1, unusual instance types (`p3.16xlarge`). 9 events. 82/100 HIGH.
-4. **Cross-Account Lateral Movement** — AssumeRole chain across three accounts using trust policy misuse. Cross-account threat that single-account monitoring misses. 11 events. 91/100 CRITICAL.
-5. **Shadow AI / Unauthorized Bedrock Use** — A non-approved principal invokes Nova Pro from outside the wolfir service boundary. Demonstrates the AI security pillar catching a threat the cloud security pillar wouldn't see. 5 events. 76/100 HIGH.
+1. **IAM Privilege Escalation** — Contractor abuses an AssumeRole chain to gain AdministratorAccess. MITRE T1098, T1078. 9 events. CRITICAL. Full attack chain: recon → pivot → persistence.
+2. **AWS Organizations Cross-Account Breach** — A compromised role in a Dev account pivots via STS AssumeRole into Production and Security accounts — lateral movement across 3 OUs, 12 member accounts. wolfir detects and contains with org-wide SCPs. 18 events. CRITICAL.
+3. **Shadow AI / LLM Abuse** — Ungoverned Bedrock InvokeModel calls combined with a prompt injection attempt. This scenario exercises the MITRE ATLAS self-monitoring pipeline — the AI security pillar catching a threat that cloud security monitoring alone would not surface. 7 events. CRITICAL.
 
-Run scenario 1 first, then scenario 3 — the cross-incident memory will flag "78% probability this is the same attacker." This is the **correlation seeding trick**: scenario 1 runs silently in the background when you land on the page so scenario 3 always has historical data to correlate against.
+Run scenario 1 first, then scenario 2 — the cross-incident memory will flag "78% probability this is the same attacker." This is the **correlation seeding trick**: scenario 1 runs silently in the background when you land on the page so scenario 2 always has historical data to correlate against.
 
 ### Compliance Mapping — 6 Frameworks, Automatic
 
@@ -716,7 +714,7 @@ if policy_arn not in policy_arns:
 
 ### 7. Session Revocation Requires a Specific IAM Pattern
 
-"Revoke all active sessions for a role" sounds straightforward. AWS doesn't have an API call for this — you can't enumerate and invalidate active STS sessions. The only way to invalidate sessions retroactively is an IAM policy condition:
+"Revoke all active sessions for a role" sounds straightforward. AWS doesn't have an API call for this — you can't enumerate and kill active STS sessions. The only way to invalidate sessions retroactively is an IAM policy condition:
 
 ```python
 policy_doc = {
@@ -779,7 +777,7 @@ This pattern appears throughout the codebase. Inconsistent field names across re
 
 ### 10. Bedrock Guardrails Blocked Legitimate Security Queries
 
-Adding Guardrails to Agentic Query introduced a failure mode we didn't anticipate: `GuardrailInterventionException` from completely legitimate security queries. Asking "which IAM role was used in the attack?" triggers Guardrails if the word "attack" matches a sensitive phrase filter. "Show me the attack path" trips a content filter. "How do I revoke compromised credentials?" contains "compromised."
+Adding Guardrails to Agentic Query introduced a failure mode we didn't anticipate: `GuardrailInterventionException` from completely legitimate security queries. Asking "which IAM role was used in the attack?" triggers Guardrails if the word "attack" matches a sensitive phrase filter. "Show me the exploit path" trips a content filter. "How do I revoke compromised credentials?" contains "compromised."
 
 Security tooling is inherently full of words that content filters are trained to block. The fix was two-pronged: tuning the guardrail to allow security research context (adding specific allowed phrases for security operations terminology), and adding graceful degradation so a guardrail rejection surfaces a useful message rather than a 500 error:
 
@@ -796,7 +794,7 @@ except GuardrailInterventionException as e:
 
 The demo mode isn't a shortcut — it's a parallel implementation that has to produce structurally identical output to the real pipeline for the frontend to use one codebase. Every `ExecutionResult` object, every risk score shape, every timeline format has to be identical whether the pipeline ran for real or returned pre-computed outputs.
 
-The discipline cost time: every new feature required both a real implementation and a demo implementation. Adding confidence intervals to risk scores meant updating both the live Nova Micro calls and the stored demo outputs. Adding the Blast Radius Simulator meant pre-computing a realistic Blast Radius result for each of the five demo scenarios. Any divergence between demo and real mode breaks one of them in ways that are hard to debug.
+The discipline cost time: every new feature required both a real implementation and a demo implementation. Adding confidence intervals to risk scores meant updating both the live Nova Micro calls and the stored demo outputs. Adding the Blast Radius Simulator meant pre-computing a realistic Blast Radius result for each of the three demo scenarios. Any divergence between demo and real mode breaks one of them in ways that are hard to debug.
 
 The upside: the discipline forced us to define clean, typed API contracts between every layer. The demo mode is a constant test that the real mode's output structure is stable.
 
@@ -872,7 +870,7 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 
 **Infrastructure decisions compound.** Terraform from day one meant the Knowledge Base setup was three commands. Docker from day one meant the demo setup was one command. These aren't things you add later cleanly.
 
-**Security products must practice what they preach.** Monitoring wolfir's Bedrock pipeline with MITRE ATLAS came from asking: "If someone targeted wolfir specifically, what would they try?" Answering that question led to building a genuinely new capability.
+**Security products must eat their own dog food.** Monitoring wolfir's Bedrock pipeline with MITRE ATLAS came from asking: "If someone targeted wolfir specifically, what would they try?" Answering that question led to building a genuinely new capability.
 
 **Demo engineering is product engineering.** Making the full five-agent pipeline work offline, client-side, with pre-computed real Nova outputs forced us to define clean API contracts, unified data shapes, and graceful degradation. The discipline of keeping demo mode and real mode on the same API contract made the real backend better.
 
@@ -916,9 +914,9 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 
 **Small and mid-sized security teams** that don't have Splunk, Cortex XSOAR, or dedicated SOC analysts. They have CloudTrail, maybe GuardDuty, and not enough hours. wolfir gives them what a 20-person SOC has: a structured response pipeline that runs in minutes.
 
-**Cloud engineers learning incident response.** The five demo scenarios walk through realistic attack chains — crypto mining, S3 data exfiltration, cross-account lateral movement, Shadow AI misuse, IAM privilege escalation. Running a scenario and reading the generated attack timeline teaches you what to look for in real incidents.
+**Cloud engineers learning incident response.** The three demo scenarios walk through realistic attack chains — IAM privilege escalation, cross-account lateral movement, and Shadow AI abuse. Running a scenario and reading the generated attack timeline teaches you what to look for in real incidents.
 
-**Teams deploying AI who need to secure it.** The MITRE ATLAS self-monitoring pillar is a proof of concept for a problem barely anyone is addressing: who watches the watcher? If you're deploying LLMs for security analysis, prompt injection and API misuse are real threat vectors, not theoretical ones.
+**Teams deploying AI who need to secure it.** The MITRE ATLAS self-monitoring pillar is a proof of concept for a problem barely anyone is addressing: who watches the watcher? If you're deploying LLMs for security analysis, prompt injection and API abuse are real threat vectors, not theoretical ones.
 
 **AWS builders exploring multi-agent architectures.** The codebase is a reference implementation: Strands Agents SDK + MCP + multiple Nova models + DynamoDB cross-incident memory + Bedrock Knowledge Base + demo/real mode coexistence. MIT-licensed.
 
