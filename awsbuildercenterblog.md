@@ -26,9 +26,9 @@ That's the two-pillar architecture. **Cloud security and AI security, one platfo
 
 ### System Architecture
 
-![wolfir two-pillar architecture — Cloud Security and AI Security pillars, Amazon Bedrock with 7 Nova models, 6 MCP server modules, DynamoDB cross-incident memory, and MITRE ATLAS self-monitoring layer](./images/wolfir-architecture-diagram.png)
+![wolfir comprehensive platform architecture — all inputs, 5-agent pipeline, 12-feature incident response package, AI security self-monitor, and Amazon Bedrock foundation](./images/wolfir-architecture-v2.png)
 
-*Figure 1 — wolfir two-pillar architecture. Left: the cloud security pipeline (CloudTrail → 5 agents → incident response package). Right: the AI security self-monitor (MITRE ATLAS + OWASP + NIST AI RMF). Center bottom: Amazon Bedrock running all 7 Nova capabilities with Guardrails and Knowledge Base.*
+*Figure 1 — wolfir full platform architecture. Top: four input sources (CloudTrail events, architecture diagrams, demo scenarios, CloudFormation ChangeSets). Middle: the 5-agent Strands pipeline with context pruning at every handoff, plus the autonomous Agentic Query mode. Bottom left: the complete 12-feature Incident Response Package — Attack Path, Blast Radius, Remediation, Compliance Mapping, SLA Tracker, Cost Impact, PDF Report, AWS Organizations, ChangeSet Analysis, Cross-Incident Memory, Risk Scores, Voice (Aria). Bottom right: the AI Security Pillar monitoring the pipeline with MITRE ATLAS + OWASP + NIST AI RMF. Foundation: Amazon Bedrock with all 7 Nova capabilities, Guardrails, and Knowledge Base.*
 
 ### Why "wolfir"?
 
