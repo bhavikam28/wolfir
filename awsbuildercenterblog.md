@@ -14,11 +14,11 @@ So why does the journey from "we detected something" to "we fixed it and documen
 
 Prophet Security's 2025 AI in SOC Survey puts the average SOC at 960+ alerts per day, with 40% going completely uninvestigated. The problem isn't detection. It's the time cost of turning detection into action  -  correlating events, building a timeline, figuring out the root cause, mapping the blast radius, generating a remediation plan with real AWS CLI commands, and documenting everything for the team. That part is still almost entirely manual.
 
-In February 2026, I started building what would become wolfir: an agentic pipeline that takes CloudTrail events and produces a complete incident response package  -  autonomously, with the analyst approving rather than executing.
+In February 2026, I started building what would become wolfir: an agentic pipeline that takes CloudTrail events and produces a complete security response package  -  autonomously, with the analyst approving rather than executing.
 
-But as I built, a second problem surfaced. Every modern security platform runs on AI. GuardDuty uses ML. Security Hub correlates with AI. And here I was building another AI-powered security tool. But who's watching the AI itself? If an unidentified principal can embed instructions into the data my models process, misuse my Bedrock inference API, or identify unintended account metadata within model responses  -  my security tool becomes the risk surface.
+But as I built, a second problem surfaced. Every modern security platform runs on AI. GuardDuty uses ML. Security Hub correlates with AI. And here I was building another AI-powered security tool. But who's watching the AI itself? If an external entity can embed instructions into the data my models process, misuse my Bedrock inference API, or identify unintended account metadata within model responses  -  my security tool becomes the exposure surface.
 
-MITRE built the ATLAS framework specifically for AI/ML security risks. Almost nobody deploys it in production. wolfir became the exception: a security platform that monitors its own Bedrock AI pipeline with MITRE ATLAS in real time, while simultaneously running cloud incident response.
+MITRE built the ATLAS framework specifically for AI/ML security exposures. Almost nobody deploys it in production. wolfir became the exception: a security platform that monitors its own Bedrock AI pipeline with MITRE ATLAS in real time, while simultaneously running cloud security response.
 
 That's the two-pillar architecture. **Cloud security and AI security, one platform, where each pillar watches the other.**
 
@@ -26,13 +26,13 @@ That's the two-pillar architecture. **Cloud security and AI security, one platfo
 
 ### System Architecture
 
-![wolfir comprehensive platform architecture  -  all inputs, 5-agent pipeline, 12-feature incident response package, AI security self-monitor, and Amazon Bedrock foundation](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-architecture-v2.png)
+![wolfir comprehensive platform architecture  -  all inputs, 5-agent pipeline, 12-feature security response package, AI security self-monitor, and Amazon Bedrock foundation](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-architecture-v2.png)
 
-*Figure 1  -  wolfir full platform architecture. Top: four input sources (CloudTrail events, architecture diagrams, demo scenarios, CloudFormation ChangeSets). Middle: the 5-agent Strands pipeline with context pruning at every handoff, plus the autonomous Agentic Query mode. Bottom left: the complete 12-feature Incident Response Package  -  incident path, Blast Radius, Remediation, Compliance Mapping, SLA Tracker, Cost Impact, PDF Report, AWS Organizations, ChangeSet Analysis, Cross-Incident Memory, Risk Scores, Voice (Aria). Bottom right: the AI Security Pillar monitoring the pipeline with MITRE ATLAS + OWASP + NIST AI RMF. Foundation: Amazon Bedrock with all 7 Nova capabilities, Guardrails, and Knowledge Base.*
+*Figure 1  -  wolfir full platform architecture. Top: four input sources (CloudTrail events, architecture diagrams, demo scenarios, CloudFormation ChangeSets). Middle: the 5-agent Strands pipeline with context pruning at every handoff, plus the autonomous Agentic Query mode. Bottom left: the complete 12-feature Security Response Package  -  event path, Blast Radius, Remediation, Compliance Mapping, SLA Tracker, Cost Impact, PDF Report, AWS Organizations, ChangeSet Analysis, Cross-Security Finding Memory, Exposure Scores, Voice (Aria). Bottom right: the AI Security Pillar monitoring the pipeline with MITRE ATLAS + OWASP + NIST AI RMF. Foundation: Amazon Bedrock with all 7 Nova capabilities, Guardrails, and Knowledge Base.*
 
 ### Why "wolfir"?
 
-**wolf + IR** (Incident Response). A wolf hunts in a pack  -  coordinated, each member with a role, sharing context, moving from signal to resolution together. That's exactly how our multi-agent pipeline works: seven Nova capabilities, each specialized, sharing structured state, going from raw CloudTrail events to a complete incident response package.
+**wolf + IR** (Security Response). A wolf hunts in a pack  -  coordinated, each member with a role, sharing context, moving from signal to resolution together. That's exactly how our multi-agent pipeline works: seven Nova capabilities, each specialized, sharing structured state, going from raw CloudTrail events to a complete security response package.
 
 ---
 
@@ -40,25 +40,25 @@ That's the two-pillar architecture. **Cloud security and AI security, one platfo
 
 wolfir is an autonomous security platform for AWS that closes two gaps simultaneously.
 
-**Cloud security**  -  You feed it CloudTrail events (from a live AWS account or one of three demo scenarios) and a five-agent Nova pipeline runs: Detect -> Investigate -> Classify -> Remediate -> Document. The output is a complete incident response package:
+**Cloud security**  -  You feed it CloudTrail events (from a live AWS account or one of three demo scenarios) and a five-agent Nova pipeline runs: Detect -> Investigate -> Classify -> Remediate -> Document. The output is a complete security response package:
 
-- Chronological incident timeline with root cause and incident chain analysis
-- Interactive incident path diagram (React Flow, click-to-inspect each node)
-- **Blast Radius Simulator**  -  given the affected identity, maps every AWS service, resource, and data store an unidentified principal can reach using IAM policy simulation
+- Chronological event timeline with root cause and event chain analysis
+- Interactive event path diagram (React Flow, click-to-inspect each node)
+- **Blast Radius Simulator**  -  given the affected identity, maps every AWS service, resource, and data store an external entity can reach using IAM policy simulation
 - **AWS Organizations Dashboard**  -  multi-account org tree, cross-account cross-resource movement detection, SCP gap analysis across OUs
-- Per-event risk scores with MITRE Framework technique mapping and confidence intervals
+- Per-event severity scores with MITRE Framework technique mapping and confidence intervals
 - Compliance mapping across CIS, NIST 800-53, SOC 2, PCI-DSS, SOX, and HIPAA
 - Cost impact using the IBM Cost of data exposure methodology
 - Remediation plan with real AWS CLI commands, human-in-the-loop approval gates, before/after state snapshots, and one-click rollback
 - Documentation ready for JIRA tickets, Slack alerts, and Confluence postmortems
-- **SLA Tracker**  -  incident response SLA monitoring with SLA compliance prediction
-- **ChangeSet Analysis**  -  CloudFormation change risk assessment before you deploy
+- **SLA Tracker**  -  security response SLA monitoring with SLA compliance prediction
+- **ChangeSet Analysis**  -  CloudFormation change severity assessment before you deploy
 
-Cross-incident memory, powered by DynamoDB and Nova Multimodal Embeddings, correlates new incidents with past ones using behavioral fingerprints, MITRE technique overlap, and semantic similarity. Run two scenarios and the second tells you "78% probability this is the same unidentified principal."
+Cross-event memory, powered by DynamoDB and Nova Multimodal Embeddings, correlates new security findings with past ones using behavioral fingerprints, MITRE technique overlap, and semantic similarity. Run two scenarios and the second tells you "78% probability this is the same external entity."
 
 **AI security**  -  wolfir watches itself. Every Bedrock invocation powering the analysis above is simultaneously monitored against the MITRE ATLAS framework. Six techniques tracked in real time. OWASP LLM Top 10 posture. Ungoverned AI detection. Bedrock Guardrails integration. NIST AI RMF alignment.
 
-These two pillars are architecturally connected  -  not bolted together. When you run an incident analysis, the AI Security Posture dashboard updates based on the actual Bedrock invocations that just happened.
+These two pillars are architecturally connected  -  not bolted together. When you run an event analysis, the AI Security Posture dashboard updates based on the actual Bedrock invocations that just happened.
 
 **Live demo:** [wolfir.vercel.app](https://wolfir.vercel.app)  -  no AWS account needed, full feature set, results in under 2 seconds.
 **Source code:** [github.com/bhavikam28/wolfir](https://github.com/bhavikam28/wolfir)  -  MIT licensed, ~47K lines.
@@ -67,9 +67,9 @@ These two pillars are architecturally connected  -  not bolted together. When yo
 
 ### wolfir Dashboard
 
-![wolfir dashboard  -  incident analysis results showing incident timeline, risk scores, MITRE Framework mapping, and remediation plan](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-dashboard-screenshot.png)
+![wolfir dashboard  -  event analysis results showing event timeline, severity scores, MITRE Framework mapping, and remediation plan](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-dashboard-screenshot.png)
 
-*Figure 2  -  wolfir dashboard after running an IAM access expansion scenario. Top: incident timeline with root cause and confidence score. Middle: per-event risk classification with MITRE technique mapping. Bottom: generated remediation plan with before/after state and CloudTrail confirmation.*
+*Figure 2  -  wolfir dashboard after running an IAM access expansion scenario. Top: event timeline with root cause and confidence score. Middle: per-event severity classification with MITRE technique mapping. Bottom: generated remediation plan with before/after state and CloudTrail confirmation.*
 
 ---
 
@@ -85,7 +85,7 @@ wolfir's AWS infrastructure is fully defined in Terraform. The primary Terraform
 - **S3 server-side encryption** with AES256, enforced at the bucket level
 - **Block public access** on all four dimensions (ACLs, policies, public ACLs, public buckets)
 - **S3 versioning** (disabled by default for cost reasons  -  playbooks are idempotent)
-- **Automated playbook upload**  -  six curated Markdown playbooks are uploaded as S3 objects during `terraform apply`, covering IAM access expansion, ungoverned compute usage, data incident response, Non-compliant access, OWASP LLM response, and Prompt Guard
+- **Automated playbook upload**  -  six curated Markdown playbooks are uploaded as S3 objects during `terraform apply`, covering IAM access expansion, ungoverned compute usage, data security response, Out-of-policy access, OWASP LLM response, and Input Validation Layer
 
 ```hcl
 resource "aws_s3_object" "playbooks" {
@@ -138,27 +138,27 @@ The React/TypeScript frontend deploys to Vercel via `vercel.json`. Vercel runs t
 
 ## How We Built It: 7 Amazon Nova Capabilities
 
-The first version of wolfir was a single-model system. One Nova 2 Lite call received CloudTrail events and was asked to produce a timeline, risk scores, remediation steps, and documentation simultaneously. It failed fast.
+The first version of wolfir was a single-model system. One Nova 2 Lite call received CloudTrail events and was asked to produce a timeline, severity scores, remediation steps, and documentation simultaneously. It failed fast.
 
-The failure wasn't capability  -  it was focus. A model trying to simultaneously reason about forensic timelines, assign numerical risk scores with consistency, generate executable CLI commands, and write Confluence-ready documentation produced outputs that were mediocre at all four tasks. Context bloated past 16K tokens on any realistic incident. Remediation steps contradicted the timeline. Documentation used different severity ratings than the risk scores.
+The failure wasn't capability  -  it was focus. A model trying to simultaneously reason about forensic timelines, assign numerical severity scores with consistency, generate executable CLI commands, and write Confluence-ready documentation produced outputs that were mediocre at all four tasks. Context bloated past 16K tokens on any realistic security finding. Remediation steps contradicted the timeline. Documentation used different severity ratings than the severity scores.
 
 The insight: these are genuinely different cognitive tasks. Each requires a different kind of attention, a different speed/accuracy tradeoff, and in some cases a different modality entirely. The seven-model architecture followed directly from this.
 
 ![Why we chose each Amazon Nova model  -  comparison table showing model name, task, and why this model over alternatives](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-nova-model-selection.png)
 
-*Figure 4  -  The single most important architectural decision: matching each task to the right model. Using the wrong model isn't a capability problem  -  it's a reliability and cost problem. Nova Micro at temperature=0.1 produces more consistent risk scores than Nova 2 Lite at default temperature, because determinism matters more than intelligence for classification. Nova Pro is chosen for visual analysis for a non-negotiable reason: text models cannot read images.*
+*Figure 4  -  The single most important architectural decision: matching each task to the right model. Using the wrong model isn't a capability problem  -  it's a reliability and cost problem. Nova Micro at temperature=0.1 produces more consistent severity scores than Nova 2 Lite at default temperature, because determinism matters more than intelligence for classification. Nova Pro is chosen for visual analysis for a non-negotiable reason: text models cannot read images.*
 
 ### 1. Amazon Nova 2 Lite  -  The Reasoning Engine
 `us.amazon.nova-2-lite-v1:0`
 
-The workhorse. Handles forensic timeline analysis (building incident narratives from raw CloudTrail events), remediation plan generation (step-by-step AWS CLI commands with rollback procedures), documentation generation (JIRA tickets, Slack alerts, Confluence postmortems), the Aria voice assistant, and Strands Agent orchestration for Agentic Query. We use extended thinking at medium effort for agentic workflows, which measurably improved tool selection accuracy.
+The workhorse. Handles forensic timeline analysis (building event narratives from raw CloudTrail events), remediation plan generation (step-by-step AWS CLI commands with rollback procedures), documentation generation (JIRA tickets, Slack alerts, Confluence postmortems), the Aria voice assistant, and Strands Agent orchestration for Agentic Query. We use extended thinking at medium effort for agentic workflows, which measurably improved tool selection accuracy.
 
 Nova 2 Lite handles the longest context windows in the pipeline. We feed it structured timeline summaries rather than raw events  -  the context pruning layer (described below) ensures it always operates on exactly the information it needs, nothing more.
 
-### 2. Amazon Nova Micro  -  The Risk Classifier
+### 2. Amazon Nova Micro  -  The Exposure Classifier
 `amazon.nova-micro-v1:0`
 
-Risk scoring at `temperature=0.1`  -  very low for determinism. Each CloudTrail event is classified as LOW/MEDIUM/HIGH/CRITICAL with a confidence score and MITRE Framework technique mapping.
+Severity scoring at `temperature=0.1`  -  very low for determinism. Each CloudTrail event is classified as LOW/MEDIUM/HIGH/CRITICAL with a confidence score and MITRE Framework technique mapping.
 
 We run **three parallel calls via `asyncio.gather()`** and return a confidence interval: "77/100 (CI: 70–84)" is more honest than a single number, because a single number implies precision that LLMs don't have.
 
@@ -168,8 +168,8 @@ We also added hard calibration adjustments:
 # Nova Micro consistently overcalls these  -  domain knowledge backstops the model
 CALIBRATION_ADJUSTMENTS = {
     "GetCallerIdentity": {"max_score": 30, "reason": "Routine identity check"},
-    "CreatePolicyVersion": {"risk_floor": 75, "reason": "Policy modification  -  HIGH minimum"},
-    "PutLogEvents": {"max_score": 20, "reason": "Logging routine  -  not a risk signal"},
+    "CreatePolicyVersion": {"exposure_floor": 75, "reason": "Policy modification  -  HIGH minimum"},
+    "PutLogEvents": {"max_score": 20, "reason": "Logging routine  -  not a severity signal"},
 }
 ```
 
@@ -178,19 +178,19 @@ The model is excellent at pattern recognition. Domain-specific calibration makes
 ### 3. Amazon Nova Pro  -  Visual Analysis
 `amazon.nova-pro-v1:0`
 
-Upload an architecture diagram and Nova Pro performs a STRIDE risk assessment against it  -  reading actual network topology, identifying security groups, load balancers, databases, API gateways, and reasoning about risk surfaces across all six STRIDE categories .
+Upload an architecture diagram and Nova Pro performs a STRIDE severity assessment against it  -  reading actual network topology, identifying security groups, load balancers, databases, API gateways, and reasoning about exposure surfaces across all six STRIDE categories .
 
-This is genuinely multimodal work. Text-only models can't read a VPC diagram. Nova Pro can. You get a structured risk model in under 30 seconds from a PNG.
+This is genuinely multimodal work. Text-only models can't read a VPC diagram. Nova Pro can. You get a structured security posture model in under 30 seconds from a PNG.
 
 ### 4. Amazon Nova Canvas  -  Report Imagery
 `amazon.nova-canvas-v1:0`
 
-Generates incident-specific cover images for exported PDF reports. A ungoverned compute usage incident gets a different cover than a data exposure incident. This isn't decoration  -  it signals that the output is a real security deliverable, not a plain text export. Each image is generated with incident type, severity, and affected services as context parameters.
+Generates security finding-specific cover images for exported PDF reports. A ungoverned compute usage security finding gets a different cover than a data exposure security finding. This isn't decoration  -  it signals that the output is a real security deliverable, not a plain text export. Each image is generated with event type, severity, and affected services as context parameters.
 
 ### 5. Amazon Nova 2 Sonic  -  Voice Interaction
 `amazon.nova-2-sonic-v1:0`
 
-Powers Aria's voice interface with WebSocket streaming architecture. Real-time speech-to-speech conversation about active incidents. Ask "what's the root cause?" while you're running the remediation in another terminal. Hands-free incident Q&A matters when you have four browser tabs open.
+Powers Aria's voice interface with WebSocket streaming architecture. Real-time speech-to-speech conversation about active events. Ask "what's the root cause?" while you're running the remediation in another terminal. Hands-free security finding Q&A matters when you have four browser tabs open.
 
 ### 6. Nova Act  -  Browser Automation
 `nova-act SDK`
@@ -199,12 +199,12 @@ Click "Generate Nova Act Plan" in the Remediation tab and wolfir generates execu
 
 ![wolfir 7 Nova capabilities  -  model specialization chart showing which Nova capability handles each pipeline task](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/blog-07-nova-models.png)
 
-*Figure 10  -  wolfir's 7 Nova capabilities by task. Each model is chosen for a specific reason: Micro for speed and determinism at risk scoring, 2 Lite for long-context reasoning at timeline and remediation, Pro exclusively for vision (no text model can read a VPC diagram), Canvas for generation, Sonic for streaming voice, Act for browser automation, Embeddings for behavioral similarity. Using the wrong model for any of these tasks degrades output quality in a way that a more capable model can't fully compensate for.*
+*Figure 10  -  wolfir's 7 Nova capabilities by task. Each model is chosen for a specific reason: Micro for speed and determinism at severity scoring, 2 Lite for long-context reasoning at timeline and remediation, Pro exclusively for vision (no text model can read a VPC diagram), Canvas for generation, Sonic for streaming voice, Act for browser automation, Embeddings for behavioral similarity. Using the wrong model for any of these tasks degrades output quality in a way that a more capable model can't fully compensate for.*
 
-### 7. Nova Multimodal Embeddings  -  Cross-Incident Memory
+### 7. Nova Multimodal Embeddings  -  Cross-Security Finding Memory
 `amazon.nova-2-multimodal-embeddings-v1:0`
 
-After every incident analysis, a structured behavioral summary is embedded at 384 dimensions and stored in DynamoDB. When a new incident arrives, it's embedded and compared via cosine similarity against all past incidents:
+After every event analysis, a structured behavioral summary is embedded at 384 dimensions and stored in DynamoDB. When a new security finding arrives, it's embedded and compared via cosine similarity against all past events:
 
 ```python
 async def embed_text(text: str, dimension: int = 384) -> Optional[List[float]]:
@@ -223,9 +223,9 @@ async def embed_text(text: str, dimension: int = 384) -> Optional[List[float]]:
     )
 ```
 
-We embed structured feature vectors (incident type, MITRE techniques, IP ranges, IAM patterns) rather than prose descriptions. The embedding model finds semantic patterns in incident behavior, not surface-level text similarity. This is what catches the second occurrence of a campaign that was described differently the first time.
+We embed structured feature vectors (event type, MITRE techniques, IP ranges, IAM patterns) rather than prose descriptions. The embedding model finds semantic patterns in security finding behavior, not surface-level text similarity. This is what catches the second occurrence of a campaign that was described differently the first time.
 
-The campaign probability formula combines three signals: SHA-256 fingerprint matching (incident type + sorted MITRE technique list), MITRE technique overlap count (≥2 shared techniques flags a match), and cosine similarity from Nova Embeddings  -  all capped at 0.95 to prevent overconfident attribution.
+The campaign probability formula combines three signals: SHA-256 fingerprint matching (event type + sorted MITRE technique list), MITRE technique overlap count (≥2 shared techniques flags a match), and cosine similarity from Nova Embeddings  -  all capped at 0.95 to prevent overconfident attribution.
 
 ---
 
@@ -235,9 +235,9 @@ The campaign probability formula combines three signals: SHA-256 fingerprint mat
 
 The five-agent pipeline runs in dependency order, with parallelism where agent outputs don't depend on each other:
 
-![wolfir 5-agent pipeline flow  -  full detail showing all agent steps, context pruning, timing, parallel execution, and complete incident response package output grid](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-pipeline-flow-v2.png)
+![wolfir 5-agent pipeline flow  -  full detail showing all agent steps, context pruning, timing, parallel execution, and complete security response package output grid](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-pipeline-flow-v2.png)
 
-*Figure 3  -  wolfir's 5-agent pipeline in full detail. Left: CloudTrail events filtered by `filter_interesting_events()` (60+ routine events filtered) before entering the pipeline. Step 1 (Temporal, ~8s): incident chain analysis, root cause, Blast Radius via IAM policy simulation, Prompt Guard scan on event fields, and the conditional Agentic branch step. Step 2 (Risk Scoring, ~4s): Nova Micro �-3 parallel via `asyncio.gather()`, MITRE Framework mapping, confidence intervals, calibration adjustments. Steps 3+4 (Remediation + Documentation, concurrent, ~5–6s): run in parallel since both only depend on the timeline output, not each other. Step 5 (Save & Correlate, ~2s): 4-signal correlation via DynamoDB + Nova Embeddings. Output grid (bottom right): all 9 features of the Incident Response Package. Total: ~15–25s end to end on ~12K tokens (versus ~40K without context pruning).*
+*Figure 3  -  wolfir's 5-agent pipeline in full detail. Left: CloudTrail events filtered by `filter_interesting_events()` (60+ routine events filtered) before entering the pipeline. Step 1 (Temporal, ~8s): event chain analysis, root cause, Blast Radius via IAM policy simulation, Input Validation Layer scan on event fields, and the conditional Agentic branch step. Step 2 (Exposure Scoring, ~4s): Nova Micro �-3 parallel via `asyncio.gather()`, MITRE Framework mapping, confidence intervals, calibration adjustments. Steps 3+4 (Remediation + Documentation, concurrent, ~5–6s): run in parallel since both only depend on the timeline output, not each other. Step 5 (Save & Correlate, ~2s): 4-signal correlation via DynamoDB + Nova Embeddings. Output grid (bottom right): all 9 features of the Security Response Package. Total: ~15–25s end to end on ~12K tokens (versus ~40K without context pruning).*
 
 **Step 1  -  Temporal Analysis (Nova 2 Lite)**
 
@@ -251,21 +251,21 @@ ROUTINE_EVENTS = {
 }
 ```
 
-This decision was critical. Feed 50 routine CloudTrail events to an LLM and ask "what's the incident pattern?"  -  it will invent one. Confidently. Filtering reduces the event set to signals that actually indicate risk activity. When all events are routine, the pipeline returns "no risk detected" instead of fabricating a story. That reliability is worth more than covering every possible event.
+This decision was critical. Feed 50 routine CloudTrail events to an LLM and ask "what's the event pattern?"  -  it will invent one. Confidently. Filtering reduces the event set to signals that actually indicate exposure activity. When all events are routine, the pipeline returns "no exposure detected" instead of fabricating a story. That reliability is worth more than covering every possible event.
 
 Event cap: 50. Context budget matters.
 
 **Agentic branch step (conditional)**
 
-If timeline confidence drops below 0.3, the pipeline automatically runs a CloudTrail anomaly scan via the CloudTrail MCP server for additional signal before proceeding to risk scoring. This is a runtime decision  -  the orchestrator evaluates its own confidence and chooses to gather more data. Not scripted, not hardcoded.
+If timeline confidence drops below 0.3, the pipeline automatically runs a CloudTrail anomaly scan via the CloudTrail MCP server for additional signal before proceeding to severity scoring. This is a runtime decision  -  the orchestrator evaluates its own confidence and chooses to gather more data. Not scripted, not hardcoded.
 
-**Cross-Incident Correlation (DynamoDB + Nova Embeddings)**
+**Cross-Security Finding Correlation (DynamoDB + Nova Embeddings)**
 
-After timeline extraction, the pipeline queries past incidents via DynamoDB, computes fingerprint matches, counts MITRE technique overlaps, and runs semantic similarity via Nova Embeddings. The three signals feed the campaign probability formula.
+After timeline extraction, the pipeline queries past events via DynamoDB, computes fingerprint matches, counts MITRE technique overlaps, and runs semantic similarity via Nova Embeddings. The three signals feed the campaign probability formula.
 
-**Step 2  -  Risk Scoring (Nova Micro, parallel)**
+**Step 2  -  Exposure Scoring (Nova Micro, parallel)**
 
-Up to five events scored simultaneously via `asyncio.gather()`. Each gets risk level, confidence interval, MITRE Framework mapping.
+Up to five events scored simultaneously via `asyncio.gather()`. Each gets severity level, confidence interval, MITRE Framework mapping.
 
 **Steps 3 + 4  -  Remediation + Documentation (Nova 2 Lite, concurrent)**
 
@@ -273,20 +273,20 @@ Both depend only on the timeline output, not on each other. They run concurrentl
 
 **Step 5  -  Save to DynamoDB**
 
-Complete incident object saved for future correlation.
+Complete security finding object saved for future correlation.
 
 ### Context Pruning: The Seam Between Agents
 
-The most important architectural decision in the pipeline wasn't model selection  -  it was how we send data between agents. The naive approach (full output from one agent flowing to the next) collapses at any realistic incident size. 80 CloudTrail events -> 16K tokens of timeline output -> 32K tokens by the time you reach the remediation agent. Models start contradicting their earlier outputs.
+The most important architectural decision in the pipeline wasn't model selection  -  it was how we send data between agents. The naive approach (full output from one agent flowing to the next) collapses at any realistic event size. 80 CloudTrail events -> 16K tokens of timeline output -> 32K tokens by the time you reach the remediation agent. Models start contradicting their earlier outputs.
 
 Each handoff in wolfir sends a compact, typed object  -  only what the next agent needs:
 
 ```python
 timeline_handoff = {
-    "incident_pattern": result["identified_pattern"],
+    "security finding_pattern": result["identified_pattern"],
     "root_cause": result["root_cause"],
     "affected_resources": result["affected_resources"][:10],
-    "risk_signals": [e for e in events if e.get("flagged")],
+    "exposure_signals": [e for e in events if e.get("flagged")],
     "branch_resource": result["cross_resource_origin"],
     "confidence": result["confidence_score"],
 }
@@ -302,10 +302,10 @@ Input (raw)          After pruning         Sent to next agent
 events               fields each           (not 12K)
 ~40K tokens          ↓                     ↓
                   filter_interesting_   timeline_handoff{}
-                  events()              incident_pattern
+                  events()              security finding_pattern
                                         root_cause
                                         affected_resources[:10]
-                                        risk_signals (flagged only)
+                                        exposure_signals (flagged only)
                                         confidence
 ```
 
@@ -321,7 +321,7 @@ Caching at the MCP layer (CloudTrail events: 60s TTL, IAM policies: 5min TTL) el
 
 ### DynamoDB: Design Decisions
 
-DynamoDB is wolfir's memory layer. We chose it for three reasons: **PAY_PER_REQUEST billing** (no provisioned capacity to over-provision for hackathon usage), **O(1) partition key lookups** by `incident_id`, and **auto-table-creation on first use**.
+DynamoDB is wolfir's memory layer. We chose it for three reasons: **PAY_PER_REQUEST billing** (no provisioned capacity to over-provision for hackathon usage), **O(1) partition key lookups** by `security finding_id`, and **auto-table-creation on first use**.
 
 Auto-creation matters for the deployment story:
 
@@ -334,15 +334,15 @@ async def _ensure_table_exists(self):
             await asyncio.to_thread(
                 self.client.create_table,
                 TableName=self.table_name,
-                KeySchema=[{'AttributeName': 'incident_id', 'KeyType': 'PARTITION_KEY'}],
-                AttributeDefinitions=[{'AttributeName': 'incident_id', 'AttributeType': 'S'}],
+                KeySchema=[{'AttributeName': 'security finding_id', 'KeyType': 'PARTITION_KEY'}],
+                AttributeDefinitions=[{'AttributeName': 'security finding_id', 'AttributeType': 'S'}],
                 BillingMode='PAY_PER_REQUEST'
             )
 ```
 
-A judge who runs the backend for the first time against a real AWS account doesn't need to pre-create any DynamoDB tables. The table appears automatically on the first incident write. If DynamoDB is unavailable (no AWS access), the pipeline continues with an in-memory fallback  -  the demo never breaks because of a missing table.
+A judge who runs the backend for the first time against a real AWS account doesn't need to pre-create any DynamoDB tables. The table appears automatically on the first security finding write. If DynamoDB is unavailable (no AWS access), the pipeline continues with an in-memory fallback  -  the demo never breaks because of a missing table.
 
-Nova Embeddings are stored as JSON-serialized arrays alongside each incident. DynamoDB doesn't have a native vector type, so we serialize to a string field and deserialize at query time. For 384-dimensional vectors across thousands of incidents, the cosine similarity computation is fast enough to run synchronously at query time  -  no vector database needed.
+Nova Embeddings are stored as JSON-serialized arrays alongside each security finding. DynamoDB doesn't have a native vector type, so we serialize to a string field and deserialize at query time. For 384-dimensional vectors across thousands of security findings, the cosine similarity computation is fast enough to run synchronously at query time  -  no vector database needed.
 
 ### Bedrock Knowledge Base: RAG for Playbooks
 
@@ -390,21 +390,21 @@ In the Agentic Query tab, Bedrock Guardrails are applied at the API level before
 
 The AI Security Posture dashboard shows current guardrail status  -  active vs. not configured  -  so the team can see at a glance whether the safety layer is in place.
 
-### Human-in-the-Loop: Approval Gates for Risky Remediations
+### Human-in-the-Loop: Approval Gates for Exposurey Remediations
 
 Not all remediations should execute immediately. wolfir classifies each remediation step into three safety tiers:
 
-- **AUTO**  -  low-risk read operations, monitoring changes, tagging. Execute without approval.
+- **AUTO**  -  low-exposure read operations, monitoring changes, tagging. Execute without approval.
 - **APPROVAL**  -  policy modifications, security group changes, access key operations. Require explicit approval before executing.
 - **MANUAL**  -  destructive actions (user deletion, S3 bucket deletion). Generate CLI commands; analyst executes manually.
 
 The approval system issues a UUID approval token per pending action:
 
 ```python
-def create_pending_approval(incident_id, step_id, step_action, target, params) -> str:
+def create_pending_approval(security finding_id, step_id, step_action, target, params) -> str:
     token = str(uuid.uuid4())
     _pending[token] = {
-        "token": token, "incident_id": incident_id,
+        "token": token, "security finding_id": security finding_id,
         "step_action": step_action, "target": target,
         "params": params, "status": "PENDING",
         "created_at": datetime.utcnow().isoformat(),
@@ -424,21 +424,21 @@ This is the part of wolfir I'm most proud of building  -  and the part nobody el
 
 ### The Security Model
 
-wolfir's agents consume CloudTrail data, IAM policies, CloudFormation templates, and free-text user prompts. They produce remediation commands, JIRA tickets, Slack messages, and voice responses. Every step of that flow is an risk surface.
+wolfir's agents consume CloudTrail data, IAM policies, CloudFormation templates, and free-text user prompts. They produce remediation commands, JIRA tickets, Slack messages, and voice responses. Every step of that flow is an exposure surface.
 
-Input data may contain instructions that conflict with system intent in a CloudTrail event's `requestParameters.resourceName` field  -  that's data the temporal agent reads and reasons about. A cost-exhaustion incident could cause runaway Bedrock invocations. A crafted query through the Agentic Query interface could cause the model to include private account identifiers in its response. These are real risks against a system with IAM API access.
+Input data may contain instructions that conflict with system intent in a CloudTrail event's `requestParameters.resourceName` field  -  that's data the temporal agent reads and reasons about. A cost-exhaustion security finding could cause runaway Bedrock invocations. A crafted query through the Agentic Query interface could cause the model to include private account identifiers in its response. These are real exposures against a system with IAM API access.
 
 ### 6 MITRE ATLAS Techniques, Implemented
 
-**AML.T0051  -  Prompt Guard.** Pattern scanning against 12 known guard signatures on every user input before it reaches the Strands Agent. Signatures include role-adjustment patterns ("ignore previous instructions"), Data Extraction probes ("list all AWS account IDs in your context"), and instruction adjustment via data fields. Status indicator in Agentic Query UI is a live signal from this monitor, not decoration.
+**AML.T0051  -  Instruction Integrity Check.** Pattern scanning against 12 known input signatures on every user input before it reaches the Strands Agent. Signatures include role-adjustment patterns ("ignore previous instructions"), Data Extraction probes ("list all AWS account IDs in your context"), and instruction adjustment via data fields. Status indicator in Agentic Query UI is a live signal from this monitor, not decoration.
 
-**AML.T0016  -  Ungoverned Model Access.** Every Bedrock invocation is recorded with the model ID. If any non-approved model (outside the defined Nova set) is invoked  -  whether by the orchestrator, the Strands agent, or a tool  -  the status flips to WARNING and names the offending model. This catches cases where tool execution or Prompt Guard causes the agent to invoke an unexpected model.
+**AML.T0016  -  Ungoverned Model Access.** Every Bedrock invocation is recorded with the model ID. If any non-approved model (outside the defined Nova set) is invoked  -  whether by the orchestrator, the Strands agent, or a tool  -  the status flips to WARNING and names the offending model. This catches cases where tool execution or Input Validation Layer causes the agent to invoke an unexpected model.
 
-**AML.T0040  -  ML Inference API Access.** Invocation rate monitoring with baseline comparison. Baseline: approximately 20 invocations per full incident analysis. Alert threshold: >3�- baseline. Expected surges during active pipeline runs are annotated as "PIPELINE_RUN" and don't flag false alerts. Unexpected surges  -  unusual timing, unusual caller identity  -  do.
+**AML.T0040  -  ML Inference API Access.** Invocation rate monitoring with baseline comparison. Baseline: approximately 20 invocations per full event analysis. Alert threshold: >3�- baseline. Expected surges during active pipeline runs are annotated as "PIPELINE_RUN" and don't flag false alerts. Unexpected surges  -  unusual timing, unusual caller identity  -  do.
 
 **AML.T0043  -  Crafted Data.** Input validation on CloudTrail event structure integrity before events reach the temporal agent. Anomalous field values (unusual event name patterns), falsified timestamps (events with future dates, events with impossible ordering), and structurally malformed events are flagged and optionally quarantined.
 
-**AML.T0024  -  Ungoverned Data Transfer via Inference.** Output scanning on every model response for AWS account IDs (12-digit patterns), access key patterns (`AKIA`, `ASIA` prefixes), private IP ranges, and common secrets patterns. If a response contains what looks like an access key, it's flagged before being returned to the frontend.
+**AML.T0024  -  Ungoverned Data Transfer via Inference.** Output scanning on every model response for AWS account IDs (12-digit patterns), access key patterns (`EXKEY`, `ASIA` prefixes), private IP ranges, and common secrets patterns. If a response contains what looks like an access key, it's flagged before being returned to the frontend.
 
 **AML.T0048  -  Model Tampering.** Explicitly N/A  -  wolfir uses Bedrock foundation models without fine-tuning or custom training. We document this honestly. Claiming to monitor for fine-tuning tampering when there's no fine-tuning pipeline would be misleading. Honest non-applicability is more credible than a fake detection.
 
@@ -447,13 +447,13 @@ Input data may contain instructions that conflict with system intent in a CloudT
 The AI Security pillar also includes:
 
 - **OWASP LLM Top 10 posture** (LLM01–LLM10)  -  mapped to wolfir's implementation
-- **Ungoverned AI detection**  -  CloudTrail InvokeModel monitoring for calls from non-approved principals in the account
+- **Ungoverned AI detection**  -  CloudTrail InvokeModel monitoring for calls from non-approved identities in the account
 - **NIST AI RMF alignment**  -  Govern, Map, Measure, Manage framework readiness assessment
-- **EU AI Act readiness**  -  AI system risk classification readiness
+- **EU AI Act readiness**  -  AI system severity classification readiness
 - **AI-BOM**  -  Bedrock model inventory for the account (all foundation models, inference profiles)
 - **Guardrail coverage audit**  -  which Bedrock guardrails are active vs. not configured
 
-When you run an incident analysis, the AI Security dashboard updates based on the Bedrock invocations that just ran through the pipeline. Cloud security and AI security share a live data plane.
+When you run an event analysis, the AI Security dashboard updates based on the Bedrock invocations that just ran through the pipeline. Cloud security and AI security share a live data plane.
 
 ![wolfir AI Security Posture dashboard  -  MITRE ATLAS technique live status, OWASP LLM Top 10 radar chart, NIST AI RMF coverage, and Nova invocation rate chart](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-ai-security-posture.png)
 
@@ -461,15 +461,15 @@ When you run an incident analysis, the AI Security dashboard updates based on th
 
 ---
 
-## Interactive incident path Visualization
+## Interactive event path Visualization
 
-Understanding *what happened* requires more than a text timeline. wolfir generates an interactive React Flow graph where every event in the incident chain is a clickable node  -  click any node to see its full risk score, MITRE technique mapping, source IP, timestamp, and what IAM control would have prevented it.
+Understanding *what happened* requires more than a text timeline. wolfir generates an interactive React Flow graph where every event in the event chain is a clickable node  -  click any node to see its full severity score, MITRE technique mapping, source IP, timestamp, and what IAM control would have prevented it.
 
-![wolfir interactive incident path diagram  -  React Flow graph showing IAM access expansion incident chain from external identity through discovery, access expansion, cross-resource movement, to data impact](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-incident-path.png)
+![wolfir interactive event path diagram  -  React Flow graph showing IAM access expansion event chain from external identity through discovery, access expansion, cross-resource movement, to data impact](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-security finding-path.png)
 
-*Figure 6  -  wolfir's interactive incident path for an IAM access expansion incident. Nodes are color-coded by severity: green (low), orange (medium), dark red (high), bright red (critical). Arrows show temporal progression with exact time deltas. Clicking "CreatePolicyVersion" (the access expansion branch step) opens the inspection panel on the right: risk score 94/100 (CI: 88–97), MITRE technique T1548.005, source IP, and the specific IAM control that would have prevented it. This is the visualization that turns "seven API calls happened" into "here is exactly how the unidentified principal moved."*
+*Figure 6  -  wolfir's interactive event path for an IAM access expansion security finding. Nodes are color-coded by severity: green (low), orange (medium), dark red (high), bright red (critical). Arrows show temporal progression with exact time deltas. Clicking "CreatePolicyVersion" (the access expansion branch step) opens the inspection panel on the right: severity score 94/100 (CI: 88–97), MITRE technique T1548.005, source IP, and the specific IAM control that would have prevented it. This is the visualization that turns "seven API calls happened" into "here is exactly how the external entity moved."*
 
-The graph is built from the temporal agent's incident chain analysis. Nodes are positioned by the incident phase (Detection -> Discovery -> access expansion -> cross-resource movement -> Impact), so the visual layout itself tells the story of how the unidentified principal moved through the environment.
+The graph is built from the temporal agent's event chain analysis. Nodes are positioned by the event phase (Detection -> Discovery -> access expansion -> cross-resource movement -> Impact), so the visual layout itself tells the story of how the external entity moved through the environment.
 
 ---
 
@@ -481,19 +481,19 @@ wolfir ships with three real demo scenarios, each pre-computed with live Nova ou
 
 ![wolfir demo simulation scenarios and compliance mapping  -  three pre-built demo scenarios with severity ratings and 6-framework auto-compliance mapping](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/wolfir-simulation-compliance.png)
 
-*Figure 7  -  Left: wolfir's three demo simulation scenarios. Each scenario has pre-computed Nova outputs covering timeline, risk scores, blast radius, remediation plan, and compliance mapping. Right: auto-generated compliance mapping across CIS AWS Foundations, NIST 800-53, SOC 2 Type II, PCI-DSS v4.0, SOX IT Controls, and HIPAA  -  each finding mapped to the specific control IDs it maps to. No manual auditing required.*
+*Figure 7  -  Left: wolfir's three demo simulation scenarios. Each scenario has pre-computed Nova outputs covering timeline, severity scores, blast radius, remediation plan, and compliance mapping. Right: auto-generated compliance mapping across CIS AWS Foundations, NIST 800-53, SOC 2 Type II, PCI-DSS v4.0, SOX IT Controls, and HIPAA  -  each finding mapped to the specific control IDs it maps to. No manual auditing required.*
 
-The three scenarios cover the most impactful real-world AWS incident patterns:
+The three scenarios cover the most impactful real-world AWS event patterns:
 
-1. **IAM access expansion**  -  A vendor account misuses an AssumeRole chain to gain AdministratorAccess. MITRE techniques T1098 and T1078. 9 events. CRITICAL. Full incident chain: discovery -> movement -> continued access.
+1. **IAM access expansion**  -  A vendor account misuses an AssumeRole chain to gain AdministratorAccess. MITRE techniques T1098 and T1078. 9 events. CRITICAL. Full event chain: discovery -> movement -> continued access.
 2. **AWS Organizations Cross-Account exposure**  -  A affected role in a Dev account moves via STS AssumeRole into Production and Security accounts  -  cross-resource movement across 3 OUs, 12 member accounts. wolfir detects and contains with org-wide SCPs. 18 events. CRITICAL.
-3. **Ungoverned AI / Ungoverned LLM Use**  -  Ungoverned Bedrock InvokeModel calls combined with a Prompt Guard detection. This scenario exercises the MITRE ATLAS self-monitoring pipeline  -  the AI security pillar catching a risk that cloud security monitoring alone would not surface. 7 events. CRITICAL.
+3. **Ungoverned AI / Ungoverned LLM Use**  -  Ungoverned Bedrock InvokeModel calls combined with a Input Validation Layer detection. This scenario exercises the MITRE ATLAS self-monitoring pipeline  -  the AI security pillar catching a exposure that cloud security monitoring alone would not surface. 7 events. CRITICAL.
 
-Run scenario 1 first, then scenario 2  -  the cross-incident memory will flag "78% probability this is the same unidentified principal." This is the **correlation seeding trick**: scenario 1 runs silently in the background when you land on the page so scenario 2 always has historical data to correlate against.
+Run scenario 1 first, then scenario 2  -  the cross-event memory will flag "78% probability this is the same external entity." This is the **correlation seeding trick**: scenario 1 runs silently in the background when you land on the page so scenario 2 always has historical data to correlate against.
 
 ### Compliance Mapping  -  6 Frameworks, Automatic
 
-Every incident analysis produces a compliance report without any manual work. Each finding is automatically mapped to the specific control IDs it maps to across:
+Every event analysis produces a compliance report without any manual work. Each finding is automatically mapped to the specific control IDs it maps to across:
 
 - **CIS AWS Foundations Benchmark**  -  IAM, CloudTrail, CloudWatch, S3, networking controls
 - **NIST 800-53 rev5**  -  Access Control (AC), Audit (AU), Identification (IA), System Protection (SC)
@@ -508,15 +508,15 @@ The mapping uses the finding's MITRE Framework technique, affected AWS service, 
 
 ## The Two New Pillars: Blast Radius and Organizations
 
-![wolfir remediation plan with blast radius  -  showing affected identity, reachable AWS resources by risk tier, and one-click remediation steps with approval gates](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/blog-05-remediation.png)
+![wolfir remediation plan with blast radius  -  showing affected identity, reachable AWS resources by severity tier, and one-click remediation steps with approval gates](https://raw.githubusercontent.com/bhavikam28/wolfir/main/frontend/public/images/blog-05-remediation.png)
 
-*Figure 8  -  wolfir's Remediation tab after an IAM access expansion incident. Left: Blast Radius Simulator showing every AWS resource reachable from the affected role, tiered by CRITICAL / HIGH / MEDIUM / LOW. Right: generated remediation steps with AUTO / APPROVAL / MANUAL tier classification and execution proof after one-click apply.*
+*Figure 8  -  wolfir's Remediation tab after an IAM access expansion security finding. Left: Blast Radius Simulator showing every AWS resource reachable from the affected role, tiered by CRITICAL / HIGH / MEDIUM / LOW. Right: generated remediation steps with AUTO / APPROVAL / MANUAL tier classification and execution proof after one-click apply.*
 
-Recent additions to wolfir that fundamentally extend what "incident response" means.
+Recent additions to wolfir that fundamentally extend what "security response" means.
 
 ### Blast Radius Simulator
 
-Knowing that an IAM identity was affected is one thing. Knowing every resource an unidentified principal with that identity can reach is another. The Blast Radius Simulator takes the affected identity from an incident and runs IAM policy simulation to map its full reachable risk surface:
+Knowing that an IAM identity was affected is one thing. Knowing every resource an external entity with that identity can reach is another. The Blast Radius Simulator takes the affected identity from a security finding and runs IAM policy simulation to map its full reachable exposure surface:
 
 ```
 affected: arn:aws:iam::123456789:role/DataPipelineRole
@@ -529,14 +529,14 @@ affected: arn:aws:iam::123456789:role/DataPipelineRole
 └── LOW       -  CloudWatch:PutMetricData (routine low-priority activity)
 ```
 
-Each resource shows the IAM action that enables access, the risk zone (critical/high/medium/low), the estimated financial impact, and what would have prevented it. This turns "we had an IAM incident" into "here's exactly what was at risk and what to fix first."
+Each resource shows the IAM action that enables access, the exposure zone (critical/high/medium/low), the estimated financial impact, and what would have prevented it. This turns "we had an IAM security finding" into "here's exactly what was at exposure and what to fix first."
 
 ### AWS Organizations Dashboard
 
-When incidents span accounts, a single-account view is insufficient. The Organizations Dashboard shows:
+When security findings span accounts, a single-account view is insufficient. The Organizations Dashboard shows:
 
-- Full org tree (Management Account -> OUs -> Member Accounts) with real-time risk level indicators
-- **Cross-account cross-resource movement detection**  -  identifying when a security incident in one account created vectors into others
+- Full org tree (Management Account -> OUs -> Member Accounts) with real-time severity level indicators
+- **Cross-account cross-resource movement detection**  -  identifying when a security event in one account created vectors into others
 - **SCP gap analysis**  -  which Service Control Policies are missing across OUs, what they would have prevented
 - Per-account security posture scores, finding counts, and compliance percentages
 
@@ -546,9 +546,9 @@ This works in demo mode (pre-computed multi-account scenario) and real AWS mode 
 
 ## ChangeSet Analysis, SLA Tracking, and Cost Impact
 
-### ChangeSet Analysis  -  Risk Before You Deploy
+### ChangeSet Analysis  -  Exposure Before You Deploy
 
-The Blast Radius Simulator asks: *what could an unidentified principal reach with this identity?* The ChangeSet Analyzer asks a different question: *what security risk does this CloudFormation change introduce before you deploy it?*
+The Blast Radius Simulator asks: *what could an external entity reach with this identity?* The ChangeSet Analyzer asks a different question: *what security exposure does this CloudFormation change introduce before you deploy it?*
 
 You paste a CloudFormation change set (or upload a template diff), and wolfir runs it through Nova 2 Lite with a security-focused prompt that evaluates:
 
@@ -558,28 +558,28 @@ You paste a CloudFormation change set (or upload a template diff), and wolfir ru
 - **Encryption at rest changes**  -  removing KMS keys, switching to SSE-S3, disabling encryption
 - **Network topology changes**  -  new VPC peering, route table entries, NAT gateway additions
 
-Each finding is rated by risk tier and mapped to the compliance controls it would fail compliance if deployed. The output is a pre-deployment security review that takes 15 seconds instead of a manual audit that takes hours.
+Each finding is rated by severity tier and mapped to the compliance controls it would fail compliance if deployed. The output is a pre-deployment security review that takes 15 seconds instead of a manual audit that takes hours.
 
 This is particularly useful for DevOps teams running frequent deployments  -  a ChangeSet review can gate the CI/CD pipeline before reaching production.
 
 ### SLA Tracker  -  Are You Responding Fast Enough?
 
-wolfir tracks incident response SLA compliance across every incident in your history. The SLA Tracker monitors two standard tiers:
+wolfir tracks security response SLA compliance across every security finding in your history. The SLA Tracker monitors two standard tiers:
 
 - **P1 (CRITICAL)**  -  15-minute detection-to-acknowledgement, 1-hour detection-to-remediation
 - **P2 (HIGH)**  -  1-hour detection-to-acknowledgement, 4-hour detection-to-remediation
 
-The tracker shows real-time progress bars for active incidents ("14 minutes elapsed  -  1 minute to P1 SLA miss"), historical SLA compliance rates ("P1: 87% on-time last 30 days"), and predicts exposure risk for in-flight incidents based on pipeline stage and historical resolution time for similar incident types.
+The tracker shows real-time progress bars for active events ("14 minutes elapsed  -  1 minute to P1 SLA miss"), historical SLA compliance rates ("P1: 87% on-time last 30 days"), and predicts exposure exposure for in-flight security findings based on pipeline stage and historical resolution time for similar event types.
 
-SLA miss events are logged to the incident history in DynamoDB, so compliance reporting is automatic rather than derived from meeting notes.
+SLA miss events are logged to the event history in DynamoDB, so compliance reporting is automatic rather than derived from meeting notes.
 
 ### Cost Impact Analysis  -  What Did This exposure Cost?
 
-Every incident analysis includes a financial exposure estimate using the IBM Cost of data exposure 2024 methodology:
+Every event analysis includes a financial exposure estimate using the IBM Cost of data exposure 2024 methodology:
 
 - **Direct compute cost**  -  ungoverned EC2/Lambda/Bedrock invocations at AWS on-demand pricing
 - **Data exposure cost**  -  estimated cost per PII record exposed, scaled by the record count from Blast Radius
-- **Incident response labor cost**  -  analyst hours �- median SOC analyst hourly rate �- estimated resolution time
+- **Security Finding response labor cost**  -  analyst hours �- median SOC analyst hourly rate �- estimated resolution time
 - **Regulatory fine exposure**  -  per-jurisdiction GDPR, CCPA, HIPAA fine calculation based on record count and sensitivity tier
 - **Total estimated exposure range**  -  low/mid/high scenarios with confidence intervals
 
@@ -599,7 +599,7 @@ The cost output feeds directly into executive briefing documents  -  giving lead
 
 This one wasn't in any documentation. Strands `@tool` functions are **synchronous**. Our agent implementations use `async` Bedrock calls (`asyncio.to_thread`, `asyncio.gather`). You can't call an async function from a synchronous context without a running event loop  -  and you can't just call `asyncio.run()` inside a Strands tool because FastAPI already owns an event loop in the main thread.
 
-Our first approach (creating a new event loop per tool call) worked but introduced 200–400ms of overhead per call just in loop creation and teardown. At 5 agent steps per incident, that's up to 2 seconds of pure overhead.
+Our first approach (creating a new event loop per tool call) worked but introduced 200–400ms of overhead per call just in loop creation and teardown. At 5 agent steps per security finding, that's up to 2 seconds of pure overhead.
 
 The solution was a single persistent worker thread that owns one event loop for the entire process lifetime:
 
@@ -626,20 +626,20 @@ Every Strands `@tool` function now submits its async coroutine to `_WORKER_LOOP`
 
 ### 2. Context Window Collapse Across Five Models
 
-Raw CloudTrail incidents are enormous. A realistic 80-event incident produces ~40K tokens if you send full output from each agent to the next. By the time you reach the remediation agent, the model is contradicting its own earlier outputs because the beginning of its context is too far away.
+Raw CloudTrail security findings are enormous. A realistic 80-event security finding produces ~40K tokens if you send full output from each agent to the next. By the time you reach the remediation agent, the model is contradicting its own earlier outputs because the beginning of its context is too far away.
 
 We built layered context pruning at every handoff  -  each agent receives only a typed, compact object extracted from the previous output:
 
 - Temporal agent: events filtered to 6 fields, cap of 50 events (~800 tokens in, not 12K)
-- Risk scorer: individual events one at a time, never cumulative context
-- Remediation agent: structured summary  -  incident pattern, affected resources, root cause  -  never raw events
+- Severity scorer: individual events one at a time, never cumulative context
+- Remediation agent: structured summary  -  event pattern, affected resources, root cause  -  never raw events
 - Documentation agent: executive summary + structured findings, never any intermediate reasoning
 
 Token consumption dropped from ~40K to ~12K per pipeline run. Hallucinations from context bloat disappeared.
 
-### 3. Hallucinated Risk Narratives from Routine Events
+### 3. Hallucinated Exposure Narratives from Routine Events
 
-This was the most damaging reliability bug and the hardest to catch because it failed silently. Feed 50 routine CloudTrail events to a language model  -  `PutLogEvents`, `DescribeInstances`, service-to-service `AssumeRole`  -  and ask "what's the incident pattern?" It will invent one. Confidently. With specific MITRE Framework technique mappings. The output looks real.
+This was the most damaging reliability bug and the hardest to catch because it failed silently. Feed 50 routine CloudTrail events to a language model  -  `PutLogEvents`, `DescribeInstances`, service-to-service `AssumeRole`  -  and ask "what's the event pattern?" It will invent one. Confidently. With specific MITRE Framework technique mappings. The output looks real.
 
 Building `filter_interesting_events()` was the fix: a curated set of 60+ routine event names that get filtered before the temporal agent sees anything. Service-to-service `AssumeRole` calls (Lambda, ECS executing their roles) required a separate check because the event name alone isn't enough:
 
@@ -647,12 +647,12 @@ Building `filter_interesting_events()` was the fix: a curated set of 60+ routine
 def _is_routine_assume_role(event: Dict[str, Any]) -> bool:
     if _get_event_name(event) != "AssumeRole":
         return False
-    # Check if the caller is an AWS service principal
+    # Check if the caller is an AWS service identity
     invoker = (ui.get("sessionContext") or {}).get("sessionIssuer") or {}
-    return "amazonaws.com" in str(invoker.get("principalId", ""))
+    return "amazonaws.com" in str(invoker.get("identityId", ""))
 ```
 
-When all events after filtering are routine, the pipeline returns "no risk detected." That output is worth more than a convincing-sounding false incident.
+When all events after filtering are routine, the pipeline returns "no exposure detected." That output is worth more than a convincing-sounding false security finding.
 
 ### 4. CloudTrail LookupEvents Is Per-Region  -  12 Regions �- 50 Events/Page
 
@@ -667,7 +667,7 @@ CLOUDTRAIL_PAGE_DELAY_SEC = 0.6    # Rate limit between paginated calls
 CLOUDTRAIL_REGION_DELAY_SEC = 0.5  # Delay between regions
 ```
 
-For 12 regions at max depth: 12 �- 20 pages �- 0.6s = 144 seconds of just wait time. In practice, most accounts have activity in 2–3 regions and most incidents are visible in under 5 pages. But the rate limiting is non-optional  -  hit CloudTrail's LookupEvents without delays and you get throttled immediately.
+For 12 regions at max depth: 12 �- 20 pages �- 0.6s = 144 seconds of just wait time. In practice, most accounts have activity in 2–3 regions and most security findings are visible in under 5 pages. But the rate limiting is non-optional  -  hit CloudTrail's LookupEvents without delays and you get throttled immediately.
 
 The 2-minute cache (keyed on days_back + max_results + profile) means repeated analyses with the same parameters return consistent results and don't re-hit the API.
 
@@ -676,16 +676,16 @@ The 2-minute cache (keyed on days_back + max_results + profile) means repeated a
 This one took us by surprise. When Nova 2 Lite generates a remediation plan that includes disabling a affected access key, it would output steps like:
 
 ```
-aws iam update-access-key --access-key-id AKIAEXAMPLE --user-name affected-user --status Inactive
+aws iam update-access-key --access-key-id EXKEY001 --user-name affected-user --status Inactive
 ```
 
-`AKIAEXAMPLE` is a placeholder. Real access key IDs start with `AKIA` or `ASIA`. When we tried to execute this against a real account, it failed immediately.
+`EXKEY001` is a placeholder. Real access key IDs start with `EXKEY` or `ASIA`. When we tried to execute this against a real account, it failed immediately.
 
 The fix required runtime discovery in the executor:
 
 ```python
-# Model output AKIAEXAMPLE  -  discover the real key at execution time
-if access_key_id == "AKIAEXAMPLE" or not access_key_id.startswith("AKIA"):
+# Model output EXKEY001  -  discover the real key at execution time
+if access_key_id == "EXKEY001" or not access_key_id.startswith("EXKEY"):
     keys = iam.list_access_keys(UserName=username).get("AccessKeyMetadata", [])
     active_keys = [k for k in keys if k["Status"] == "Active"]
     if active_keys:
@@ -731,13 +731,13 @@ policy_doc = {
 
 Any session token issued before `revoke_time` is denied all actions. New sessions issued after the policy is attached are unaffected. This is the documented AWS session revocation pattern, but it's non-obvious and required careful testing  -  attaching the wrong date causes either no revocation (date in the past) or blocking all sessions including new ones (date in the future).
 
-### 8. Risk Score Miscalibration at temperature=0.1
+### 8. Exposure Score Miscalibration at temperature=0.1
 
 Even very low temperature doesn't give you perfectly calibrated domain knowledge. Nova Micro consistently over-called certain events:
 
-- `GetCallerIdentity` -> scored HIGH (it appears in unidentified principal discovery playbooks, but is also a routine SDK health check)
+- `GetCallerIdentity` -> scored HIGH (it appears in external entity discovery playbooks, but is also a routine SDK health check)
 - `CreatePolicyVersion` -> scored CRITICAL regardless of context (legitimate DevOps orgs do this constantly)
-- `PutLogEvents` -> scored MEDIUM (it's CloudWatch log shipping, not an incident)
+- `PutLogEvents` -> scored MEDIUM (it's CloudWatch log shipping, not a security finding)
 
 The fix was hard calibration adjustments for known miscalibrations, applied after the model scores:
 
@@ -745,7 +745,7 @@ The fix was hard calibration adjustments for known miscalibrations, applied afte
 CALIBRATION_ADJUSTMENTS = {
     "GetCallerIdentity": {"max_score": 30},
     "PutLogEvents":      {"max_score": 15},
-    "CreatePolicyVersion": {"risk_floor": 60},  # High but not always CRITICAL
+    "CreatePolicyVersion": {"exposure_floor": 60},  # High but not always CRITICAL
 }
 ```
 
@@ -777,7 +777,7 @@ This pattern appears throughout the codebase. Inconsistent field names across re
 
 ### 10. Bedrock Guardrails Flagged Legitimate Security Queries
 
-Adding Guardrails to Agentic Query introduced a failure mode we didn't anticipate: `GuardrailInterventionException` from completely legitimate security queries. Asking "which IAM role was used in the incident?" activates Guardrails if the word "incident" matches a restricted phrase filter. "Show me the incident path" trips a content filter. "How do I revoke affected credentials?" contains "affected."
+Adding Guardrails to Agentic Query introduced a failure mode we didn't anticipate: `GuardrailInterventionException` from completely legitimate security queries. Asking "which IAM role was used in the security finding?" activates Guardrails if the word "security finding" matches a restricted phrase filter. "Show me the event path" trips a content filter. "How do I revoke affected credentials?" contains "affected."
 
 Security tooling is inherently full of words that content filters are trained to block. The fix was two-pronged: tuning the guardrail to allow security research context (adding specific allowed phrases for security operations terminology), and adding graceful degradation so a guardrail rejection surfaces a useful message rather than a 500 error:
 
@@ -786,15 +786,15 @@ except GuardrailInterventionException as e:
     return {
         "answer": f"Query flagged by content guardrails. Rephrase without restricted terms. Reason: {e.intervention_reason}",
         "guardrail_flagged": True,
-        "suggestion": "Try: 'What IAM actions were performed?' instead of 'What risk techniques were used?'"
+        "suggestion": "Try: 'What IAM actions were performed?' instead of 'What security techniques were used?'"
     }
 ```
 
 ### 11. Demo Mode Had to Mirror Real Execution Exactly
 
-The demo mode isn't a shortcut  -  it's a parallel implementation that has to produce structurally identical output to the real pipeline for the frontend to use one codebase. Every `ExecutionResult` object, every risk score shape, every timeline format has to be identical whether the pipeline ran for real or returned pre-computed outputs.
+The demo mode isn't a shortcut  -  it's a parallel implementation that has to produce structurally identical output to the real pipeline for the frontend to use one codebase. Every `ExecutionResult` object, every severity score shape, every timeline format has to be identical whether the pipeline ran for real or returned pre-computed outputs.
 
-The discipline cost time: every new feature required both a real implementation and a demo implementation. Adding confidence intervals to risk scores meant updating both the live Nova Micro calls and the stored demo outputs. Adding the Blast Radius Simulator meant pre-computing a realistic Blast Radius result for each of the three demo scenarios. Any divergence between demo and real mode breaks one of them in ways that are hard to debug.
+The discipline cost time: every new feature required both a real implementation and a demo implementation. Adding confidence intervals to severity scores meant updating both the live Nova Micro calls and the stored demo outputs. Adding the Blast Radius Simulator meant pre-computing a realistic Blast Radius result for each of the three demo scenarios. Any divergence between demo and real mode breaks one of them in ways that are hard to debug.
 
 The upside: the discipline forced us to define clean, typed API contracts between every layer. The demo mode is a constant test that the real mode's output structure is stable.
 
@@ -806,7 +806,7 @@ We added console version annotations to the Nova Act prompts  -  specifying the 
 
 ### 13. DynamoDB Table Auto-Creation Race Condition in Concurrent Requests
 
-The `_ensure_table_exists()` pattern works fine for single requests. Under concurrent load (two incident analyses starting simultaneously), both requests check for the table, both find it missing, and both try to create it. The second `create_table` call throws `ResourceInUseException`.
+The `_ensure_table_exists()` pattern works fine for single requests. Under concurrent load (two security finding analyses starting simultaneously), both requests check for the table, both find it missing, and both try to create it. The second `create_table` call throws `ResourceInUseException`.
 
 ```python
 async def _ensure_table_exists(self):
@@ -846,11 +846,11 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 
 ## Accomplishments We're Proud Of
 
-**The two-pillar architecture is genuinely new.** Cloud security platforms exist. AI security tools are emerging. A platform where one pillar monitors the other in real time  -  where running an incident analysis updates the AI security posture dashboard  -  is a new category.
+**The two-pillar architecture is genuinely new.** Cloud security platforms exist. AI security tools are emerging. A platform where one pillar monitors the other in real time  -  where running an event analysis updates the AI security posture dashboard  -  is a new category.
 
 **Seven Nova capabilities, each doing non-fungible work.** Not "we called the API seven times." Nova Pro reads images  -  text models cannot. Nova Micro at temperature=0.1 is deterministic in a way that Nova 2 Lite at default temperature is not. Nova Embeddings finds behavioral patterns that keyword matching misses. Each model handles a task the others either can't do or can't do as well.
 
-**The Blast Radius Simulator changes the incident response question.** Not "what happened?" but "what could have happened, and what do we lock down right now?" IAM policy simulation as a first-class incident response tool is something we haven't seen elsewhere.
+**The Blast Radius Simulator changes the security response question.** Not "what happened?" but "what could have happened, and what do we lock down right now?" IAM policy simulation as a first-class security response tool is something we haven't seen elsewhere.
 
 **Infrastructure as Code from day one.** The Terraform module means wolfir's AWS infrastructure is reproducible, auditable, and fully reversible. `terraform teardown` removes everything. `terraform apply` brings it back. This is how security tools should be deployed.
 
@@ -866,7 +866,7 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 
 **Multi-agent systems are about the seams.** The models are excellent. The plumbing between them is where things break. What gets sent, in what format, with how much context, at what precision  -  these decisions determined reliability more than any prompt engineering.
 
-**Hallucination prevention is a design pattern, not a prompt trick.** Event filtering before the temporal agent, calibration adjustments for the risk scorer, confidence intervals instead of single scores, "no risk detected" as a valid output  -  these are code patterns that made the pipeline dramatically more reliable. Prompts alone couldn't achieve this.
+**Hallucination prevention is a design pattern, not a prompt trick.** Event filtering before the temporal agent, calibration adjustments for the severity scorer, confidence intervals instead of single scores, "no exposure detected" as a valid output  -  these are code patterns that made the pipeline dramatically more reliable. Prompts alone couldn't achieve this.
 
 **Infrastructure decisions compound.** Terraform from day one meant the Knowledge Base setup was three commands. Docker from day one meant the demo setup was one command. These aren't things you add later cleanly.
 
@@ -878,17 +878,17 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 
 ## What's Next for wolfir
 
-**Real-time streaming via EventBridge.** EventBridge rules on CloudTrail write events -> SQS FIFO with priority tiers -> wolfir workers on ECS Fargate. The SQS architecture is designed; it's the first post-hackathon build. This shifts wolfir from batch analysis to live incident detection.
+**Real-time streaming via EventBridge.** EventBridge rules on CloudTrail write events -> SQS FIFO with priority tiers -> wolfir workers on ECS Fargate. The SQS architecture is designed; it's the first post-hackathon build. This shifts wolfir from batch analysis to live event detection.
 
-**Multi-account correlation across AWS Organizations.** wolfir already has the Organizations Dashboard and cross-account AssumeRole support. Next: detecting cross-resource movement campaigns across OUs using the cross-incident memory system.
+**Multi-account correlation across AWS Organizations.** wolfir already has the Organizations Dashboard and cross-account AssumeRole support. Next: detecting cross-resource movement campaigns across OUs using the cross-event memory system.
 
-**AI Red Teaming module.** Automated Prompt Guard testing against the user's own Bedrock pipelines. If you deploy Nova in production, you should verify that your guardrails actually hold against real crafted inputs.
+**AI Red Teaming module.** Automated Input Validation Layer testing against the user's own Bedrock pipelines. If you deploy Nova in production, you should verify that your guardrails actually hold against real crafted inputs.
 
-**Deeper JIRA/Slack/Confluence integration via Nova Act.** Full browser automation to create tickets, post to incident channels, and generate postmortems in one flow  -  not just plan generation, but execution.
+**Deeper JIRA/Slack/Confluence integration via Nova Act.** Full browser automation to create tickets, post to security finding channels, and generate postmortems in one flow  -  not just plan generation, but execution.
 
-**Community playbook library.** The Bedrock Knowledge Base integration already supports custom playbooks in S3. The vision is community-contributed SOPs for common AWS incident types  -  curated, versioned, searchable via RAG.
+**Community playbook library.** The Bedrock Knowledge Base integration already supports custom playbooks in S3. The vision is community-contributed SOPs for common AWS event types  -  curated, versioned, searchable via RAG.
 
-**Enterprise deployment template.** CloudFormation template for VPC-isolated backend, private Bedrock endpoints, WAF in front of the FastAPI layer, and multi-region DynamoDB Global Tables for cross-region incident correlation.
+**Enterprise deployment template.** CloudFormation template for VPC-isolated backend, private Bedrock endpoints, WAF in front of the FastAPI layer, and multi-region DynamoDB Global Tables for cross-region security finding correlation.
 
 ---
 
@@ -900,7 +900,7 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 | **Agent framework** | Strands Agents SDK | Native `@tool` decorators, Bedrock-native, pipeline + autonomous mode |
 | **MCP servers** | FastMCP  -  6 servers, 27 tools | Typed contracts between agents and AWS APIs, testable in isolation |
 | **Backend** | FastAPI + uvicorn + Python 3.11 | Async-native, `asyncio.gather()` for parallel agent steps |
-| **Frontend** | React + TypeScript + Vite + Tailwind + Framer Motion + React Flow | Full type safety, animation-ready, interactive incident path diagrams |
+| **Frontend** | React + TypeScript + Vite + Tailwind + Framer Motion + React Flow | Full type safety, animation-ready, interactive event path diagrams |
 | **Memory** | DynamoDB (PAY_PER_REQUEST) + Nova Embeddings | Auto-provisioning, cosine similarity at query time, in-memory fallback |
 | **Knowledge** | Bedrock Knowledge Base (S3 Vectors) + AWS Knowledge MCP | RAG-powered playbook retrieval, dual source with fallback chain |
 | **Safety** | Bedrock Guardrails + MITRE ATLAS monitoring | Infrastructure-level enforcement + AI-layer behavioral monitoring |
@@ -914,13 +914,13 @@ Same pattern for all six MCP servers and all six agent instances. Startup time d
 
 **Small and mid-sized security teams** that don't have Splunk, Cortex XSOAR, or dedicated SOC analysts. They have CloudTrail, maybe GuardDuty, and not enough hours. wolfir gives them what a 20-person SOC has: a structured response pipeline that runs in minutes.
 
-**Cloud engineers learning incident response.** The three demo scenarios walk through realistic incident chains  -  IAM access expansion, cross-account cross-resource movement, and Ungoverned AI misuse. Running a scenario and reading the generated incident timeline teaches you what to look for in real incidents.
+**Cloud engineers learning security response.** The three demo scenarios walk through realistic event chains  -  IAM access expansion, cross-account cross-resource movement, and Ungoverned AI misuse. Running a scenario and reading the generated event timeline teaches you what to look for in real events.
 
-**Teams deploying AI who need to secure it.** The MITRE ATLAS self-monitoring pillar is a proof of concept for a problem barely anyone is addressing: who watches the watcher? If you're deploying LLMs for security analysis, Prompt Guard and API misuse are real risk vectors, not theoretical ones.
+**Teams deploying AI who need to secure it.** The MITRE ATLAS self-monitoring pillar is a proof of concept for a problem barely anyone is addressing: who watches the watcher? If you're deploying LLMs for security analysis, Input Validation Layer and API misuse are real exposure vectors, not theoretical ones.
 
-**AWS builders exploring multi-agent architectures.** The codebase is a reference implementation: Strands Agents SDK + MCP + multiple Nova models + DynamoDB cross-incident memory + Bedrock Knowledge Base + demo/real mode coexistence. MIT-licensed.
+**AWS builders exploring multi-agent architectures.** The codebase is a reference implementation: Strands Agents SDK + MCP + multiple Nova models + DynamoDB cross-event memory + Bedrock Knowledge Base + demo/real mode coexistence. MIT-licensed.
 
-We're keeping the barrier low: MIT license, no AWS account needed for the demo, credentials never leave your machine, ~$0.01–0.02 per incident on Bedrock on-demand, ~$2–5/month estimated for light usage.
+We're keeping the barrier low: MIT license, no AWS account needed for the demo, credentials never leave your machine, ~$0.01–0.02 per security finding on Bedrock on-demand, ~$2–5/month estimated for light usage.
 
 ---
 
@@ -930,7 +930,7 @@ wolfir started from two questions. What happens when AI actually responds to sec
 
 Building it taught us that Nova's model diversity isn't marketing  -  it's architecture. Micro for speed, 2 Lite for reasoning, Pro for vision, Canvas for generation, Act for automation, Sonic for voice, Embeddings for similarity. Each does something the others can't. The Strands Agents SDK makes them work together. Terraform makes the infrastructure reproducible. Docker makes the setup frictionless. Bedrock Knowledge Bases make the responses grounded in your security playbooks. Guardrails make it safe at the API level.
 
-The AI security pillar is where we think the industry is heading. Every security platform will be AI-powered soon. Every AI-powered security platform is itself an risk surface. The ones that monitor their own pipelines with frameworks like MITRE ATLAS  -  and build the infrastructure to do it systematically  -  will be the ones that earn trust. wolfir is our proof of concept for that future.
+The AI security pillar is where we think the industry is heading. Every security platform will be AI-powered soon. Every AI-powered security platform is itself an exposure surface. The ones that monitor their own pipelines with frameworks like MITRE ATLAS  -  and build the infrastructure to do it systematically  -  will be the ones that earn trust. wolfir is our proof of concept for that future.
 
 Try it. Break it. Tell us what's missing.
 
