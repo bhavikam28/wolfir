@@ -283,7 +283,7 @@ Each handoff in wolfir passes a compact, typed object  -  only what the next age
 
 ```python
 timeline_handoff = {
-    "attack_pattern": result["identified_pattern"],
+    "incident_pattern": result["identified_pattern"],
     "root_cause": result["root_cause"],
     "affected_resources": result["affected_resources"][:10],
     "risk_signals": [e for e in events if e.get("flagged")],
@@ -302,7 +302,7 @@ Input (raw)          After pruning         Passed to next agent
 events               fields each           (not 12K)
 ~40K tokens          ↓                     ↓
                   filter_interesting_   timeline_handoff{}
-                  events()              attack_pattern
+                  events()              incident_pattern
                                         root_cause
                                         affected_resources[:10]
                                         risk_signals (flagged only)
