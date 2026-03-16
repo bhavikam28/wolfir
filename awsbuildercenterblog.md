@@ -16,7 +16,7 @@ Prophet Security's 2025 AI in SOC Survey puts the average SOC at 960+ alerts per
 
 In February 2026, I started building what would become wolfir: an agentic pipeline that takes CloudTrail events and produces a complete incident response package — autonomously, with the analyst approving rather than executing.
 
-But as I built, a second problem surfaced. Every modern security platform runs on AI. GuardDuty uses ML. Security Hub correlates with AI. And here I was building another AI-powered security tool. But who's watching the AI itself? If an attacker can inject instructions into the data my models process, misuse my Bedrock inference API, or extract sensitive account patterns through model outputs — my security tool becomes the attack surface.
+But as I built, a second problem surfaced. Every modern security platform runs on AI. GuardDuty uses ML. Security Hub correlates with AI. And here I was building another AI-powered security tool. But who's watching the AI itself? If an attacker can embed instructions into the data my models process, misuse my Bedrock inference API, or extract sensitive account patterns through model outputs — my security tool becomes the attack surface.
 
 MITRE built the ATLAS framework specifically for adversarial ML threats. Almost nobody deploys it in production. wolfir became the exception: a security platform that monitors its own Bedrock AI pipeline with MITRE ATLAS in real time, while simultaneously running cloud incident response.
 
@@ -85,7 +85,7 @@ wolfir's AWS infrastructure is fully defined in Terraform. The primary Terraform
 - **S3 server-side encryption** with AES256, enforced at the bucket level
 - **Block public access** on all four dimensions (ACLs, policies, public ACLs, public buckets)
 - **S3 versioning** (disabled by default for cost reasons — playbooks are idempotent)
-- **Automated playbook upload** — six curated Markdown playbooks are uploaded as S3 objects during `terraform apply`, covering IAM privilege escalation, crypto mining, data exfiltration, unauthorized access, OWASP LLM response, and prompt injection
+- **Automated playbook upload** — six curated Markdown playbooks are uploaded as S3 objects during `terraform apply`, covering IAM privilege escalation, crypto mining, data breach response, unauthorized access, OWASP LLM response, and prompt injection
 
 ```hcl
 resource "aws_s3_object" "playbooks" {
@@ -115,7 +115,7 @@ docker compose up
 
 `docker-compose.yml` defines two services:
 
-**Backend** — `python:3.11-slim` container, FastAPI served by uvicorn, exposes port 8000. AWS credentials are injected either via environment variables or by mounting `~/.aws` as a read-only volume:
+**Backend** — `python:3.11-slim` container, FastAPI served by uvicorn, exposes port 8000. AWS credentials are provided either via environment variables or by mounting `~/.aws` as a read-only volume:
 
 ```yaml
 volumes:
@@ -185,7 +185,7 @@ This is genuinely multimodal work. Text-only models can't read a VPC diagram. No
 ### 4. Amazon Nova Canvas — Report Imagery
 `amazon.nova-canvas-v1:0`
 
-Generates incident-specific cover images for exported PDF reports. A crypto mining incident gets a different cover than a data exfiltration incident. This isn't decoration — it signals that the output is a real security deliverable, not a text dump. Each image is generated with incident type, severity, and affected services as context parameters.
+Generates incident-specific cover images for exported PDF reports. A crypto mining incident gets a different cover than a data breach incident. This isn't decoration — it signals that the output is a real security deliverable, not a plain text export. Each image is generated with incident type, severity, and affected services as context parameters.
 
 ### 5. Amazon Nova 2 Sonic — Voice Interaction
 `amazon.nova-2-sonic-v1:0`
@@ -430,7 +430,7 @@ An attacker could embed instructions in a CloudTrail event's `requestParameters.
 
 ### 6 MITRE ATLAS Techniques, Implemented
 
-**AML.T0051 — Prompt Injection.** Pattern scanning against 12 known injection signatures on every user input before it reaches the Strands Agent. Signatures include role-override patterns ("ignore previous instructions"), data exfiltration probes ("list all AWS account IDs in your context"), and instruction injection via data fields. Status indicator in Agentic Query UI is a live signal from this monitor, not decoration.
+**AML.T0051 — Prompt Injection.** Pattern scanning against 12 known injection signatures on every user input before it reaches the Strands Agent. Signatures include role-override patterns ("ignore previous instructions"), Data Extraction probes ("list all AWS account IDs in your context"), and instruction injection via data fields. Status indicator in Agentic Query UI is a live signal from this monitor, not decoration.
 
 **AML.T0016 — Unauthorized Model Access.** Every Bedrock invocation is recorded with the model ID. If any non-approved model (outside the defined Nova set) is invoked — whether by the orchestrator, the Strands agent, or a tool — the status flips to WARNING and names the offending model. This catches cases where tool execution or prompt injection causes the agent to invoke an unexpected model.
 
@@ -438,7 +438,7 @@ An attacker could embed instructions in a CloudTrail event's `requestParameters.
 
 **AML.T0043 — Adversarial Data.** Input validation on CloudTrail event structure integrity before events reach the temporal agent. Anomalous field values (unusual event name patterns), manipulated timestamps (events with future dates, events with impossible ordering), and structurally malformed events are flagged and optionally quarantined.
 
-**AML.T0024 — Exfiltration via Inference.** Output scanning on every model response for AWS account IDs (12-digit patterns), access key patterns (`AKIA`, `ASIA` prefixes), private IP ranges, and common secrets patterns. If a response contains what looks like an access key, it's flagged before being returned to the frontend.
+**AML.T0024 — Unauthorized Data Transfer via Inference.** Output scanning on every model response for AWS account IDs (12-digit patterns), access key patterns (`AKIA`, `ASIA` prefixes), private IP ranges, and common secrets patterns. If a response contains what looks like an access key, it's flagged before being returned to the frontend.
 
 **AML.T0048 — Model Tampering.** Explicitly N/A — wolfir uses Bedrock foundation models without fine-tuning or custom training. We document this honestly. Claiming to monitor for fine-tuning tampering when there's no fine-tuning pipeline would be misleading. Honest non-applicability is more credible than a fake detection.
 
