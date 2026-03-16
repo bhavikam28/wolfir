@@ -6,7 +6,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, Brain, Zap, Shield, FileText, Network, Lock, Target,
-  BarChart3, Mic, Database, Cpu, Layers, MessageSquare, Key, Settings
+  BarChart3, Mic, Database, Cpu, Layers, MessageSquare, Key, Settings,
+  Crosshair, Play
 } from 'lucide-react';
 import DashboardPreview from './DashboardPreview';
 
@@ -37,8 +38,8 @@ const FEATURES: Record<TabId, Array<{
     {
       icon: MessageSquare,
       title: 'Agentic Query',
-      desc: 'Autonomous agent that picks its own tools from 6 AWS MCP servers. Ask natural language questions — the agent plans and executes IAM audits, CloudTrail lookups, Security Hub checks.',
-      bullets: ['Autonomous tool selection', '23 MCP tools across 5 AWS servers', 'Multi-turn conversation support', 'No predefined workflow required'],
+      desc: 'Autonomous agent that picks its own tools from 6 AWS service modules. Ask natural language questions — the agent plans and executes IAM audits, CloudTrail lookups, Security Hub checks, OWASP posture.',
+      bullets: ['19 Strands tools registered and available', 'Autonomous tool selection — no predefined workflow', 'Multi-turn conversation with full incident context', 'OWASP LLM posture queryable on demand'],
     },
     {
       icon: Database,
@@ -50,7 +51,13 @@ const FEATURES: Record<TabId, Array<{
       icon: Brain,
       title: 'Timeline & Root Cause',
       desc: 'Nova 2 Lite generates chronological timelines and traces kill chains. 90-day lookback. Confidence scoring on every analysis. CloudTrail event data scanned for prompt injection before reaching the model.',
-      bullets: ['Chronological event ordering + kill chain tracing', 'Root cause + blast radius identification', 'Confidence scoring with adaptive caps', 'Prompt injection scan on CloudTrail fields (AML.T0051)'],
+      bullets: ['Chronological event ordering + kill chain tracing', 'Root cause identification with confidence scoring', 'Prompt injection scan on CloudTrail event fields', 'Context pruning: only essential fields sent to model'],
+    },
+    {
+      icon: Crosshair,
+      title: 'Blast Radius Analysis',
+      desc: 'Automatically identifies every AWS resource touched by a compromised identity. Maps lateral movement across IAM roles, S3 buckets, EC2 instances, and Lambda functions in a single analysis run.',
+      bullets: ['All resources accessed by compromised role or user', 'Lateral movement tracing across services', 'Affected resource count + action timeline', 'Feeds directly into remediation scoping'],
     },
     {
       icon: Zap,
@@ -154,27 +161,27 @@ const FEATURES: Record<TabId, Array<{
   platform: [
     {
       icon: Key,
-      title: 'AWS SSO Support',
-      desc: 'IAM Identity Center (SSO) fully supported. Configure once with aws configure sso. Select profile in console — no separate flow.',
-      bullets: ['aws sso login support', 'Multi-account profiles', 'CLI profile selection', 'Zero-trust credentials'],
+      title: 'Multi-Account & SSO Support',
+      desc: 'IAM Identity Center (SSO) and standard AWS CLI profiles fully supported. Switch between AWS accounts and regions without leaving the console — credentials never stored or transmitted.',
+      bullets: ['AWS SSO / IAM Identity Center support', 'Multi-account profile switching', 'Multi-region CloudTrail fetch (12 regions)', 'Zero-trust: credentials stay on your machine'],
     },
     {
-      icon: Shield,
-      title: 'Credentials Stay Local',
-      desc: 'No keys stored or transmitted. Use AWS CLI profile or SSO. Audit our open-source code. Your account, your data.',
-      bullets: ['Local credentials only', 'No server-side storage', 'Open source auditable', 'Your AWS account'],
+      icon: Play,
+      title: 'Demo Mode',
+      desc: 'Full demo experience without any AWS account. Pre-loaded with 3 real attack scenarios: IAM privilege escalation, S3 data exfiltration, crypto-mining via compromised role.',
+      bullets: ['3 pre-built attack scenarios', 'Client-side fallback — works offline', 'Cross-incident correlation seeded automatically', 'All 7 Nova capabilities exercised in demo'],
     },
     {
       icon: Mic,
-      title: 'Voice (Aria)',
-      desc: 'Nova 2 Sonic integration-ready. Hands-free investigation with natural language. Ask "what happened?" and get spoken analysis.',
-      bullets: ['Voice query support', 'Nova 2 Sonic ready', 'Incident context aware', 'Hands-free analysis'],
+      title: 'Voice Investigation (Aria)',
+      desc: 'Nova 2 Sonic voice integration. Ask "what happened in the last 24 hours?" and get spoken incident analysis. Hands-free SOC investigation support.',
+      bullets: ['Nova 2 Sonic speech-to-speech', 'Incident context-aware voice responses', 'Hands-free CloudTrail and timeline queries', 'WebSocket streaming architecture ready'],
     },
     {
       icon: Database,
-      title: 'Incident History',
+      title: 'Incident History & Correlation',
       desc: 'Cross-incident correlation with 4-signal scoring. Similar incident lookup via Nova Embeddings. DynamoDB-backed. Track attacker campaigns across time.',
-      bullets: ['Incident list, search, and similarity lookup', 'Nova Embeddings semantic search', 'IOC, MITRE, fingerprint + semantic correlation', 'Campaign probability across all past incidents'],
+      bullets: ['Nova Embeddings semantic similarity search', 'IOC matching: shared IPs and IAM principals', 'MITRE technique overlap detection', 'Campaign probability across all past incidents'],
     },
   ],
 };
