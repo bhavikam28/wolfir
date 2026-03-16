@@ -249,7 +249,7 @@ const FeaturesSection: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-base mb-1">Multi-Agent Orchestration</h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">5 specialized Nova models coordinate with shared state — Detect, Investigate, Classify, Remediate, Document in one pipeline.</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">7 Nova capabilities, 19 registered Strands tools, persistent async worker — Detect, Investigate, Classify, Remediate, Document in one coordinated pipeline.</p>
                 </div>
               </div>
             </motion.div>
@@ -309,7 +309,7 @@ const FeaturesSection: React.FC = () => {
               <span className="text-sm font-semibold text-indigo-700">Context-Aware Orchestration</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-              5 Nova Models + Nova Act + Embeddings
+              7 Nova Capabilities — Right Model, Right Task
             </h2>
             <p className="text-base text-slate-600 max-w-xl mx-auto">
               Agents share state across the pipeline. Click any stage to explore.
@@ -395,9 +395,9 @@ const FeaturesSection: React.FC = () => {
             className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
-              { label: 'MCP Tools', value: '23', sub: 'Registered' },
-              { label: 'Strands Tools', value: '14', sub: '@tool decorated' },
-              { label: 'Nova Models', value: '5', sub: 'Integrated' },
+              { label: 'Strands Tools', value: '19', sub: 'Agent-registered' },
+              { label: 'Nova Capabilities', value: '7', sub: 'Integrated' },
+              { label: 'ATLAS Techniques', value: '6', sub: 'Monitored live' },
               { label: 'AWS Services', value: '7+', sub: 'Connected' },
             ].map((stat) => (
               <div key={stat.label} className="text-center px-4 py-4 bg-white rounded-xl border border-slate-200 shadow-sm">

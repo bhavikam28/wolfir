@@ -49,8 +49,8 @@ const FEATURES: Record<TabId, Array<{
     {
       icon: Brain,
       title: 'Timeline & Root Cause',
-      desc: 'Nova 2 Lite generates chronological timelines and traces kill chains. 90-day lookback for correlation. Confidence scoring on every analysis.',
-      bullets: ['Chronological event ordering', 'Kill chain tracing', 'Root cause identification', 'Confidence scores'],
+      desc: 'Nova 2 Lite generates chronological timelines and traces kill chains. 90-day lookback. Confidence scoring on every analysis. CloudTrail event data scanned for prompt injection before reaching the model.',
+      bullets: ['Chronological event ordering + kill chain tracing', 'Root cause + blast radius identification', 'Confidence scoring with adaptive caps', 'Prompt injection scan on CloudTrail fields (AML.T0051)'],
     },
     {
       icon: Zap,
@@ -68,21 +68,21 @@ const FEATURES: Record<TabId, Array<{
   orchestrate: [
     {
       icon: Cpu,
-      title: '5 Nova Models',
-      desc: 'Nova Pro (multimodal), Nova 2 Lite (reasoning), Nova Micro (classification), Nova 2 Sonic (voice-ready), Nova Canvas (image generation). Each model used for its strength.',
-      bullets: ['Model specialization per task', 'Cost and latency optimized', 'Failover and retry logic', 'Cross-region inference ready'],
+      title: '7 Nova Capabilities',
+      desc: 'Nova Pro (multimodal STRIDE), Nova 2 Lite (timeline reasoning), Nova Micro (risk classification), Nova 2 Sonic (voice), Nova Canvas (report art), Nova Act (remediation planning), Nova Embeddings (incident similarity).',
+      bullets: ['Model specialization per task', 'Nova Embeddings in core correlation pipeline', 'Persistent async worker — shared event loop', 'Confidence-interval scoring with 3× parallel Micro calls'],
     },
     {
       icon: Network,
-      title: '6 AWS MCP Servers',
-      desc: 'CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security. 23+ tools registered. Orchestrated via Strands Agents SDK with shared context.',
-      bullets: ['CloudTrail: events, trail status, anomalies', 'IAM: user/role audit, policy analysis', 'CloudWatch: alarms, billing, EC2 security', 'Security Hub: findings, GuardDuty', 'Nova Canvas: report covers', 'AI Security: MITRE ATLAS pipeline monitoring'],
+      title: '6 AWS Service Modules',
+      desc: 'CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security. 19 Strands tools registered and available to the autonomous agent — including OWASP LLM status.',
+      bullets: ['CloudTrail: events, trail status, anomalies', 'IAM: user/role audit, policy analysis', 'CloudWatch: alarms, billing, EC2 security', 'Security Hub: findings, GuardDuty', 'Nova Canvas: report covers', 'AI Security: MITRE ATLAS + OWASP LLM Top 10'],
     },
     {
       icon: Layers,
       title: 'Cross-Incident Memory',
-      desc: 'DynamoDB-backed persistent memory. Run multiple analyses — the pipeline detects same-attacker patterns. Ask "have we seen this before?"',
-      bullets: ['DynamoDB persistent storage', 'IP and actor correlation', 'Campaign probability scoring', 'Voice assistant integration'],
+      desc: 'DynamoDB-backed persistent memory with 4-signal correlation: attack fingerprint, MITRE technique overlap, IOC matching (IPs + IAM ARNs), and Nova Embeddings semantic similarity.',
+      bullets: ['Attack fingerprint + MITRE technique matching', 'IOC correlation: shared IPs and IAM principals', 'Nova Embeddings semantic similarity (cosine)', 'Campaign probability scoring across all 4 signals'],
     },
     {
       icon: Target,
@@ -101,8 +101,8 @@ const FEATURES: Record<TabId, Array<{
     {
       icon: Shield,
       title: 'MITRE ATLAS',
-      desc: '6 techniques monitored: prompt injection, capability theft, API abuse, adversarial inputs, data exfiltration, model poisoning. wolfir monitors its own AI pipeline.',
-      bullets: ['6 MITRE ATLAS techniques', 'Real-time invocation monitoring', 'Pattern matching + Nova Micro classification', 'Who protects the AI?'],
+      desc: '6 techniques with real runtime checks — not just labels. AML.T0051 scans CloudTrail event data before passing to Nova. T0016 flags unauthorized model access. T0024 surfaces live Bedrock Guardrail blocks.',
+      bullets: ['AML.T0051: scans user input AND CloudTrail event fields', 'AML.T0016: real-time unexpected model access detection', 'AML.T0024: live Bedrock Guardrail block event tracking', 'AML.T0040: invocation rate anomaly detection'],
     },
     {
       icon: Target,
@@ -173,8 +173,8 @@ const FEATURES: Record<TabId, Array<{
     {
       icon: Database,
       title: 'Incident History',
-      desc: 'Cross-incident correlation, similar incident lookup, search. DynamoDB-backed. Track patterns across time.',
-      bullets: ['Incident list and search', 'Similar incident lookup', 'Correlation across incidents', 'Stats and trends'],
+      desc: 'Cross-incident correlation with 4-signal scoring. Similar incident lookup via Nova Embeddings. DynamoDB-backed. Track attacker campaigns across time.',
+      bullets: ['Incident list, search, and similarity lookup', 'Nova Embeddings semantic search', 'IOC, MITRE, fingerprint + semantic correlation', 'Campaign probability across all past incidents'],
     },
   ],
 };
