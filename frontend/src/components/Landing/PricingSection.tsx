@@ -45,7 +45,7 @@ const PricingSection: React.FC = () => {
             <div className="space-y-4 mb-8">
               {[
                 'Demo mode — free, no AWS required',
-                '5 Nova models orchestrated per analysis',
+                '7 Nova capabilities orchestrated per analysis',
                 'Credentials stay local — never stored',
                 'Open source — audit the code',
               ].map((item, i) => (

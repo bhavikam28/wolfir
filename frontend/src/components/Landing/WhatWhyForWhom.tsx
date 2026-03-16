@@ -11,7 +11,7 @@ const WhatWhyForWhom: React.FC = () => {
       icon: Target,
       label: 'What',
       title: 'Agentic Incident Response Pipeline',
-      desc: 'Context-aware orchestration — 5 Nova models, each doing what it\'s best at. From signal to remediation plan to documentation in one autonomous pipeline.',
+      desc: 'Context-aware orchestration — 7 Nova capabilities, each doing what it\'s best at. From signal to remediation plan to documentation in one autonomous pipeline.',
     },
     {
       icon: Zap,

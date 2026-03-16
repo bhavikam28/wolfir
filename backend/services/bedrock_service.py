@@ -1,13 +1,16 @@
 """
 Amazon Bedrock service wrapper for Nova models
-Supports Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, and Nova Canvas
+Supports all 7 Nova capabilities: Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, Nova Canvas,
+Nova Multimodal Embeddings (via embedding_service.py), and Nova Act (via nova_act_agent.py/SDK)
 
 Model capabilities (verified via Bedrock console):
-- amazon.nova-2-lite-v1:0  — Input: TEXT,IMAGE,VIDEO | Output: TEXT | Streaming: Yes
-- amazon.nova-pro-v1:0     — Input: TEXT,IMAGE,VIDEO | Output: TEXT | Streaming: Yes
-- amazon.nova-micro-v1:0   — Input: TEXT            | Output: TEXT | Streaming: Yes
-- amazon.nova-2-sonic-v1:0 — Input: SPEECH          | Output: SPEECH,TEXT | Streaming: Yes
-- amazon.nova-canvas-v1:0  — Input: TEXT,IMAGE       | Output: IMAGE | Streaming: No
+- amazon.nova-2-lite-v1:0                    — Input: TEXT,IMAGE,VIDEO | Output: TEXT       | Streaming: Yes
+- amazon.nova-pro-v1:0                       — Input: TEXT,IMAGE,VIDEO | Output: TEXT       | Streaming: Yes
+- amazon.nova-micro-v1:0                     — Input: TEXT             | Output: TEXT       | Streaming: Yes
+- amazon.nova-2-sonic-v1:0                   — Input: SPEECH           | Output: SPEECH,TEXT| Streaming: Yes
+- amazon.nova-canvas-v1:0                    — Input: TEXT,IMAGE       | Output: IMAGE      | Streaming: No
+- amazon.nova-2-multimodal-embeddings-v1:0   — Input: TEXT,IMAGE       | Output: EMBEDDINGS | Streaming: No
+- nova-act SDK (separate)                    — Input: TEXT             | Output: ACTIONS    | Streaming: No
 """
 import json
 import asyncio

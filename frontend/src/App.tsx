@@ -466,7 +466,7 @@ function App() {
                 </motion.div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Running Multi-Agent Pipeline</h3>
-                  <p className="text-xs text-slate-500">5 Nova AI models analyzing your incident</p>
+                  <p className="text-xs text-slate-500">7 Nova capabilities analyzing your incident</p>
                 </div>
               </div>
 

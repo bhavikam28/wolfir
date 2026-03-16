@@ -12,7 +12,7 @@ const FAQSection: React.FC = () => {
   const faqs = [
     {
       q: 'What is wolfir?',
-      a: 'wolfir is an agentic incident response pipeline powered by Amazon Nova. It orchestrates 5 Nova models plus Nova Act to go from security alert to remediation plan to documentation — autonomously, with human-in-the-loop approval for risky actions.',
+      a: 'wolfir is an agentic incident response pipeline powered by Amazon Nova. It orchestrates 7 Nova capabilities (Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, Nova Canvas, Nova Act, Nova Embeddings) to go from security alert to remediation plan to documentation — autonomously, with human-in-the-loop approval for risky actions.',
     },
     {
       q: 'Who is wolfir for?',
@@ -55,7 +55,7 @@ const FAQSection: React.FC = () => {
     },
     {
       q: 'What does "agentic" mean?',
-      a: 'Multiple AI models work together with shared state. wolfir uses 5 Nova models: Temporal (timeline), Risk Scorer (severity), Remediation (action plan), Documentation (JIRA/Slack/Confluence), plus an Autonomous Agent that picks its own tools. Each does what it\'s best at — no manual triage.',
+      a: 'Multiple AI models work together with shared state. wolfir uses 7 Nova capabilities: pipeline agents (timeline, severity, remediation, documentation), plus Nova 2 Sonic (voice), Nova Canvas (report cover art), Nova Act (browser automation), and Nova Embeddings (cross-incident similarity). Each does what it\'s best at — no manual triage.',
     },
     {
       q: 'How fast is the analysis?',

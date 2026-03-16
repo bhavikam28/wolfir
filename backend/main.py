@@ -93,7 +93,7 @@ app = FastAPI(
     title="wolfir",
     description=(
         "AI-Powered Security Incident Response using Amazon Nova — "
-        "Strands Agents SDK + MCP Server + 5 Nova Bedrock Models + Nova Act SDK + "
+        "Strands Agents SDK + MCP Server + 7 Nova Capabilities (Nova 2 Lite, Nova Pro, Nova Micro, Nova 2 Sonic, Nova Canvas, Nova Act, Nova Embeddings) + "
         "6 AWS MCP Servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security)"
     ),
     version="3.0.0",
@@ -212,7 +212,7 @@ async def root():
         "service": "wolfir",
         "version": "3.0.0",
         "status": "running",
-        "description": "AI-Powered Cloud + AI Security — 5 Nova Bedrock models + Nova Act SDK + Nova Embeddings",
+        "description": "AI-Powered Cloud + AI Security — 7 Nova capabilities (5 Bedrock models + Nova Act SDK + Nova Embeddings)",
         "frameworks": {
             "strands": "strands-agents SDK (real)",
             "mcp": "MCP Server via FastMCP (real) — 6 AWS MCP servers, 23 tools",

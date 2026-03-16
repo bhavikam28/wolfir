@@ -198,7 +198,7 @@ const ARCH_DIAGRAMS: Record<string, React.ReactNode> = {
       <div className="px-6 py-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { cat: 'AI Layer', items: ['Amazon Bedrock', 'Strands SDK', '5 Nova Models', 'MCP Protocol'], color: 'border-blue-500/30 bg-blue-900/10', head: 'text-blue-400' },
+            { cat: 'AI Layer', items: ['Amazon Bedrock', 'Strands SDK', '7 Nova Capabilities', 'MCP Protocol'], color: 'border-blue-500/30 bg-blue-900/10', head: 'text-blue-400' },
             { cat: 'Backend', items: ['Python FastAPI', 'WebSockets', 'asyncio', 'Docker'], color: 'border-violet-500/30 bg-violet-900/10', head: 'text-violet-400' },
             { cat: 'Frontend', items: ['React + TypeScript', 'Framer Motion', 'Tailwind CSS', 'Recharts'], color: 'border-emerald-500/30 bg-emerald-900/10', head: 'text-emerald-400' },
             { cat: 'AWS Services', items: ['CloudTrail', 'IAM', 'Security Hub', 'DynamoDB'], color: 'border-amber-500/30 bg-amber-900/10', head: 'text-amber-400' },

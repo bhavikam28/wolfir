@@ -36,7 +36,7 @@ const FEATURES: Feature[] = [
     number: 1,
     name: 'Threat Detection Pipeline',
     description: 'Multi-agent AI pipeline detects, investigates, classifies, and documents security incidents autonomously.',
-    model: '5 Nova Models',
+    model: '7 Nova Capabilities',
     modelColor: 'text-indigo-600 bg-indigo-50 border-indigo-200',
     icon: Shield,
     gradient: 'from-indigo-500 to-violet-600',

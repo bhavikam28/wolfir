@@ -2,23 +2,26 @@
 
 ---
 
+
 ## Inspiration
+
+Every security platform today runs on AI. [GuardDuty](https://aws.amazon.com/guardduty/) uses ML for behavioral anomaly detection. [Security Hub](https://aws.amazon.com/security-hub/) correlates findings across Inspector, Macie, and dozens of partner tools. [CloudTrail](https://aws.amazon.com/cloudtrail/) captures every API call. [IAM Access Analyzer](https://aws.amazon.com/iam/features/analyze-access/) flags overly permissive policies. Everyone's using AI to detect threats. **The signal infrastructure AWS has built is genuinely exceptional.**
+
+But I kept asking myself one question while building wolfir: *what happens when someone attacks the AI?*
+
+If an attacker can inject instructions into the data my models process — abuse my [Bedrock](https://aws.amazon.com/bedrock/) inference API, trigger runaway invocations, extract sensitive account patterns through model outputs — **my security tool becomes the attack surface.** [MITRE built the ATLAS framework](https://atlas.mitre.org/) specifically to catalogue adversarial ML threats. Almost nobody deploys it in production. wolfir became the exception.
+
+That's the problem I built wolfir to solve. Not just cloud security. **AI security too — a platform that secures your cloud, and secures itself.**
+
+---
 
 **960 alerts a day. 40% go uninvestigated.**
 
-That number — from [Prophet Security's 2025 AI in SOC Survey](https://www.prophetsecurity.ai) — is what started this project. AWS has built genuinely exceptional detection infrastructure. [CloudTrail](https://aws.amazon.com/cloudtrail/) captures every API call. [GuardDuty](https://aws.amazon.com/guardduty/) surfaces behavioral anomalies. [Security Hub](https://aws.amazon.com/security-hub/) aggregates findings from Inspector, Macie, and dozens of partner tools. [IAM Access Analyzer](https://aws.amazon.com/iam/features/analyze-access/) flags overly permissive policies. **The signal is all there, in real time.**
-
-So why does the journey from *"we detected something"* to *"we fixed it and documented it"* still take 45 minutes of manual work at 2am?
+That number — from [Prophet Security's 2025 AI in SOC Survey](https://www.prophetsecurity.ai) — captures the second motivation. So why does the journey from *"something happened"* to *"we fixed it and documented it"* still take 45 minutes of manual work at 2am?
 
 The problem isn't detection. **It's the time cost of turning detection into action.** Correlating events, building a timeline, figuring out root cause, mapping the blast radius, writing a remediation plan with real AWS CLI commands, and documenting everything for the team — that part is still almost entirely manual. An analyst who should be making decisions is instead building a spreadsheet.
 
-That gap was the first motivation. You can read the full story in [*Why We Built an Autonomous Cloud Security Platform*](https://wolfir.vercel.app/#blog/01) on our blog.
-
-**Then a second problem emerged.** Every modern security platform now runs on AI. GuardDuty uses ML. Security Hub correlates with AI. I was building another AI-powered security tool — but as I built, I kept asking a question nobody seemed to be asking: *who's watching the AI itself?*
-
-If an attacker can embed instructions into the data my models process, misuse my [Bedrock](https://aws.amazon.com/bedrock/) inference API, trigger runaway invocations, or extract sensitive account patterns through model outputs — **my security tool becomes the attack surface.** [MITRE built the ATLAS framework](https://atlas.mitre.org/) specifically to catalogue adversarial ML threats. Almost nobody deploys it in production. wolfir became the exception.
-
-We explore the AI security threat model in depth in [*Who Watches the AI?*](https://wolfir.vercel.app/#blog/03).
+I explore both problems in depth on the blog: [*Why I Built wolfir*](https://wolfir.vercel.app/#blog/01) and [*Who Watches the AI?*](https://wolfir.vercel.app/#blog/03).
 
 **The name is deliberate.** wolf + IR (Incident Response). A wolf hunts in a pack — coordinated, patient, each member with a role, sharing context, moving from signal to resolution together. That's exactly how wolfir works: seven [Amazon Nova](https://aws.amazon.com/ai/nova/) capabilities, each specialized, sharing structured state, going from raw CloudTrail events to a complete incident response package.
 
@@ -26,7 +29,7 @@ We explore the AI security threat model in depth in [*Who Watches the AI?*](http
 
 ## What It Does
 
-wolfir is an **autonomous cloud security and AI security platform for AWS**, built on two architecturally connected pillars. **[Try the live demo →](https://wolfir.vercel.app)** — no AWS account or setup required.
+wolfir is an **autonomous cloud security and AI security platform for AWS**, built on two architecturally connected pillars. **[Try the live demo →](https://wolfir.vercel.app)** — explore the full platform with built-in demo scenarios, then connect your own AWS account for real analysis against your live environment.
 
 ---
 
@@ -36,7 +39,7 @@ You feed it CloudTrail events — from a live AWS account or one of three built-
 
 **Detect → Investigate → Classify → Remediate → Document**
 
-The full pipeline architecture is explained in [*Five Nova Models, One Pipeline: A Deep Dive*](https://wolfir.vercel.app/#blog/02).
+The full pipeline architecture is explained in [*Seven Nova Capabilities, One Pipeline: A Deep Dive*](https://wolfir.vercel.app/#blog/02).
 
 The output is a complete incident response package, not a report. Here is everything it produces:
 
@@ -132,7 +135,7 @@ The output is a complete incident response package, not a report. Here is everyt
 - **AWS Organizations Cross-Account Breach** — Compromised Dev account role pivots via STS into Production and Security accounts across 3 OUs, 12 member accounts. 18 events. CRITICAL.
 - **Shadow AI / Unauthorized LLM Use** — Ungoverned Bedrock InvokeModel calls combined with a prompt injection attempt. Exercises the [MITRE ATLAS](https://atlas.mitre.org/) self-monitoring pipeline — the AI security pillar catching what the cloud pillar cannot. 7 events. CRITICAL.
 
-See [*Demo Mode That Actually Works*](https://wolfir.vercel.app/#blog/04) for how we built the offline-first architecture that powers all three scenarios.
+See [*Demo Mode That Actually Works*](https://wolfir.vercel.app/#blog/04) for how I built the offline-first architecture that powers all three scenarios.
 
 ---
 
@@ -165,7 +168,7 @@ Read the full AI security architecture in [*Who Watches the AI? Why wolfir Monit
 
 ### 7 Amazon Nova Capabilities — Each Doing Non-Fungible Work
 
-The full model selection reasoning is in [*Why We Chose Each Amazon Nova Model*](https://wolfir.vercel.app/#blog/07).
+The full model selection reasoning is in [*Why I Chose Each Amazon Nova Model*](https://wolfir.vercel.app/#blog/07).
 
 - **[Nova Pro](https://aws.amazon.com/ai/nova/)** → Visual STRIDE threat modeling on uploaded architecture diagrams. The only multimodal Nova — text models cannot read a VPC diagram.
 - **[Nova 2 Lite](https://aws.amazon.com/ai/nova/)** → Timeline reconstruction, remediation plan generation, documentation, Agentic Query orchestration with extended thinking, Aria voice responses. The reasoning workhorse.
@@ -177,7 +180,7 @@ The full model selection reasoning is in [*Why We Chose Each Amazon Nova Model*]
 
 ---
 
-## How We Built It
+## How I Built It
 
 **Backend:** Python + [FastAPI](https://fastapi.tiangolo.com/) + [Strands Agents SDK](https://github.com/strands-agents/sdk-python) + boto3 + uvicorn
 
@@ -215,7 +218,7 @@ timeline_handoff = {
 
 **The MCP architecture creates explicit typed contracts.** Six FastMCP server modules expose 19 [Strands](https://github.com/strands-agents/sdk-python) tools to the agent layer. The alternative — direct boto3 calls from within agent prompts — creates implicit coupling. When AWS API behavior changes, agent behavior changes unpredictably. MCP servers create a clean seam: mock the server in tests, never touch agent logic.
 
-**The persistent async worker solved the Strands SDK event loop problem.** Strands `@tool` functions are synchronous. Our agent implementations use async Bedrock calls. The naive fix (new event loop per tool call) added 200–400ms of overhead per call. The solution:
+**The persistent async worker solved the Strands SDK event loop problem.** Strands `@tool` functions are synchronous. The agent implementations use async Bedrock calls. The naive fix (new event loop per tool call) added 200–400ms of overhead per call. The solution:
 
 ```python
 _WORKER_LOOP = asyncio.new_event_loop()
@@ -231,19 +234,20 @@ def _run_async(coro):
 **Credentials never leave the user's machine.** wolfir uses local [AWS CLI profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) or mounted `~/.aws` volumes. Nothing is stored or transmitted. In a security product, this is not optional.
 
 Full technical deep-dives:
-- [Pipeline architecture →](https://wolfir.vercel.app/#blog/02)
-- [Technical challenges →](https://wolfir.vercel.app/#blog/06)
-- [Demo mode architecture →](https://wolfir.vercel.app/#blog/04)
+- [Pipeline architecture ](https://wolfir.vercel.app/#blog/02)
+- [Technical challenges ](https://wolfir.vercel.app/#blog/06)
+- [Demo mode architecture ](https://wolfir.vercel.app/#blog/04)
+
 
 ---
 
 ## Challenges We Ran Into
 
-Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wolfir.vercel.app/#blog/06)
+Full engineering post-mortem: [*The Bugs That Taught Me Everything*](https://wolfir.vercel.app/#blog/06)
 
 **Token bloat collapsed the first architecture.** Passing full agent outputs sequentially hit context limits before the remediation agent started reasoning. The pruning layer fixed this: 60% reduction in token consumption, hallucinations from context bloat eliminated.
 
-**Strands SDK isn't designed for deterministic multi-step handoffs.** It excels at autonomous single-agent reasoning. For a security pipeline requiring auditable, deterministic execution order and inspectable intermediate state, you have to architect around it. Running specialized models as `@tool` functions inside a Strands orchestrator gave us the best of both worlds.
+**Strands SDK isn't designed for deterministic multi-step handoffs.** It excels at autonomous single-agent reasoning. For a security pipeline requiring auditable, deterministic execution order and inspectable intermediate state, you have to architect around it. Running specialized models as `@tool` functions inside a Strands orchestrator gave me the best of both worlds.
 
 **The persistent async worker bridge.** Strands tool functions are synchronous. FastAPI owns an event loop. Creating a new event loop per tool call works but adds hundreds of milliseconds per call. The single persistent worker thread with `asyncio.run_coroutine_threadsafe()` reduced per-call overhead from 200–400ms to under 5ms.
 
@@ -265,11 +269,11 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 
 ---
 
-## Accomplishments That We're Proud Of
+## Accomplishments I'm Proud Of
 
-**The two-pillar architecture is genuinely new.** Cloud security platforms exist. AI security tools are emerging. A platform where one pillar monitors the other in real time — where running an incident analysis updates the AI security posture dashboard — is a new category. We haven't seen another project that monitors its own [Bedrock](https://aws.amazon.com/bedrock/) pipeline against [MITRE ATLAS](https://atlas.mitre.org/) in production.
+**The two-pillar architecture is genuinely new.** Cloud security platforms exist. AI security tools are emerging. A platform where one pillar monitors the other in real time — where running an incident analysis updates the AI security posture dashboard — is a new category. I haven't seen another project that monitors its own [Bedrock](https://aws.amazon.com/bedrock/) pipeline against [MITRE ATLAS](https://atlas.mitre.org/) in production.
 
-**Seven Nova capabilities, each doing work that can't be substituted.** Nova Pro because you literally cannot analyze an uploaded architecture diagram for STRIDE threats without multimodal capability. Nova Micro at `temperature=0.1` for determinism — more reliable for classification than Nova 2 Lite at default temperature. Nova Embeddings for behavioral similarity — finds campaigns described differently each time. See [*Why We Chose Each Amazon Nova Model*](https://wolfir.vercel.app/#blog/07).
+**Seven Nova capabilities, each doing work that can't be substituted.** Nova Pro because you literally cannot analyze an uploaded architecture diagram for STRIDE threats without multimodal capability. Nova Micro at `temperature=0.1` for determinism — more reliable for classification than Nova 2 Lite at default temperature. Nova Embeddings for behavioral similarity — finds campaigns described differently each time. See [*Why I Chose Each Amazon Nova Model*](https://wolfir.vercel.app/#blog/07).
 
 **The Blast Radius Simulator changes the incident response question.** Not *"what happened?"* but *"what could have happened, and what do we lock down right now?"* IAM policy simulation as a first-class incident response tool gives security teams the prioritized list they actually need.
 
@@ -279,11 +283,11 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 
 **Infrastructure as Code from day one.** `terraform apply` creates the full AWS environment. `terraform destroy` removes everything. `docker compose up` runs the full stack in under 2 minutes. These aren't aspirational — they're the baseline.
 
-**Credentials never leave the user's machine.** In a security product, this isn't a nice-to-have. We use local AWS CLI profiles and mounted credentials volumes. Nothing is stored or transmitted.
+**Credentials never leave the user's machine.** In a security product, this isn't a nice-to-have. wolfir uses local AWS CLI profiles and mounted credentials volumes. Nothing is stored or transmitted.
 
 ---
 
-## What We Learned
+## What I Learned
 
 **Multi-agent systems are less about AI capability than about the seams between agents.** The hard problems were: what format does the handoff use, what gets pruned, what gets carried forward, and how does the orchestrator know when a step has produced usable output. Get those seams wrong and no amount of model capability compensates.
 
@@ -291,11 +295,11 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 
 **Hallucination prevention is a design pattern, not a prompt trick.** Event filtering before the temporal agent, calibration overrides for the risk scorer, confidence intervals instead of single scores, *"no threat detected"* as a valid output, context pruning at every handoff — these are code patterns. Prompts alone couldn't achieve this.
 
-**Demo engineering is product engineering.** Making the full five-agent pipeline work offline, client-side, with pre-computed real Nova outputs forced us to define clean API contracts, unified data shapes, and graceful degradation across every layer. The discipline of keeping demo mode and real mode on the same API contract made the real backend better. Full explanation: [*Demo Mode That Actually Works*](https://wolfir.vercel.app/#blog/04).
+**Demo engineering is product engineering.** Making the full five-agent pipeline work offline, client-side, with pre-computed real Nova outputs forced me to define clean API contracts, unified data shapes, and graceful degradation across every layer. The discipline of keeping demo mode and real mode on the same API contract made the real backend better. Full explanation: [*Demo Mode That Actually Works*](https://wolfir.vercel.app/#blog/04).
 
 **Infrastructure decisions compound.** Terraform from day one meant the Knowledge Base setup was three commands. Docker from day one meant the demo setup was one command. These aren't things you add later cleanly.
 
-**The most important realization: securing AI is the next frontier in cloud security.** SIEM and SOAR tools are converging on AI for detection and triage. The attack surface shifts to those AI systems. [MITRE ATLAS](https://atlas.mitre.org/) exists. Most teams don't deploy it. wolfir does — and builds the proof of concept for a monitoring layer that every AI-powered security platform will eventually need.
+**The most important realization: securing AI is the next frontier in cloud security.** SIEM and SOAR tools are converging on AI for detection and triage. The attack surface shifts to those AI systems. [MITRE ATLAS](https://atlas.mitre.org/) exists. Most teams don't deploy it. I built wolfir as proof of concept for a monitoring layer that every AI-powered security platform will eventually need.
 
 ---
 
@@ -311,15 +315,15 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 
 ---
 
-**Live Demo:** [wolfir.vercel.app](https://wolfir.vercel.app) — no AWS account needed, full feature set, results in under 2 seconds
+**Live Demo:** [wolfir.vercel.app](https://wolfir.vercel.app) 
 
-**Source Code:** [github.com/bhavikam28/wolfir](https://github.com/bhavikam28/wolfir) — MIT licensed, ~47K lines
+**Source Code:** [github.com/bhavikam28/wolfir](https://github.com/bhavikam28/wolfir) 
 
 **Blog:**
-- [Why We Built wolfir](https://wolfir.vercel.app/#blog/01)
+- [Why I Built wolfir](https://wolfir.vercel.app/#blog/01)
 - [Pipeline Architecture Deep Dive](https://wolfir.vercel.app/#blog/02)
 - [Who Watches the AI? MITRE ATLAS Self-Monitoring](https://wolfir.vercel.app/#blog/03)
 - [Demo Mode That Actually Works](https://wolfir.vercel.app/#blog/04)
 - [Autonomous Remediation: When AI Should Click the Button](https://wolfir.vercel.app/#blog/05)
-- [The Bugs That Taught Us Everything](https://wolfir.vercel.app/#blog/06)
-- [Why We Chose Each Amazon Nova Model](https://wolfir.vercel.app/#blog/07)
+- [The Bugs That Taught Me Everything](https://wolfir.vercel.app/#blog/06)
+- [Why I Chose Each Amazon Nova Model](https://wolfir.vercel.app/#blog/07)

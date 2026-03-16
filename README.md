@@ -2,7 +2,7 @@
 
 **AI that secures your cloud — and secures itself. Powered by Amazon Nova.**
 
-> The only cloud security platform that also watches itself. **5 Amazon Nova models** detect, investigate, classify, remediate, and document cloud threats — while monitoring the AI pipeline against MITRE ATLAS in real time. Built for SOC analysts and AI security teams. **Cloud + AI security, one platform.**
+> The only cloud security platform that also watches itself. **7 Amazon Nova capabilities** detect, investigate, classify, remediate, and document cloud threats — while monitoring the AI pipeline against MITRE ATLAS in real time. Built for SOC analysts and AI security teams. **Cloud security + AI security, one platform.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-22d3ee)](https://wolfir.vercel.app)
 
@@ -14,64 +14,79 @@
 
 Security teams receive **960+ alerts per day** on average, and **40% go uninvestigated** (Prophet Security, AI in SOC Survey, 2025). Manual correlation, triage, and remediation take hours — often at 2am. Existing tools detect; they don't respond. We built wolfir to close that gap: from alert to remediation plan to documentation, autonomously, with human-in-the-loop approval for risky actions.
 
+But there was a second problem nobody was solving: every modern security platform now uses AI, but nobody is securing the AI itself. Prompt injection, API abuse, adversarial inputs — MITRE ATLAS has catalogued these threats. Who's monitoring them in production? For most teams, the answer is nobody. wolfir does.
+
 **Why we chose this path:**
-- **Multi-model specialization** — One model can't do everything well. Nova Pro reads diagrams. Nova Micro scores risk in &lt;1s. Nova 2 Lite reasons over timelines. Each does what it's best at.
+- **Multi-model specialization** — One model can't do everything well. Nova Pro reads diagrams. Nova Micro scores risk in <1s. Nova 2 Lite reasons over timelines. Each does what it's best at.
 - **Agentic over static** — We wanted an AI that picks its own tools (CloudTrail, IAM, Security Hub) and plans its own queries, not a fixed workflow.
 - **Action, not just insight** — Remediation plans with one-click apply, CloudTrail proof, and rollback. Nova Act for AWS Console and JIRA automation.
 - **Who protects the AI?** — MITRE ATLAS monitoring on our own pipeline. Prompt injection, API abuse, data exfiltration — we watch ourselves.
 
 ## Why "wolfir"?
 
-**wolf** + **ir** (Incident Response). A wolf hunts in a pack — coordinated, precise, relentless. Our multi-agent pipeline works the same way: 5 Nova models plus an autonomous agent, each with a role, sharing state, moving from signal to resolution. The name is short, memorable, and signals both the "hunt" (finding threats) and the "pack" (multi-agent orchestration).
+**wolf** + **ir** (Incident Response). A wolf hunts in a pack — coordinated, precise, relentless. Our multi-agent pipeline works the same way: 7 Nova capabilities, each with a role, sharing state, moving from signal to resolution. The name is short, memorable, and signals both the "hunt" (finding threats) and the "pack" (multi-agent orchestration).
 
 ## What is wolfir?
 
 wolfir is an **autonomous security platform** that closes two gaps:
 
-1. **Cloud security** — Incident response: detect, investigate, classify, remediate, document. CloudTrail → timeline → attack path → remediation with one-click apply. Built with 5 Amazon Nova models (Pro, 2 Lite, Micro, 2 Sonic, Canvas), Nova Act, and Nova Embeddings.
+1. **Cloud security** — Incident response: detect, investigate, classify, remediate, document. CloudTrail → timeline → attack path → remediation with one-click apply. Built with Amazon Nova Pro, Nova 2 Lite, Nova Micro, Nova 2 Sonic, Nova Canvas, Nova Act, and Nova Multimodal Embeddings.
 
-2. **AI security** — "Who protects the AI?" wolfir monitors its own Bedrock pipeline with MITRE ATLAS (6 techniques), OWASP LLM Top 10, Shadow AI detection. When you use AI to defend your cloud, we defend the AI.
+2. **AI security** — "Who protects the AI?" wolfir monitors its own Bedrock pipeline with MITRE ATLAS (6 techniques), OWASP LLM Top 10, Shadow AI detection, and EU AI Act / NIST AI RMF compliance readiness. When you use AI to defend your cloud, we defend the AI.
 
 **AI systems run on cloud. When cloud is compromised, AI is compromised. wolfir secures both.** This is not a dashboard or SIEM — it's an autonomous multi-agent system that takes action and watches itself.
+
+---
 
 ## ✨ Features at a Glance
 
 | Feature | Description |
 |---------|-------------|
-| **5-Agent Pipeline** | Detect → Investigate → Classify → Remediate → Document (Nova Pro, Nova 2 Lite, Nova Micro) |
-| **Attack Path** | Interactive diagrams tracing threat propagation across AWS |
-| **Compliance Mapping** | CIS, NIST 800-53, SOC 2, PCI-DSS, SOX, HIPAA |
-| **Cost Impact** | Financial exposure, breach liability, ROI estimation |
-| **Remediation + Nova Act** | AI-generated plans with one-click apply, JIRA automation |
-| **Aria** | Voice/text assistant for incident Q&A |
-| **Agentic Query** | Autonomous agent picks tools from 6 AWS MCP servers |
-| **Security Health Check** | 5 agent queries with no incident required |
-| **ChangeSet Analysis** | CloudFormation ChangeSet risk assessment |
-| **IR Protocol Adherence** | NIST IR phase compliance scoring |
-| **AI Pipeline Security** | MITRE ATLAS monitoring (6 techniques) |
-| **Visual Analysis** | Upload diagrams — Nova Pro STRIDE assessment |
+| **5-Agent Nova Pipeline** | Detect → Investigate → Classify → Remediate → Document (Nova Pro, Nova 2 Lite, Nova Micro) |
+| **Attack Path Diagram** | Interactive React Flow diagram tracing threat propagation across AWS resources |
+| **Blast Radius Simulator** | Proactive "what-if" — given a compromised identity, maps every reachable resource, service, and data store an attacker could access |
+| **AWS Organizations Dashboard** | Multi-account security view: org tree (Management → OUs → Member Accounts), cross-account threat correlation, SCP gap analysis |
+| **Compliance Mapping** | CIS, NIST 800-53, SOC 2, PCI-DSS, SOX, HIPAA — auto-mapped from incident context |
+| **Cost Impact** | Financial exposure using IBM Cost of Data Breach formula, breach liability, ROI estimation |
+| **Remediation + Nova Act** | AI-generated plans with one-click apply, JIRA automation, before/after state snapshots, rollback |
+| **Aria** | Voice/text assistant for incident Q&A — powered by Nova 2 Sonic and Nova 2 Lite |
+| **Agentic Query** | Autonomous agent picks tools from 6 AWS MCP servers (27 tools) — no fixed workflow |
+| **Security Health Check** | 5 autonomous agent queries with no incident required — proactive posture assessment |
+| **ChangeSet Analysis** | CloudFormation ChangeSet risk assessment before deployment |
+| **IR Protocol Adherence** | NIST IR phase compliance scoring with gap identification |
+| **SLA Tracker** | Incident SLA monitoring with breach prediction |
+| **AI Pipeline Security** | MITRE ATLAS monitoring (6 techniques), OWASP LLM Top 10, Shadow AI detection |
+| **Visual Analysis** | Upload architecture diagrams — Nova Pro performs STRIDE threat assessment |
+| **Cross-Incident Memory** | DynamoDB + Nova Embeddings: detects attack campaigns across incidents |
 | **Real AWS** | Connect via AWS CLI profile — credentials stay local, never transmitted |
+| **Demo Scenarios** | 5 pre-computed scenarios: IAM Privilege Escalation, Cryptocurrency Mining, S3 Data Exfiltration, Unauthorized Access, Shadow AI + Organizations Breach |
+
+---
 
 ## 🏗 Architecture
 
 ### High-Level Flow
 
 ```
-CloudTrail Alert
-      ↓
-┌─────────────────────────────────────────────────┐
-│  STRANDS AGENTS SDK — Orchestration Layer        │
-├─────────┬──────────┬──────────┬────────┬────────┤
-│  Nova   │  Nova 2  │  Nova    │ Orch-  │ Nova 2 │
-│  Pro    │  Lite    │  Micro   │ estrator│ Lite   │
-│ Detect  │Investigate│ Classify │Remediate│Document│
-├─────────┴──────────┴──────────┴────────┴────────┤
-│  6 MCP Servers (CloudTrail, IAM, CW, Security Hub, Canvas, AI Security) │
-│  27 MCP Tools · 21 Strands @tool Functions · Nova Act       │
-└──────────────────────────────────────────────────┘
-      ↓              ↓             ↓
-  DynamoDB     CloudTrail      JIRA/Slack/
-  (Memory)     (Audit Proof)   Confluence
+CloudTrail Alert / Real AWS / Demo Scenario
+              ↓
+┌─────────────────────────────────────────────────────┐
+│       STRANDS AGENTS SDK — Orchestration Layer       │
+├──────────┬──────────┬──────────┬────────┬───────────┤
+│  Nova    │  Nova 2  │  Nova    │ Nova 2 │  Nova     │
+│  Pro     │  Lite    │  Micro   │  Lite  │  2 Lite   │
+│ Detect   │Investigate│ Classify│Remediate│ Document  │
+├──────────┴──────────┴──────────┴────────┴───────────┤
+│  6 MCP Servers · 27 MCP Tools · 21 Strands @tools   │
+│  CloudTrail · IAM · CloudWatch · Security Hub ·     │
+│  Nova Canvas · AI Security                          │
+├─────────────────────────────────────────────────────┤
+│  Nova Act (Browser Automation) · Nova Canvas (Art)  │
+│  Nova 2 Sonic (Voice) · Nova Embeddings (Similarity)│
+└─────────────────────────────────────────────────────┘
+              ↓              ↓              ↓
+          DynamoDB      CloudTrail     JIRA / Slack /
+         (Memory)      (Audit Proof)   Confluence
 ```
 
 ### Detailed Architecture Diagram
@@ -83,22 +98,29 @@ flowchart TB
         V[Visual Diagram Upload]
         A[Autonomous Agent Prompt]
         CS[ChangeSet Analysis]
+        ORG[Organizations Multi-Account]
     end
 
     subgraph Frontend["🖥️ Frontend (React + Vite)"]
         LP[Landing Page]
-        Demo[Demo Mode]
+        Demo[Demo Mode — 5 Scenarios]
         Console[Console Mode]
         Timeline[Timeline View]
-        AttackPath[Attack Path Diagram]
-        Remediation[Remediation Plan]
+        AttackPath[Attack Path — React Flow]
+        BlastRadius[Blast Radius Simulator]
+        OrgDash[Organizations Dashboard]
+        Remediation[Remediation Plan + Nova Act]
         Compliance[Compliance Mapping]
         CostImpact[Cost Impact]
-        Docs[Documentation]
-        Aria[Voice Assistant]
+        Docs[Documentation — JIRA/Slack/Confluence]
+        Aria[Aria Voice/Text Assistant]
         AgenticQuery[Agentic Query]
-        AIsec[AI Pipeline Security]
-        Protocol[IR Protocol Adherence]
+        AIsec[AI Pipeline Security — MITRE ATLAS]
+        Protocol[IR Protocol Adherence — NIST]
+        SLA[SLA Tracker]
+        HealthCheck[Security Health Check]
+        Visual[Visual Analysis — STRIDE]
+        ChangeSet[ChangeSet Analysis]
     end
 
     subgraph Backend["⚙️ Backend (FastAPI)"]
@@ -110,76 +132,74 @@ flowchart TB
         ChangesetAPI[ChangeSet API]
         ProtocolAPI[Protocol API]
         Report[Report API]
+        DemoAPI[Demo Scenarios API]
     end
 
     subgraph Strands["🔗 Strands Agents SDK"]
-        Agent[Strands Agent]
+        Agent[Strands Orchestrator]
         Tools[21 @tool Functions]
     end
 
-    subgraph Nova["🤖 Amazon Nova Models"]
-        NovaPro[Nova Pro - Visual]
-        NovaLite[Nova 2 Lite - Reasoning]
-        NovaMicro[Nova Micro - Classification]
-        NovaSonic[Nova 2 Sonic - Voice]
-        NovaCanvas[Nova Canvas - Images]
+    subgraph Nova["🤖 Amazon Nova Models — 7 Capabilities"]
+        NovaPro[Nova Pro — Visual / STRIDE]
+        NovaLite[Nova 2 Lite — Timeline · Remediation · Docs · Aria]
+        NovaMicro[Nova Micro — Risk Classification temp=0.1]
+        NovaSonic[Nova 2 Sonic — Voice Streaming]
+        NovaCanvas[Nova Canvas — Report Cover Art]
+        NovaAct[Nova Act — Browser Automation]
+        NovaEmbed[Nova Embeddings — Incident Similarity]
     end
 
-    subgraph MCP["🔌 6 AWS MCP Servers"]
+    subgraph MCP["🔌 6 AWS MCP Servers — 27 Tools"]
         MCPCloudTrail[CloudTrail MCP]
         MCPIAM[IAM MCP]
         MCPCW[CloudWatch MCP]
         MCPSHub[Security Hub MCP]
         MCPCanvas[Nova Canvas MCP]
-        MCPAIsec[AI Security MCP]
-    end
-
-    subgraph NovaAct["🔧 Nova Act"]
-        ActPlan[Remediation Plan]
-        ActJira[JIRA Automation]
+        MCPAIsec[AI Security MCP — MITRE ATLAS]
     end
 
     subgraph AWS["☁️ AWS Services"]
         Bedrock[Amazon Bedrock]
-        DynamoDB[DynamoDB - Incident Memory]
-        S3[S3 - Diagrams]
+        DynamoDB[DynamoDB — Cross-Incident Memory]
+        S3[S3 — Diagrams]
         IAM[IAM]
+        Orgs[AWS Organizations API]
     end
 
     CT --> Orch
     V --> Orch
     A --> Agent
     CS --> ChangesetAPI
+    ORG --> Orch
 
     Orch --> Strands
     Agent --> Tools
     Tools --> MCP
 
-    MCPCloudTrail --> Bedrock
+    MCP --> Bedrock
     MCPIAM --> IAM
-    MCPCW --> Bedrock
-    MCPSHub --> Bedrock
-    MCPCanvas --> Bedrock
     AIsecAPI --> MCPAIsec
-    MCPAIsec --> Bedrock
 
     NovaPro --> Bedrock
     NovaLite --> Bedrock
     NovaMicro --> Bedrock
     NovaSonic --> Bedrock
     NovaCanvas --> Bedrock
+    NovaAct --> Bedrock
+    NovaEmbed --> Bedrock
 
     Orch --> NovaPro
     Orch --> NovaLite
     Orch --> NovaMicro
     Orch --> NovaSonic
     Orch --> NovaCanvas
-
-    Orch --> ActPlan
-    ActPlan --> ActJira
+    Orch --> NovaAct
+    Orch --> NovaEmbed
 
     Orch --> DynamoDB
     Orch --> S3
+    Orch --> Orgs
 
     API --> Orch
     API --> Auth
@@ -187,6 +207,7 @@ flowchart TB
     API --> AIsecAPI
     API --> ProtocolAPI
     API --> Report
+    API --> DemoAPI
     Frontend --> API
 ```
 
@@ -209,111 +230,123 @@ sequenceDiagram
     Frontend->>API: POST /api/orchestration/analyze-incident
     API->>Orchestrator: Run pipeline
 
-    Orchestrator->>TemporalAgent: Analyze events
-    TemporalAgent->>Bedrock: Nova 2 Lite
-    Bedrock-->>TemporalAgent: Timeline, root cause
+    Orchestrator->>TemporalAgent: Analyze events (context pruned)
+    TemporalAgent->>Bedrock: Nova 2 Lite — timeline + kill chain
+    Bedrock-->>TemporalAgent: Timeline, root cause, attack pattern
 
-    Orchestrator->>RiskScorer: Score events
-    RiskScorer->>Bedrock: Nova Micro
-    Bedrock-->>RiskScorer: Risk 0-100
+    Orchestrator->>RiskScorer: Score events (parallel x3)
+    RiskScorer->>Bedrock: Nova Micro temp=0.1 — deterministic scoring
+    Bedrock-->>RiskScorer: Risk 0-100 with confidence interval
 
     Orchestrator->>RemediationAgent: Generate plan
-    RemediationAgent->>Bedrock: Nova 2 Lite
-    Bedrock-->>RemediationAgent: Remediation steps
+    RemediationAgent->>Bedrock: Nova 2 Lite — executable steps
+    Bedrock-->>RemediationAgent: Remediation + Nova Act plan
 
     Orchestrator->>DocAgent: Generate docs
     DocAgent->>Bedrock: Nova 2 Lite
-    Bedrock-->>DocAgent: JIRA, Slack, Confluence
+    Bedrock-->>DocAgent: JIRA ticket, Slack alert, Confluence page
 
-    Orchestrator->>DynamoDB: Save incident
+    Orchestrator->>DynamoDB: Save incident + embeddings
+    Note over DynamoDB: Cross-incident correlation via<br/>Nova Multimodal Embeddings
     Orchestrator-->>API: OrchestrationResponse
-    API-->>Frontend: Results
-    Frontend-->>User: Timeline, Attack Path, Remediation, Docs
+    API-->>Frontend: Full results
+    Frontend-->>User: Timeline · Attack Path · Blast Radius ·<br/>Remediation · Compliance · ATLAS · Aria
 ```
 
-### Scalability Architecture (SQS + Multi-Region)
-
-How wolfir scales from a hackathon demo to a real SOC handling 960+ alerts/day:
+### Scalability Architecture (Production Path)
 
 ```
-                        ┌─────────────────────────────┐
-                        │   CloudTrail / GuardDuty     │
-                        │   (960+ alerts/day avg)      │
-                        └──────────────┬──────────────┘
-                                       │
-                        ┌──────────────▼──────────────┐
-                        │   AWS SQS (Alert Queue)     │
-                        │   FIFO · DLQ · 14-day TTL   │
-                        └──┬──────────┬──────────┬───┘
-                           │          │          │
-              ┌────────────▼─┐  ┌─────▼──────┐  ┌▼────────────┐
-              │ wolfir Worker │  │wolfir Worker│  │wolfir Worker│
-              │  (ECS Fargate)│  │(ECS Fargate)│  │(ECS Fargate)│
-              │ Priority:HIGH │  │Priority:MED │  │Priority:LOW │
-              └──────┬───────┘  └──────┬──────┘  └──────┬──────┘
-                     │                 │                  │
-              ┌──────▼─────────────────▼──────────────────▼──────┐
-              │        Strands Agents Orchestration Layer         │
-              │   Nova Pro · Nova 2 Lite · Nova Micro · Nova Act  │
-              │           6 MCP Servers · 27 MCP Tools            │
-              └──────────────────────┬───────────────────────────┘
-                                     │
-              ┌──────────────────────▼───────────────────────────┐
-              │              DynamoDB Global Tables               │
-              │    Cross-region incident memory & correlation     │
-              │    us-east-1 · us-west-2 · ap-southeast-1        │
-              └──────────────────────────────────────────────────┘
+                    ┌────────────────────────────┐
+                    │  CloudTrail / GuardDuty     │
+                    │  (960+ alerts/day avg)      │
+                    └─────────────┬──────────────┘
+                                  │
+                    ┌─────────────▼──────────────┐
+                    │   AWS SQS (Alert Queue)    │
+                    │   FIFO · DLQ · 14-day TTL  │
+                    └──┬───────────┬──────────┬──┘
+                       │           │           │
+          ┌────────────▼──┐ ┌──────▼──────┐ ┌─▼────────────┐
+          │ wolfir Worker  │ │wolfir Worker│ │wolfir Worker  │
+          │  (ECS Fargate) │ │(ECS Fargate)│ │(ECS Fargate)  │
+          │ Priority: HIGH │ │Priority: MED│ │Priority: LOW  │
+          └──────┬─────────┘ └──────┬──────┘ └──────┬────────┘
+                 │                  │                │
+          ┌──────▼──────────────────▼────────────────▼───────┐
+          │       Strands Agents Orchestration Layer          │
+          │  Nova Pro · Nova 2 Lite · Nova Micro · Nova Act   │
+          │         6 MCP Servers · 27 MCP Tools              │
+          └────────────────────────┬──────────────────────────┘
+                                   │
+          ┌────────────────────────▼──────────────────────────┐
+          │            DynamoDB Global Tables                  │
+          │   Cross-region incident memory & correlation       │
+          │   us-east-1 · us-west-2 · ap-southeast-1          │
+          └────────────────────────────────────────────────────┘
 ```
 
-**Why this matters:** The current demo runs a single FastAPI worker. In production, SQS decouples alert ingestion from AI processing — you can burst to 100 concurrent Strands agents during an active breach without dropping alerts. Each worker is stateless; DynamoDB holds all cross-incident state. The FIFO queue ensures critical events (GuardDuty HIGH) jump ahead of low-severity CloudWatch noise.
+---
 
 ## 🔑 Key Differentiators
 
-### 1. Cross-Incident Memory (DynamoDB)
-Persistent correlation engine detects attack campaigns across incidents. Run two demos — the second one says "78% probability this is the same attacker."
+### 1. AI Security Self-Monitoring (MITRE ATLAS)
+wolfir monitors its **own** Bedrock AI pipeline against 6 MITRE ATLAS techniques in real time. No other security platform watches its own AI pipeline. This is the second pillar — not an add-on.
 
-### 2. Autonomous Remediation with Proof
-Actually executes AWS API calls (not just plans). Before/after state snapshots, CloudTrail confirmation, one-click rollback.
+### 2. Blast Radius Simulator
+Given any compromised IAM identity from an incident, wolfir maps every AWS service, resource, and data store the attacker could reach using IAM policy simulation. Shows critical/high/medium/low risk zones with estimated financial impact per resource.
 
-### 3. AI Pipeline Self-Monitoring (MITRE ATLAS)
-"Who protects the AI?" Monitors its own Bedrock pipeline for prompt injection, API abuse, and data exfiltration using 6 MITRE ATLAS techniques.
+### 3. AWS Organizations Multi-Account View
+Full org tree visualization (Management Account → OUs → Member Accounts), cross-account lateral movement detection, SCP gap analysis, and account-level security posture scores — all from a single wolfir console.
 
-## 🤖 Nova Models & Services Used
+### 4. Cross-Incident Memory (DynamoDB + Nova Embeddings)
+Persistent behavioral correlation across incidents. Run two demos — the second detects "78% probability same attacker." Embeddings over structured feature vectors (not prose) give accurate behavioral matching.
+
+### 5. Autonomous Remediation with Proof
+Executes AWS API calls (not just plans). Before/after state snapshots, CloudTrail confirmation of every action, one-click rollback.
+
+---
+
+## 🤖 Nova Models & Services Used — 7 Capabilities
 
 wolfir uses **7 Amazon Nova capabilities** — each chosen for what it does best:
 
 | # | Model / Service | Model ID | Usage |
 |---|-----------------|----------|-------|
-| 1 | **Nova Pro** | `amazon.nova-pro-v1:0` | Visual architecture analysis — multimodal, reads diagram images |
-| 2 | **Nova 2 Lite** | `us.amazon.nova-2-lite-v1:0` | Timeline, remediation, docs, Aria, Strands Agent — fast text reasoning |
-| 3 | **Nova Micro** | `amazon.nova-micro-v1:0` | Risk scoring — ultra-fast, deterministic (temp=0.1) |
-| 4 | **Nova 2 Sonic** | `amazon.nova-2-sonic-v1:0` | Voice (integration-ready) — WebSocket streaming for Aria |
-| 5 | **Nova Canvas** | `amazon.nova-canvas-v1:0` | Report cover art — image generation for incident reports |
-| 6 | **Nova Act** | nova-act SDK | Browser automation plans — AWS Console remediation, JIRA ticket creation |
-| 7 | **Nova Multimodal Embeddings** | `amazon.nova-2-multimodal-embeddings-v1:0` | Incident similarity — semantic search over incident history |
+| 1 | **Nova Pro** | `amazon.nova-pro-v1:0` | Visual architecture analysis — multimodal, STRIDE threat modeling on uploaded diagrams |
+| 2 | **Nova 2 Lite** | `us.amazon.nova-2-lite-v1:0` | Timeline reconstruction, remediation generation, documentation, Aria assistant, Strands orchestrator |
+| 3 | **Nova Micro** | `amazon.nova-micro-v1:0` | Risk scoring at `temp=0.1` — deterministic, runs 3× in parallel for confidence interval |
+| 4 | **Nova 2 Sonic** | `amazon.nova-2-sonic-v1:0` | Aria voice — WebSocket streaming speech-to-text and TTS |
+| 5 | **Nova Canvas** | `amazon.nova-canvas-v1:0` | Incident report cover art — context-aware image per incident type |
+| 6 | **Nova Act** | nova-act SDK | Browser automation plans — AWS Console remediation steps, JIRA ticket creation |
+| 7 | **Nova Multimodal Embeddings** | `amazon.nova-2-multimodal-embeddings-v1:0` | Cross-incident behavioral similarity search |
 
-**Why this mix?** Each model has a strength. Nova Micro scores risk in &lt;1s. Nova 2 Lite handles the heavy reasoning. Nova Pro reads images. Nova Canvas generates visuals. Nova Act automates browser workflows. Embeddings power "find similar incidents." Throwing one model at everything would be slower and less accurate.
+**Why this mix?** Each model has a strength. Nova Micro scores risk in <1s at near-zero temperature. Nova 2 Lite handles all heavy text reasoning. Nova Pro reads images — text models can't do STRIDE on architecture diagrams. Nova Canvas generates visuals. Nova Act automates browser workflows. Embeddings power "find similar incidents." One model doing all of this would be slower, less accurate, and context-bound.
 
-**Model roles:** Nova 2 Lite is the primary orchestrator for timeline, remediation, and documentation. Nova Pro handles visual diagram analysis. Nova Act is integrated in the Remediation tab — click "Generate Nova Act Plan" for AWS Console and JIRA browser automation steps.
+---
 
 ## 🔧 AWS Services
 
 - **Amazon Bedrock** — All Nova model invocations
-- **DynamoDB** — Cross-incident memory + correlation
-- **CloudTrail** — Security event source + audit proof
-- **IAM** — Policy analysis + remediation execution
-- **CloudWatch** — Anomaly detection + billing monitoring
+- **DynamoDB** — Cross-incident memory, correlation, incident history
+- **CloudTrail** — Security event source + audit proof for every remediation
+- **IAM** — Policy analysis, Blast Radius simulation, remediation execution
+- **CloudWatch** — Anomaly detection, billing anomaly monitoring
 - **S3** — Architecture diagram storage
-- **Strands Agents SDK** — Multi-agent orchestration
+- **AWS Organizations** — Multi-account org tree, SCP analysis
+- **Strands Agents SDK** — Multi-agent orchestration framework
+
+---
 
 ## 📦 Tech Stack
 
 - **Backend**: Python, FastAPI, Strands Agents SDK, boto3
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion
-- **MCP**: FastMCP with 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security). 23 MCP tools. 21 Strands @tool functions.
-- **Deployment**: Vercel (frontend), Local/EC2 (backend)
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion, React Flow
+- **MCP**: FastMCP — 6 AWS MCP servers (CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, AI Security), 27 MCP tools, 21 Strands `@tool` functions
+- **Deployment**: Vercel (frontend), Local/EC2/Docker (backend)
 
-## 🚀 Quick Start / Setup
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11+
@@ -322,30 +355,21 @@ wolfir uses **7 Amazon Nova capabilities** — each chosen for what it does best
 
 ### IAM Permissions
 
-The IAM user (e.g. `secops-lens-pro`) used for AWS credentials needs these permissions:
-
 | Service | Actions | Purpose |
 |---------|---------|---------|
 | **CloudTrail** | `LookupEvents`, `ListTrails` | Real AWS analysis |
 | **Bedrock** | `InvokeModel`, `ListFoundationModels` | Nova AI pipeline |
-| **DynamoDB** | `PutItem`, `GetItem`, `Query`, `DescribeTable`, `CreateTable` | Cross-Incident Memory |
+| **DynamoDB** | `PutItem`, `GetItem`, `Query`, `DescribeTable`, `CreateTable` | Cross-incident memory |
+| **Organizations** | `ListAccounts`, `ListOrganizationalUnitsForParent`, `DescribeOrganization` | Multi-account dashboard |
 
-**If you see** `AccessDeniedException` for `dynamodb:PutItem`, `dynamodb:Query`, or `dynamodb:DescribeTable`, add the DynamoDB policy — see **[docs/IAM-POLICY-CLOUDTRAIL.md](docs/IAM-POLICY-CLOUDTRAIL.md)** for exact JSON and step-by-step instructions. See **[docs/AWS_SETUP.md](docs/AWS_SETUP.md)** for credential setup.
+See **[docs/IAM-POLICY-CLOUDTRAIL.md](docs/IAM-POLICY-CLOUDTRAIL.md)** for exact JSON policies and step-by-step setup.
 
 ### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
-python main.py
-# API runs on http://localhost:8000
-```
-
-**Ensure all backend files are committed** — including `backend/agents/strands_orchestrator.py`, `backend/mcp_servers/`, and `backend/agents/`. Judges cloning the repo need these for the full Nova AI pipeline.
-
-Or with hot-reload:
-```bash
-cd backend
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# API runs on http://localhost:8000
 ```
 
 ### Frontend
@@ -358,7 +382,7 @@ npm run dev
 
 ### Optional: Knowledge Base (RAG) for Enhanced Playbooks
 
-wolfir works without a Knowledge Base — the Agent uses inline prompts when KB is not configured. For enhanced incident response playbook retrieval (RAG) and semantic "find similar incidents" in Agentic Query, optionally deploy:
+wolfir works without a Knowledge Base. For enhanced playbook retrieval and semantic incident search in Agentic Query, optionally deploy:
 
 1. **Terraform** — Creates S3 bucket and uploads sample playbooks:
    ```bash
@@ -367,52 +391,75 @@ wolfir works without a Knowledge Base — the Agent uses inline prompts when KB 
 2. **Bedrock Console** — Create a Knowledge Base with **S3 Vectors** (Quick create), connect to the Terraform-created bucket, sync.
 3. **Configure** — Set `KNOWLEDGE_BASE_ID` in `.env`.
 
-See [terraform/README.md](terraform/README.md) for step-by-step instructions. This step is optional; the Agent will use inline prompts when KB is not configured.
+See [terraform/README.md](terraform/README.md) for step-by-step instructions.
 
-### Demo Flow (No AWS Required)
-1. Open http://localhost:5173
-2. Click **Launch Console** or **Try Demo**
-3. Select a scenario (e.g. Cryptocurrency Mining, IAM Privilege Escalation)
-4. Watch the 5-agent pipeline execute in real time
-5. Explore: Timeline → Attack Path → Remediation → IR Protocol (NIST) → AI Security → Aria → Export
-6. In Remediation: click **Generate Nova Act Plan** for AWS Console / JIRA browser automation
-7. Ask **Aria**: "What is the root cause?" or "Have we seen this attack before?"
-8. Export reports (PDF, clipboard, print)
+---
+
+## 🎬 Demo Flow (No AWS Required)
+
+1. Open http://localhost:5173 (or https://wolfir.vercel.app)
+2. Click **Launch Console** → **Scenario Picker**
+3. Select a scenario — "Cryptocurrency Mining" or "IAM Privilege Escalation"
+4. Watch the 5-agent pipeline execute with model labels in real time
+5. Explore every tab:
+   - **Timeline** → forensic kill chain reconstruction
+   - **Attack Path** → interactive React Flow diagram, click nodes
+   - **Blast Radius** → what the attacker could reach from this identity
+   - **Compliance** → CIS, NIST 800-53, SOC 2, PCI-DSS, SOX, HIPAA
+   - **Cost Impact** → financial exposure with IBM formula
+   - **Remediation** → click **Generate Nova Act Plan** for browser automation steps
+   - **IR Protocol** → NIST IR phase scoring
+   - **AI Security** → MITRE ATLAS posture (wolfir watching itself)
+   - **SLA Tracker** → incident response SLA status
+6. **Cross-incident correlation**: run scenario 1, then run scenario 2 — see "78% same attacker"
+7. **Agentic Query** → ask anything: "What IAM permissions were abused?", "Which controls failed?"
+8. **Aria** → voice/text assistant: "What is the root cause?" "Have we seen this attacker before?"
+9. **Organizations Dashboard** → multi-account org tree, cross-account threats, SCP gaps
+10. **Export** → PDF report with Nova Canvas cover art
 
 ### Real AWS Analysis
-1. Configure AWS credentials: `aws configure --profile wolfir` (see [docs/AWS_SETUP.md](docs/AWS_SETUP.md))
+1. Configure credentials: `aws configure --profile wolfir` (see [docs/AWS_SETUP.md](docs/AWS_SETUP.md))
 2. Start backend and frontend
-3. Go to **Real AWS Account** tab → **Test AWS Connection**
-4. Click **Analyze Real CloudTrail Events** for live analysis
+3. **Real AWS Account** tab → **Test AWS Connection** → **Analyze Real CloudTrail Events**
+
+---
 
 ## 📊 Performance
 
 | Metric | Value |
 |--------|-------|
-| Alert to Resolution | End-to-End Automated |
-| Cost per Incident | ~$0.013 *(see derivation below)* |
+| Demo mode latency | ~2 seconds (pre-computed real Nova outputs) |
+| Full pipeline (real AWS) | 30–45 seconds end-to-end |
+| Cost per incident | ~$0.013 *(see derivation below)* |
 | MITRE ATT&CK Coverage | T1078, T1098, T1059, T1496, T1530 |
 | MITRE ATLAS Monitoring | 6 techniques |
 | Compliance Frameworks | CIS, NIST 800-53, SOC 2, PCI-DSS, SOX, HIPAA |
 
-**Cost per incident derivation:** Typical incident uses ~5 Nova calls (Detect, Investigate, Classify, Remediate, Document). Nova 2 Lite input ~4K tokens, output ~1K tokens ≈ $0.001/call; Nova Micro ~$0.0002/call. Total ≈ $0.005–0.015 depending on event volume. Assumes Bedrock on-demand pricing (US East). See [BILLING_AND_OPEN_SOURCE.md](BILLING_AND_OPEN_SOURCE.md) for details.
+**Cost derivation:** Typical incident — 5 Nova calls (Detect, Investigate, Classify, Remediate, Document). Nova 2 Lite: ~4K tokens in, ~1K out ≈ $0.001/call. Nova Micro ≈ $0.0002/call. Total ≈ $0.005–0.015 on Bedrock on-demand (US East). See [BILLING_AND_OPEN_SOURCE.md](BILLING_AND_OPEN_SOURCE.md) for full details.
+
+---
 
 ## 🔒 Security of the Product
 
-- **Credentials** — Never stored; always local via AWS CLI profile. wolfir requires no long-lived access keys — use `aws sso login` or `aws configure` locally, then point wolfir at your profile.
-- **Demo mode** — Complete client-side fallback when backend is offline; no AWS required.
+- **Credentials** — Never stored, always local via AWS CLI profile. Explicit `del credentials` immediately after `sts.get_caller_identity()` validation. No long-lived keys in wolfir.
+- **Demo mode** — Complete client-side fallback; no AWS connection required. Demo outputs are real Nova model outputs, not fabricated.
 - **CloudTrail audit proof** — Every remediation action is logged and verifiable.
-- **API rate limiting** — 60 requests/minute per IP (SlowAPI) to prevent abuse.
-- **Input sanitization** — Orchestration API caps events at 500; request body max 5MB. JSON validated before processing.
-- **Agentic Query guardrails** — MITRE ATLAS + Bedrock Guardrails protect against prompt injection and dangerous tool calls (e.g. `iam:DeleteUser`). Status visible in UI.
+- **Rate limiting** — 60 requests/minute per IP (SlowAPI).
+- **Input sanitization** — 500-event cap, 5MB request body max, JSON validated before processing.
+- **Agentic Query guardrails** — MITRE ATLAS AML.T0051 monitoring + Bedrock Guardrails protect against prompt injection. Status visible in UI — not decoration.
+- **Blast Radius** — Read-only IAM simulation; no destructive calls. Simulates policy evaluation without executing actions.
+
+---
 
 ## 💰 AWS Billing & Open Source
 
-**Important**: This project uses **your AWS account and credentials**. All AWS charges will be billed to **your account**.
+**Important**: This project uses your AWS account and credentials. All AWS charges are billed to your account.
 
 - Each user configures their own AWS credentials
-- Estimated cost: ~$2-5/month for light usage
+- Estimated cost: ~$2–5/month for light usage
 - See [BILLING_AND_OPEN_SOURCE.md](BILLING_AND_OPEN_SOURCE.md) for details
+
+---
 
 ## 🧪 Testing
 
@@ -422,21 +469,17 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-See [tests/README.md](tests/README.md) for test structure.
+---
 
 ## 📝 Blog Posts
 
-Natural-language deep dives on wolfir’s design and challenges:
+Technical deep-dives on wolfir's design and architecture decisions:
 
-- [01 — wolfir Project Overview](blogs/01-wolfir-project-overview.md)
-- [02 — Multi-Agent Orchestration Challenges](blogs/02-multi-agent-orchestration-challenges.md)
+- [01 — wolfir Project Overview: Why Seven Nova Capabilities](blogs/01-wolfir-project-overview.md)
+- [02 — Multi-Agent Orchestration: The Problems Nobody Warned About](blogs/02-multi-agent-orchestration-challenges.md)
 - [03 — AI Pipeline Security & MITRE ATLAS](blogs/03-ai-pipeline-security-mitre-atlas.md)
-- [04 — Real AWS vs. Demo Mode](blogs/04-real-aws-vs-demo-mode.md)
+- [04 — Real AWS vs. Demo Mode: Building Two-Mode Parity](blogs/04-real-aws-vs-demo-mode.md)
 - [05 — Remediation, Nova Act & Human-in-the-Loop](blogs/05-remediation-nova-act-and-human-in-the-loop.md)
-
-## 📄 License
-
-AI-powered security intelligence built with Amazon Nova.
 
 ---
 

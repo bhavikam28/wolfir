@@ -1,4 +1,4 @@
-# Building WolfIR: Why Cloud Security Needed Five Nova Models Instead of One
+# Building WolfIR: Why Cloud Security Needed Seven Nova Capabilities Instead of One
 
 When I started thinking about what to build for the Amazon Nova hackathon, I kept coming back to the same problem I'd seen across every AWS environment I'd worked with: the gap between detection and action.
 
@@ -6,11 +6,11 @@ AWS gives you a lot of tools. CloudTrail captures every API call. GuardDuty surf
 
 That investigation-to-remediation workflow is still almost entirely manual. Prophet Security's 2025 AI in SOC Survey puts the average SOC at 960+ alerts per day, with 40% going uninvestigated. The rest sit in queues, get triaged inconsistently, or get missed. The problem isn't data. It's the time cost of turning data into action.
 
-So I built WolfIR — an autonomous incident response pipeline that runs from CloudTrail alert to documented, executed remediation using five Amazon Nova models working in coordination. This post explains the architecture decisions that shaped it and why each model choice was deliberate, not arbitrary.
+So I built WolfIR — an autonomous incident response pipeline that runs from CloudTrail alert to documented, executed remediation using seven Amazon Nova capabilities working in coordination. This post explains the architecture decisions that shaped it and why each model choice was deliberate, not arbitrary.
 
 ---
 
-## Why five models, and why these five
+## Why seven capabilities, and why these seven
 
 The first version of WolfIR was a single-model system. One Nova 2 Lite call received the CloudTrail event set and was asked to produce a timeline, risk score, remediation steps, and documentation. It failed quickly.
 
@@ -44,7 +44,7 @@ The practical effect is that WolfIR gets better at correlation the more incident
 
 ## MCP servers as the AWS integration layer
 
-Five MCP servers connect WolfIR's agents to real AWS data: CloudTrail, IAM, CloudWatch, Security Hub, and Nova Canvas. The MCP architecture was a deliberate choice over direct boto3 calls from within agent prompts, for a specific reason.
+Six MCP servers connect WolfIR's agents to real AWS data: CloudTrail, IAM, CloudWatch, Security Hub, Nova Canvas, and AI Security. The MCP architecture was a deliberate choice over direct boto3 calls from within agent prompts, for a specific reason.
 
 When you put AWS API calls inside an LLM's tool execution, you get implicit coupling between the agent's reasoning and the AWS API surface. If an API changes, your agent's behavior changes in ways that are hard to predict. If you want to test agent behavior, you need live AWS access.
 
@@ -78,7 +78,7 @@ That was the design principle: demo mode and real mode use the same UI, the same
 
 ---
 
-The full system — five models, five MCP servers, 14 Strands tool functions, DynamoDB correlation engine, MITRE ATLAS monitoring, voice assistant, visual report export — took about four weeks to build. The hardest parts weren't the AI. They were the context handoff logic between agents, keeping demo and real modes in sync, and making autonomous remediation trustworthy enough that a security engineer would actually use it.
+The full system — seven Nova capabilities, six MCP servers, 21 Strands tool functions, DynamoDB correlation engine, MITRE ATLAS monitoring, voice assistant, visual report export — took about four weeks to build. The hardest parts weren't the AI. They were the context handoff logic between agents, keeping demo and real modes in sync, and making autonomous remediation trustworthy enough that a security engineer would actually use it.
 
 Those are the parts the next posts cover.
 

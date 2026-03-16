@@ -140,7 +140,7 @@ const IndustryStatsSection: React.FC = () => {
             className="inline-flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-full"
             style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.12)', color: '#2563EB' }}
           >
-            wolfir closes the gap — 5 Nova agents · MITRE ATLAS · AI pipeline monitoring · one-click remediation
+            wolfir closes the gap — 7 Nova capabilities · MITRE ATLAS · AI pipeline monitoring · one-click remediation
           </p>
         </motion.div>
       </div>

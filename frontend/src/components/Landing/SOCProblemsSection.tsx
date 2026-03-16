@@ -166,7 +166,7 @@ const SOCProblemsSection: React.FC = () => {
           >
             <ArrowDown className="w-5 h-5 text-blue-400 rotate-180" />
             <p className="text-blue-300 font-semibold text-sm">
-              wolfir closes the gap — 5 Nova agents · MITRE ATLAS · autonomous response
+              wolfir closes the gap — 7 Nova capabilities · MITRE ATLAS · autonomous response
             </p>
           </motion.div>
         </motion.div>

@@ -54,7 +54,7 @@ What we wanted was something that could take a raw CloudTrail event, run a full 
 
 ## The Architecture: Five Agents, One Pipeline
 
-wolfir's core is a multi-agent pipeline built on **AWS Strands SDK**, orchestrating five Amazon Nova models across a five-stage incident response flow.
+wolfir's core is a multi-agent pipeline built on **AWS Strands SDK**, orchestrating seven Amazon Nova capabilities across a five-stage incident response flow.
 
 [ARCH: pipeline]
 
@@ -75,7 +75,7 @@ The remediation agent takes the timeline, risk score, and investigation summary 
 **Stage 5: Document (Post-Mortem + Audit Trail)**
 The final agent takes everything from the previous four stages and produces documentation: a JIRA ticket draft, a Slack alert summary, a Confluence post-mortem template, and a PDF-ready incident report. **Nova 2 Sonic** handles voice output for our Aria assistant (who can read findings aloud and answer follow-up questions). **Nova Canvas** generates the visual report cover.
 
-## Why Five Models Instead of One?
+## Why Seven Capabilities Instead of One?
 
 This is the question we get most often. The honest answer: we tried with one model first.
 
@@ -91,6 +91,7 @@ Model specialization is the key insight. Each Nova model has a different cost/pe
 | Nova 2 Sonic | Voice (Aria assistant) | Optimized for speech synthesis |
 | Nova Canvas | Report cover generation | Purpose-built for image generation |
 | Nova Act | Browser automation plans | Actions in AWS Console and JIRA |
+| Nova Multimodal Embeddings | Cross-incident similarity | Behavioral fingerprinting for campaign detection |
 
 Using the right model for each job cuts our inference cost by roughly 60% compared to running everything on Nova Pro, while producing better results in each specific stage.
 
@@ -144,8 +145,8 @@ We're not done building. But we're far enough along that a SOC analyst can go fr
   },
   {
     id: '02',
-    title: 'Five Nova Models, 23 MCP Tools, One Pipeline: A Deep Dive Into wolfir\'s Architecture',
-    excerpt: 'How do you orchestrate five AI models across a five-stage security pipeline without it turning into a spaghetti mess of API calls and race conditions? This is the full technical story of how wolfir\'s architecture actually works — the design decisions, the tradeoffs, and the parts that were harder than expected.',
+    title: 'Seven Nova Capabilities, One Pipeline: A Deep Dive Into wolfir\'s Architecture',
+    excerpt: 'How do you orchestrate seven Nova capabilities across a five-stage security pipeline without it turning into a spaghetti mess of API calls and race conditions? This is the full technical story of how wolfir\'s architecture actually works — the design decisions, the tradeoffs, and the parts that were harder than expected.',
     readTime: '20 min read',
     tags: ['Strands Agents', 'Architecture', 'Engineering', 'Amazon Nova', 'MCP'],
     image: '/images/blog-02-pipeline.png',
@@ -246,7 +247,7 @@ Nova Canvas generates the visual report cover for PDF exports — an AI-generate
 
 ### Nova Act: Browser Automation Plans
 
-Nova Act is different from the other five models. It's a browser automation SDK, not a language model per se. We use it to generate structured plans for actions that can't be expressed as AWS API calls — creating JIRA tickets, navigating to specific AWS Console pages, updating Confluence documentation.
+Nova Act is different from the other five pipeline models. It's a browser automation SDK, not a language model per se. We use it to generate structured plans for actions that can't be expressed as AWS API calls — creating JIRA tickets, navigating to specific AWS Console pages, updating Confluence documentation.
 
 Nova Act plans are step-by-step browser instructions: "Navigate to IAM Console, select Roles, find compromised-role, attach policy." Users can execute these manually or, with the Nova Act API key configured, run them automatically.
 
@@ -356,7 +357,7 @@ Everything else — Strands, the model specialization strategy, the state object
 
 It sounds paranoid. It isn't.
 
-wolfir is powered by five Amazon Nova models. Those models consume CloudTrail events, IAM policy documents, user-provided context, and natural language queries. They reason over that data and produce security recommendations. If an attacker can influence what those models see or how they reason — by injecting instructions into the data stream, abusing the API, or exfiltrating sensitive context through model outputs — the security platform becomes an attack vector instead of a defense.
+wolfir is powered by seven Amazon Nova capabilities. Those models consume CloudTrail events, IAM policy documents, user-provided context, and natural language queries. They reason over that data and produce security recommendations. If an attacker can influence what those models see or how they reason — by injecting instructions into the data stream, abusing the API, or exfiltrating sensitive context through model outputs — the security platform becomes an attack vector instead of a defense.
 
 97% of organizations that suffered AI-related breaches lacked proper AI access controls. That's not a niche problem. That's the baseline state of AI security in 2026.
 
@@ -972,7 +973,7 @@ The system is more reliable now than it was in month one. It will be more reliab
   {
     id: '07',
     title: 'Why We Chose Each Amazon Nova Model: A Decision Framework for Multi-Agent AI',
-    excerpt: 'Five Nova models across five pipeline stages — that\'s not a random choice. Each model was selected for specific capabilities: latency, reasoning depth, structured output reliability, browser control. This is the full reasoning behind every model selection decision in wolfir.',
+    excerpt: 'Seven Nova capabilities, five pipeline stages — not a random choice. Each model was selected for specific reasons: latency, reasoning depth, structured output reliability, browser control, semantic similarity. This is the full reasoning behind every model selection decision in wolfir.',
     readTime: '17 min read',
     tags: ['Amazon Nova', 'Amazon Bedrock', 'Architecture', 'Agentic AI', 'Engineering'],
     image: '/images/blog-07-nova-models.png',
