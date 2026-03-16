@@ -241,13 +241,13 @@ The five-agent pipeline runs in dependency order, with parallelism where agent o
 
 **Step 1  -  Temporal Analysis (Nova 2 Lite)**
 
-CloudTrail events are filtered to six essential fields before hitting the model: `eventTime`, `eventName`, `sourceIPAddress`, `userIdentity` summary, `errorCode`, `requestParameters`. The `filter_interesting_events()` function removes routine noise:
+CloudTrail events are filtered to six essential fields before hitting the model: `eventTime`, `eventName`, `sourceIPAddress`, `userIdentity` summary, `errorCode`, `requestParameters`. The `filter_interesting_events()` function removes routine background:
 
 ```python
 ROUTINE_EVENTS = {
     "PutLogEvents", "GetCallerIdentity", "AssumeRole",  # service-to-service
     "DescribeInstances", "ListBuckets",  # read-only inventory
-    "PutMetricData", "PutMetricAlarm",  # CloudWatch noise
+    "PutMetricData", "PutMetricAlarm",  # CloudWatch background
 }
 ```
 
@@ -521,7 +521,7 @@ Knowing that an IAM identity was affected is one thing. Knowing every resource a
 ```
 affected: arn:aws:iam::123456789:role/DataPipelineRole
 │
-├── CRITICAL  -  S3:GetObject on s3://prod-customer-data/* (PII exposure)
+├── CRITICAL  -  S3:GetObject on s3://prod-customer-data/* (personal data exposure)
 ├── CRITICAL  -  DynamoDB:Scan on CustomerOrders table (financial data)
 ├── HIGH      -  EC2:RunInstances (unauthorized compute vector)
 ├── HIGH      -  Bedrock:InvokeModel (AI Unauthorized Model Access)
@@ -769,7 +769,7 @@ def _get_event_name(event: Dict[str, Any]) -> str:
             parsed = json.loads(ct)
             return parsed.get("eventName", "") if isinstance(parsed, dict) else ""
         except Exception:
-            pass
+            continue  # skip
     return ""
 ```
 
