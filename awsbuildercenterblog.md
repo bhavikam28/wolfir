@@ -1,6 +1,6 @@
 # wolfir: The AI Security Platform That Watches Itself
 
-*wolfir uses 7 Amazon Nova capabilities, Strands Agents SDK, and MITRE ATLAS self-monitoring for cloud and AI security — every architectural decision explained.*
+*wolfir: 7 Amazon Nova capabilities, Strands Agents SDK, and MITRE ATLAS self-monitoring for cloud and AI security — every architectural decision explained.*
 
 ---
 
