@@ -12,13 +12,13 @@ So why does the journey from *"we detected something"* to *"we fixed it and docu
 
 The problem isn't detection. **It's the time cost of turning detection into action.** Correlating events, building a timeline, figuring out root cause, mapping the blast radius, writing a remediation plan with real AWS CLI commands, and documenting everything for the team — that part is still almost entirely manual. An analyst who should be making decisions is instead building a spreadsheet.
 
-That gap was the first motivation. You can read the full story in [*Why We Built an Autonomous Cloud Security Platform*](https://wolfir.vercel.app/blog/01) on our blog.
+That gap was the first motivation. You can read the full story in [*Why We Built an Autonomous Cloud Security Platform*](https://wolfir.vercel.app/#blog/01) on our blog.
 
 **Then a second problem emerged.** Every modern security platform now runs on AI. GuardDuty uses ML. Security Hub correlates with AI. I was building another AI-powered security tool — but as I built, I kept asking a question nobody seemed to be asking: *who's watching the AI itself?*
 
 If an attacker can embed instructions into the data my models process, misuse my [Bedrock](https://aws.amazon.com/bedrock/) inference API, trigger runaway invocations, or extract sensitive account patterns through model outputs — **my security tool becomes the attack surface.** [MITRE built the ATLAS framework](https://atlas.mitre.org/) specifically to catalogue adversarial ML threats. Almost nobody deploys it in production. wolfir became the exception.
 
-We explore the AI security threat model in depth in [*Who Watches the AI?*](https://wolfir.vercel.app/blog/03).
+We explore the AI security threat model in depth in [*Who Watches the AI?*](https://wolfir.vercel.app/#blog/03).
 
 **The name is deliberate.** wolf + IR (Incident Response). A wolf hunts in a pack — coordinated, patient, each member with a role, sharing context, moving from signal to resolution together. That's exactly how wolfir works: seven [Amazon Nova](https://aws.amazon.com/ai/nova/) capabilities, each specialized, sharing structured state, going from raw CloudTrail events to a complete incident response package.
 
@@ -36,7 +36,7 @@ You feed it CloudTrail events — from a live AWS account or one of three built-
 
 **Detect → Investigate → Classify → Remediate → Document**
 
-The full pipeline architecture is explained in [*Five Nova Models, One Pipeline: A Deep Dive*](https://wolfir.vercel.app/blog/02).
+The full pipeline architecture is explained in [*Five Nova Models, One Pipeline: A Deep Dive*](https://wolfir.vercel.app/#blog/02).
 
 The output is a complete incident response package, not a report. Here is everything it produces:
 
@@ -52,7 +52,7 @@ The output is a complete incident response package, not a report. Here is everyt
 - Given the compromised identity, runs [IAM policy simulation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_testing-policies.html) to map *every* AWS resource an attacker can reach
 - Results tiered as CRITICAL / HIGH / MEDIUM / LOW with estimated financial impact per resource
 - Turns *"we had an IAM incident"* into *"here's exactly what was at risk and what to lock down first"*
-- Covered in detail in [*When AI Should (and Shouldn't) Click the Button*](https://wolfir.vercel.app/blog/05)
+- Covered in detail in [*When AI Should (and Shouldn't) Click the Button*](https://wolfir.vercel.app/#blog/05)
 
 **AWS Organizations Dashboard**
 - Full org tree — Management Account → OUs → Member Accounts — with real-time threat level indicators
@@ -132,7 +132,7 @@ The output is a complete incident response package, not a report. Here is everyt
 - **AWS Organizations Cross-Account Breach** — Compromised Dev account role pivots via STS into Production and Security accounts across 3 OUs, 12 member accounts. 18 events. CRITICAL.
 - **Shadow AI / Unauthorized LLM Use** — Ungoverned Bedrock InvokeModel calls combined with a prompt injection attempt. Exercises the [MITRE ATLAS](https://atlas.mitre.org/) self-monitoring pipeline — the AI security pillar catching what the cloud pillar cannot. 7 events. CRITICAL.
 
-See [*Demo Mode That Actually Works*](https://wolfir.vercel.app/blog/04) for how we built the offline-first architecture that powers all three scenarios.
+See [*Demo Mode That Actually Works*](https://wolfir.vercel.app/#blog/04) for how we built the offline-first architecture that powers all three scenarios.
 
 ---
 
@@ -159,13 +159,13 @@ Every Bedrock invocation powering the analysis above is simultaneously monitored
 
 **When you run an incident analysis, the AI Security dashboard updates based on the actual Bedrock invocations that just ran.** Cloud security and AI security share a live data plane. The two pillars are connected, not bolted together.
 
-Read the full AI security architecture in [*Who Watches the AI? Why wolfir Monitors Its Own Intelligence Pipeline*](https://wolfir.vercel.app/blog/03).
+Read the full AI security architecture in [*Who Watches the AI? Why wolfir Monitors Its Own Intelligence Pipeline*](https://wolfir.vercel.app/#blog/03).
 
 ---
 
 ### 7 Amazon Nova Capabilities — Each Doing Non-Fungible Work
 
-The full model selection reasoning is in [*Why We Chose Each Amazon Nova Model*](https://wolfir.vercel.app/blog/07).
+The full model selection reasoning is in [*Why We Chose Each Amazon Nova Model*](https://wolfir.vercel.app/#blog/07).
 
 - **[Nova Pro](https://aws.amazon.com/ai/nova/)** → Visual STRIDE threat modeling on uploaded architecture diagrams. The only multimodal Nova — text models cannot read a VPC diagram.
 - **[Nova 2 Lite](https://aws.amazon.com/ai/nova/)** → Timeline reconstruction, remediation plan generation, documentation, Agentic Query orchestration with extended thinking, Aria voice responses. The reasoning workhorse.
@@ -231,15 +231,15 @@ def _run_async(coro):
 **Credentials never leave the user's machine.** wolfir uses local [AWS CLI profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) or mounted `~/.aws` volumes. Nothing is stored or transmitted. In a security product, this is not optional.
 
 Full technical deep-dives:
-- [Pipeline architecture →](https://wolfir.vercel.app/blog/02)
-- [Technical challenges →](https://wolfir.vercel.app/blog/06)
-- [Demo mode architecture →](https://wolfir.vercel.app/blog/04)
+- [Pipeline architecture →](https://wolfir.vercel.app/#blog/02)
+- [Technical challenges →](https://wolfir.vercel.app/#blog/06)
+- [Demo mode architecture →](https://wolfir.vercel.app/#blog/04)
 
 ---
 
 ## Challenges We Ran Into
 
-Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wolfir.vercel.app/blog/06)
+Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wolfir.vercel.app/#blog/06)
 
 **Token bloat collapsed the first architecture.** Passing full agent outputs sequentially hit context limits before the remediation agent started reasoning. The pruning layer fixed this: 60% reduction in token consumption, hallucinations from context bloat eliminated.
 
@@ -269,13 +269,13 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 
 **The two-pillar architecture is genuinely new.** Cloud security platforms exist. AI security tools are emerging. A platform where one pillar monitors the other in real time — where running an incident analysis updates the AI security posture dashboard — is a new category. We haven't seen another project that monitors its own [Bedrock](https://aws.amazon.com/bedrock/) pipeline against [MITRE ATLAS](https://atlas.mitre.org/) in production.
 
-**Seven Nova capabilities, each doing work that can't be substituted.** Nova Pro because you literally cannot analyze an uploaded architecture diagram for STRIDE threats without multimodal capability. Nova Micro at `temperature=0.1` for determinism — more reliable for classification than Nova 2 Lite at default temperature. Nova Embeddings for behavioral similarity — finds campaigns described differently each time. See [*Why We Chose Each Amazon Nova Model*](https://wolfir.vercel.app/blog/07).
+**Seven Nova capabilities, each doing work that can't be substituted.** Nova Pro because you literally cannot analyze an uploaded architecture diagram for STRIDE threats without multimodal capability. Nova Micro at `temperature=0.1` for determinism — more reliable for classification than Nova 2 Lite at default temperature. Nova Embeddings for behavioral similarity — finds campaigns described differently each time. See [*Why We Chose Each Amazon Nova Model*](https://wolfir.vercel.app/#blog/07).
 
 **The Blast Radius Simulator changes the incident response question.** Not *"what happened?"* but *"what could have happened, and what do we lock down right now?"* IAM policy simulation as a first-class incident response tool gives security teams the prioritized list they actually need.
 
 **The cross-incident memory correlation.** Running two demo scenarios and watching wolfir surface *"78% probability this is the same attacker"* — with overlapping IOCs, MITRE technique overlap, and semantic similarity from Nova Embeddings — that's the moment that made the engineering feel worth it.
 
-**Remediations actually execute.** Before/after state snapshots, CloudTrail confirmation of every action, one-click rollback. This is not a report generator. It takes action with accountability. Full reasoning in [*When AI Should (and Shouldn't) Click the Button*](https://wolfir.vercel.app/blog/05).
+**Remediations actually execute.** Before/after state snapshots, CloudTrail confirmation of every action, one-click rollback. This is not a report generator. It takes action with accountability. Full reasoning in [*When AI Should (and Shouldn't) Click the Button*](https://wolfir.vercel.app/#blog/05).
 
 **Infrastructure as Code from day one.** `terraform apply` creates the full AWS environment. `terraform destroy` removes everything. `docker compose up` runs the full stack in under 2 minutes. These aren't aspirational — they're the baseline.
 
@@ -291,7 +291,7 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 
 **Hallucination prevention is a design pattern, not a prompt trick.** Event filtering before the temporal agent, calibration overrides for the risk scorer, confidence intervals instead of single scores, *"no threat detected"* as a valid output, context pruning at every handoff — these are code patterns. Prompts alone couldn't achieve this.
 
-**Demo engineering is product engineering.** Making the full five-agent pipeline work offline, client-side, with pre-computed real Nova outputs forced us to define clean API contracts, unified data shapes, and graceful degradation across every layer. The discipline of keeping demo mode and real mode on the same API contract made the real backend better. Full explanation: [*Demo Mode That Actually Works*](https://wolfir.vercel.app/blog/04).
+**Demo engineering is product engineering.** Making the full five-agent pipeline work offline, client-side, with pre-computed real Nova outputs forced us to define clean API contracts, unified data shapes, and graceful degradation across every layer. The discipline of keeping demo mode and real mode on the same API contract made the real backend better. Full explanation: [*Demo Mode That Actually Works*](https://wolfir.vercel.app/#blog/04).
 
 **Infrastructure decisions compound.** Terraform from day one meant the Knowledge Base setup was three commands. Docker from day one meant the demo setup was one command. These aren't things you add later cleanly.
 
@@ -316,10 +316,10 @@ Full engineering post-mortem: [*The Bugs That Taught Us Everything*](https://wol
 **Source Code:** [github.com/bhavikam28/wolfir](https://github.com/bhavikam28/wolfir) — MIT licensed, ~47K lines
 
 **Blog:**
-- [Why We Built wolfir](https://wolfir.vercel.app/blog/01)
-- [Pipeline Architecture Deep Dive](https://wolfir.vercel.app/blog/02)
-- [Who Watches the AI? MITRE ATLAS Self-Monitoring](https://wolfir.vercel.app/blog/03)
-- [Demo Mode That Actually Works](https://wolfir.vercel.app/blog/04)
-- [Autonomous Remediation: When AI Should Click the Button](https://wolfir.vercel.app/blog/05)
-- [The Bugs That Taught Us Everything](https://wolfir.vercel.app/blog/06)
-- [Why We Chose Each Amazon Nova Model](https://wolfir.vercel.app/blog/07)
+- [Why We Built wolfir](https://wolfir.vercel.app/#blog/01)
+- [Pipeline Architecture Deep Dive](https://wolfir.vercel.app/#blog/02)
+- [Who Watches the AI? MITRE ATLAS Self-Monitoring](https://wolfir.vercel.app/#blog/03)
+- [Demo Mode That Actually Works](https://wolfir.vercel.app/#blog/04)
+- [Autonomous Remediation: When AI Should Click the Button](https://wolfir.vercel.app/#blog/05)
+- [The Bugs That Taught Us Everything](https://wolfir.vercel.app/#blog/06)
+- [Why We Chose Each Amazon Nova Model](https://wolfir.vercel.app/#blog/07)
