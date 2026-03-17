@@ -1336,7 +1336,9 @@ function App() {
           {backendOffline && !error && (
             <div className="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 mb-4 flex items-center gap-2">
               <span className="text-xs text-slate-600">
-                Demo mode — backend offline. Instant demo works. For full AI, start backend: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">cd backend && uvicorn main:app --reload</code>
+                Demo mode — backend offline. Instant demo works fully without a backend.
+                For real AWS analysis: start the backend (<code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">cd backend && uvicorn main:app --reload</code>)
+                {' '}then open <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">http://localhost:5173</code> — not this Vercel link.
               </span>
             </div>
           )}

@@ -249,7 +249,10 @@ See [terraform/README.md](terraform/README.md) for step-by-step instructions.
 
 ## Demo Flow (No AWS Account Required)
 
-1. Open [wolfir.vercel.app](https://wolfir.vercel.app) or `http://localhost:5173`
+> **wolfir.vercel.app** runs in instant demo mode — no backend or AWS account needed. All demo scenarios work fully client-side.
+> **Real AWS analysis** requires the backend running locally. Use `http://localhost:5173` (not the Vercel link) — see [Real AWS Analysis](#real-aws-analysis) below.
+
+1. Open [wolfir.vercel.app](https://wolfir.vercel.app) (demo mode) or `http://localhost:5173` (with local backend)
 2. Click **Try Demo Free** → **Scenario Picker**
 3. Select one of three scenarios:
    - **IAM Privilege Escalation** — Contractor misuses an AssumeRole chain to gain AdministratorAccess. MITRE T1098, T1078. 9 events. CRITICAL.
@@ -275,9 +278,14 @@ See [terraform/README.md](terraform/README.md) for step-by-step instructions.
 10. **Incident History** → all past findings, behavioral correlations, campaign clustering
 
 ### Real AWS Analysis
+
+> **Important:** Use `http://localhost:5173` — not `wolfir.vercel.app` — for real AWS analysis. Chrome's Private Network Access policy blocks public HTTPS sites from calling localhost backends. The local frontend has no such restriction.
+
 1. Configure credentials: `aws configure --profile wolfir` (see [docs/AWS_SETUP.md](docs/AWS_SETUP.md))
-2. Start backend and frontend
-3. Click **Launch Console** → **Real AWS Account** tab → **Test AWS Connection** → **Analyze Real CloudTrail Events**
+2. Start the backend: `cd backend && uvicorn main:app --reload`
+3. Start the frontend: `cd frontend && npm run dev`
+4. Open `http://localhost:5173` in your browser
+5. Click **Launch Console** → **Real AWS Account** tab → **Test AWS Connection** → **Analyze Real CloudTrail Events**
 
 ---
 
