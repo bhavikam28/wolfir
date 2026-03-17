@@ -615,6 +615,7 @@ function App() {
                           setAwsAccountId(result.account_id || null);
                           if (result.connected) {
                             setConnectionError(null);
+                            setBackendOffline(false);
                             authAPI.getAccountTeaser(awsProfile || undefined).then((t) => setAccountTeaser(t)).catch(() => {});
                           } else {
                             setConnectionError('Connection failed. Check your profile name and run aws configure or aws sso login first.');

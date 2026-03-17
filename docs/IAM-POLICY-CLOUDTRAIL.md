@@ -1,21 +1,21 @@
 # IAM Policy for wolfir
 
-The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions for full functionality.
+wolfir needs the following permissions for full functionality. All permissions are read-only or scoped to wolfir-prefixed resources — no broad write access required.
 
 | Permission | Purpose | When Needed |
 |------------|---------|-------------|
-| `cloudtrail:LookupEvents` | Fetch CloudTrail events | Start CloudTrail Analysis |
-| `cloudtrail:ListTrails` | Verify CloudTrail access | Test Connection |
-| `bedrock:InvokeModel` | Run Nova models for AI analysis | CloudTrail analysis, orchestrator |
-| `bedrock:ListFoundationModels` | List available models | Test Connection |
-| `bedrock:ListGuardrails` | List guardrails for AI Pipeline tab | Optional — Guardrails discovery |
-| `dynamodb:PutItem`, `GetItem`, `Query`, `DescribeTable`, `CreateTable` | Cross-Incident Memory | After each analysis |
+| `cloudtrail:LookupEvents`, `ListTrails` | Fetch and verify CloudTrail events | Real AWS analysis, Test Connection |
+| `bedrock:InvokeModel`, `ListFoundationModels`, `ListGuardrails` | Nova AI pipeline, guardrails audit | All analysis |
+| `dynamodb:PutItem/GetItem/Query/Scan/UpdateItem/DescribeTable/CreateTable` | Cross-incident memory | After each analysis |
+| `cloudformation:ListChangeSets/DescribeChangeSet/ListStacks/DescribeStacks` | ChangeSet Analysis tab | Pre-deployment review |
+| `iam:ListUsers/ListRoles/ListAccessKeys/SimulatePrincipalPolicy` | Blast Radius Simulator, IAM audit | Incident analysis |
+| `organizations:ListAccounts/ListOrganizationalUnitsForParent/DescribeOrganization` | AWS Organizations Dashboard | Multi-account view |
 
-## Option 1: AWS Console (Attach policy to user)
+## Full Policy (Recommended — paste this in AWS Console)
 
-1. Open **IAM** → **Users** → select `secops-lens-pro`
+1. Open **IAM** → **Users** → select your IAM user
 2. **Add permissions** → **Create inline policy** → **JSON** tab
-3. Paste this policy (replace `ACCOUNT_ID` with your AWS account ID, e.g. `155610685000`):
+3. Paste this policy (replace `ACCOUNT_ID` with your 12-digit AWS account ID):
 
 ```json
 {
@@ -26,7 +26,8 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
             "Effect": "Allow",
             "Action": [
                 "cloudtrail:LookupEvents",
-                "cloudtrail:ListTrails"
+                "cloudtrail:ListTrails",
+                "cloudtrail:DescribeTrails"
             ],
             "Resource": "*"
         },
@@ -35,14 +36,11 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
             "Effect": "Allow",
             "Action": [
                 "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream",
                 "bedrock:ListFoundationModels",
                 "bedrock:ListGuardrails"
             ],
-            "Resource": [
-                "arn:aws:bedrock:us-east-1::foundation-model/*",
-                "arn:aws:bedrock:us-east-1:ACCOUNT_ID:inference-profile/*",
-                "*"
-            ]
+            "Resource": "*"
         },
         {
             "Sid": "WolfirDynamoDB",
@@ -51,10 +49,45 @@ The user `secops-lens-pro` needs CloudTrail, Bedrock, and DynamoDB permissions f
                 "dynamodb:PutItem",
                 "dynamodb:GetItem",
                 "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:UpdateItem",
                 "dynamodb:DescribeTable",
                 "dynamodb:CreateTable"
             ],
-            "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT_ID:table/wolfir-incident-memory"
+            "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT_ID:table/wolfir-*"
+        },
+        {
+            "Sid": "WolfirCloudFormation",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:ListChangeSets",
+                "cloudformation:DescribeChangeSet",
+                "cloudformation:ListStacks",
+                "cloudformation:DescribeStacks"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "WolfirIAMRead",
+            "Effect": "Allow",
+            "Action": [
+                "iam:ListUsers",
+                "iam:ListRoles",
+                "iam:ListAccessKeys",
+                "iam:SimulatePrincipalPolicy"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "WolfirOrganizations",
+            "Effect": "Allow",
+            "Action": [
+                "organizations:ListAccounts",
+                "organizations:ListOrganizationalUnitsForParent",
+                "organizations:DescribeOrganization",
+                "organizations:ListRoots"
+            ],
+            "Resource": "*"
         }
     ]
 }

@@ -151,6 +151,17 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class PrivateNetworkAccessMiddleware(BaseHTTPMiddleware):
+    """Allow Chrome Private Network Access (PNA) from public HTTPS origins (e.g. wolfir.vercel.app)
+    to this local backend. Chrome 94+ blocks public → loopback requests unless the server
+    explicitly opts in via this header on the OPTIONS preflight response."""
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        return response
+
+
 # Configure CORS
 _cors_origins = [
     "http://localhost:5173",
@@ -174,6 +185,7 @@ app.add_middleware(
 )
 app.add_middleware(MaxBodySizeMiddleware)
 app.add_middleware(APIKeyMiddleware)
+app.add_middleware(PrivateNetworkAccessMiddleware)
 
 # Include REST API routers
 app.include_router(analysis.router)

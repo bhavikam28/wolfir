@@ -84,8 +84,8 @@ aws sso login --profile wolfir
 
 1. **Clone and install:**
    ```bash
-   git clone <repo-url>
-   cd secops-lens-pro
+   git clone https://github.com/bhavikam28/wolfir
+   cd wolfir
    ```
 
 2. **Configure AWS credentials:**
@@ -132,8 +132,10 @@ aws sso login --profile wolfir
 
 ### "Bedrock access denied"
 - Ensure Bedrock is enabled in your AWS account
-- Verify region supports Bedrock (us-east-1, us-west-2, etc.)
+- Verify region supports Bedrock — use `us-east-1` (recommended)
 - Check IAM permissions include `bedrock:InvokeModel`
+- **Nova 2 Lite requires cross-region inference to be enabled.** Go to AWS Bedrock Console → Model access → enable cross-region inference for `us.amazon.nova-2-lite-v1:0`. This is free to enable and takes under a minute.
+- **Nova 2 Sonic** may require separate model access request in Bedrock Console → Model access.
 
 ## Architecture
 
