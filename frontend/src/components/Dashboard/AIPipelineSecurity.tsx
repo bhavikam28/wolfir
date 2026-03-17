@@ -843,10 +843,10 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
                 {shadowAi.error && !(shadowAi as { is_simulated?: boolean })?.is_simulated ? (
                   <p className="text-xs text-slate-500">{shadowAi.error}</p>
                 ) : (
-                  {(() => {
+                  (() => {
                     // Deduplicate findings by principal — show one row per unique caller with event count
                     const principalMap = new Map<string, { count: number; suspicious: boolean }>();
-                    (shadowAi.findings ?? []).forEach(f => {
+                    (shadowAi.findings ?? []).forEach((f: any) => {
                       const existing = principalMap.get(f.principal);
                       if (existing) { existing.count++; if (f.suspicious) existing.suspicious = true; }
                       else principalMap.set(f.principal, { count: 1, suspicious: !!f.suspicious });
@@ -873,7 +873,7 @@ export default function AIPipelineSecurity({ onNavigateToFeature }: AIPipelineSe
                         ))}
                       </div>
                     );
-                  })()}
+                  })()
                 )}
               </div>
             )}
